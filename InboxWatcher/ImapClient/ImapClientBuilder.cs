@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using System.Threading.Tasks;
+using MailKit;
 
 namespace InboxWatcher
 {
@@ -69,6 +70,31 @@ namespace InboxWatcher
                 (sender, args) =>
                     client.InboxOpenTask =
                         client.Inbox.OpenAsync(FolderAccess.ReadWrite);
+
+            return client;
+        }
+
+        public IImapClient BuildReady()
+        {
+            return GetReady(Build());
+        }
+
+        public IImapClient GetReady(IImapClient client)
+        {
+            if (!client.ConnectTask.IsCompleted)
+            {
+                if (!client.ConnectTask.Wait(5000)) return BuildReady();
+            }
+
+            if (!client.AuthTask.IsCompleted)
+            {
+                if (!client.AuthTask.Wait(5000)) return BuildReady();
+            }
+
+            if (!client.InboxOpenTask.IsCompleted)
+            {
+                if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
+            }
 
             return client;
         }
