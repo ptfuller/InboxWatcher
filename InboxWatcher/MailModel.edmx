@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="MailModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="MailModelStoreContainer">
+    <EntitySet Name="Emails" EntityType="MailModel.Store.Emails" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="EmailLogs" EntityType="MailModel.Store.EmailLogs" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="EmailFilters" EntityType="MailModel.Store.EmailFilters" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="EmailLogEntry" Association="MailModel.Store.EmailLogEntry">
+      <End Role="Email" EntitySet="Emails" />
+      <End Role="EmailLog" EntitySet="EmailLogs" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="Emails">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="InQueue" Type="bit" Nullable="false" />
+    <Property Name="Minutes" Type="int" Nullable="false" />
+    <Property Name="Sender" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="TimeReceived" Type="datetime" Nullable="false" />
+    <Property Name="Subject" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="MarkedAsRead" Type="bit" Nullable="false" />
+    <Property Name="BodyText" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="EnvelopeID" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <EntityType Name="EmailLogs">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="TakenBy" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Action" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="TimeActionTaken" Type="datetime" Nullable="false" />
+    <Property Name="EmailId" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="EmailFilters">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="FilterName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SubjectContains" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SentFromContains" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ForwardToAddress" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ForwardThis" Type="bit" Nullable="false" />
+    <Property Name="MoveToFolder" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <Association Name="EmailLogEntry">
+    <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1" />
+    <End Role="EmailLog" Type="MailModel.Store.EmailLogs" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Email">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="EmailLog">
+        <PropertyRef Name="EmailId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="MailModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
+        <EntityContainer Name="MailModelContainer" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Emails" EntityType="MailModel.Email" />
+          <EntitySet Name="EmailLogs" EntityType="MailModel.EmailLog" />
+          <AssociationSet Name="EmailLogEntry" Association="MailModel.EmailLogEntry">
+            <End Role="Email" EntitySet="Emails" />
+            <End Role="EmailLog" EntitySet="EmailLogs" />
+          </AssociationSet>
+          <EntitySet Name="EmailFilters" EntityType="MailModel.EmailFilter" />
+        </EntityContainer>
+        <EntityType Name="Email">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="InQueue" Type="Boolean" Nullable="false" />
+          <Property Name="Minutes" Type="Int32" Nullable="false" />
+          <Property Name="Sender" Type="String" Nullable="false" />
+          <Property Name="TimeReceived" Type="DateTime" Nullable="false" />
+          <Property Name="Subject" Type="String" Nullable="false" />
+          <Property Name="MarkedAsRead" Type="Boolean" Nullable="false" />
+          <Property Name="BodyText" Type="String" Nullable="false" />
+          <Property Name="EnvelopeID" Type="String" Nullable="false" />
+          <NavigationProperty Name="EmailLogs" Relationship="MailModel.EmailLogEntry" FromRole="Email" ToRole="EmailLog" />
+        </EntityType>
+        <EntityType Name="EmailLog">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="TakenBy" Type="String" Nullable="false" />
+          <Property Name="Action" Type="String" Nullable="false" />
+          <Property Name="TimeActionTaken" Type="DateTime" Nullable="false" />
+          <NavigationProperty Name="Email" Relationship="MailModel.EmailLogEntry" FromRole="EmailLog" ToRole="Email" />
+          <Property Name="EmailId" Type="Int32" Nullable="false" />
+        </EntityType>
+        <Association Name="EmailLogEntry">
+          <End Type="MailModel.Email" Role="Email" Multiplicity="1" />
+          <End Type="MailModel.EmailLog" Role="EmailLog" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Email">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="EmailLog">
+              <PropertyRef Name="EmailId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="EmailFilter">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="FilterName" Type="String" Nullable="false" />
+          <Property Name="SubjectContains" Type="String" Nullable="false" />
+          <Property Name="SentFromContains" Type="String" Nullable="false" />
+          <Property Name="ForwardToAddress" Type="String" Nullable="false" />
+          <Property Name="ForwardThis" Type="Boolean" Nullable="false" />
+          <Property Name="MoveToFolder" Type="String" Nullable="false" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="MailModelStoreContainer" CdmEntityContainer="MailModelContainer">
+    <EntitySetMapping Name="Emails">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.Email)">
+        <MappingFragment StoreEntitySet="Emails">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="InQueue" ColumnName="InQueue" />
+          <ScalarProperty Name="Minutes" ColumnName="Minutes" />
+          <ScalarProperty Name="Sender" ColumnName="Sender" />
+          <ScalarProperty Name="TimeReceived" ColumnName="TimeReceived" />
+          <ScalarProperty Name="Subject" ColumnName="Subject" />
+          <ScalarProperty Name="MarkedAsRead" ColumnName="MarkedAsRead" />
+          <ScalarProperty Name="BodyText" ColumnName="BodyText" />
+          <ScalarProperty Name="EnvelopeID" ColumnName="EnvelopeID" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="EmailLogs">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailLog)">
+        <MappingFragment StoreEntitySet="EmailLogs">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="TakenBy" ColumnName="TakenBy" />
+          <ScalarProperty Name="Action" ColumnName="Action" />
+          <ScalarProperty Name="TimeActionTaken" ColumnName="TimeActionTaken" />
+          <ScalarProperty Name="EmailId" ColumnName="EmailId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="EmailFilters">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailFilter)">
+        <MappingFragment StoreEntitySet="EmailFilters">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="FilterName" ColumnName="FilterName" />
+          <ScalarProperty Name="SubjectContains" ColumnName="SubjectContains" />
+          <ScalarProperty Name="SentFromContains" ColumnName="SentFromContains" />
+          <ScalarProperty Name="ForwardToAddress" ColumnName="ForwardToAddress" />
+          <ScalarProperty Name="ForwardThis" ColumnName="ForwardThis" />
+          <ScalarProperty Name="MoveToFolder" ColumnName="MoveToFolder" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <edmx:Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </edmx:Connection>
+    <edmx:Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+        <DesignerProperty Name="UseLegacyProvider" Value="False" />
+      </DesignerInfoPropertySet>
+    </edmx:Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

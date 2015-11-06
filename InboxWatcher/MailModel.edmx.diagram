@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="c550c9a72737479780c0fc050ce49720" Name="Diagram1" >
+        <EntityTypeShape EntityType="MailModel.Email" Width="1.5" PointX="0.5" PointY="0.5" />
+        <EntityTypeShape EntityType="MailModel.EmailLog" Width="1.5" PointX="3.25" PointY="0.5" />
+        <AssociationConnector Association="MailModel.EmailLogEntry" />
+        <EntityTypeShape EntityType="MailModel.EmailFilter" Width="1.5" PointX="5" PointY="0.5" />
+      </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
