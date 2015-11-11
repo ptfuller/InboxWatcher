@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using MailKit;
+﻿using MailKit;
 
 namespace InboxWatcher
 {
@@ -96,7 +95,10 @@ namespace InboxWatcher
                 if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
             }
 
-            return client;
+            if (client.IsConnected && client.IsAuthenticated)
+                return client;
+
+            return BuildReady();
         }
     }
 }

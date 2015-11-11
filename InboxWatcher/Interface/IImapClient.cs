@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -16,32 +15,8 @@ namespace InboxWatcher
 {
     public interface IImapClient
     {
-        
-        
-        void Compress(CancellationToken cancellationToken);
-        Task CompressAsync(CancellationToken cancellationToken);
-        void EnableQuickResync(CancellationToken cancellationToken);
-        void EnableUTF8(CancellationToken cancellationToken);
-        Task EnableUTF8Async(CancellationToken cancellationToken);
-        ImapImplementation Identify(ImapImplementation clientImplementation, CancellationToken cancellationToken);
-        Task<ImapImplementation> IdentifyAsync(ImapImplementation clientImplementation, CancellationToken cancellationToken);
-        
-        void Authenticate(ICredentials credentials, CancellationToken cancellationToken);
-        
-        void Connect(string host, int port, SecureSocketOptions options, CancellationToken cancellationToken);
-        void Connect(Socket socket, string host, int port, SecureSocketOptions options, CancellationToken cancellationToken);
-        void Disconnect(bool quit, CancellationToken cancellationToken);
-        void NoOp(CancellationToken cancellationToken);
-        void Idle(CancellationToken doneToken, CancellationToken cancellationToken);
-        Task IdleAsync(CancellationToken doneToken, CancellationToken cancellationToken);
-        IMailFolder GetFolder(SpecialFolder folder);
-        IMailFolder GetFolder(FolderNamespace @namespace);
-        IMailFolder GetFolder(string path, CancellationToken cancellationToken);
-        
-        
-        IEnumerable<IMailFolder> GetFolders(FolderNamespace @namespace, bool subscribedOnly, CancellationToken cancellationToken);
         object SyncRoot { get; }
-        
+
         ImapCapabilities Capabilities { get; set; }
         int InternationalizationLevel { get; }
         AccessRights Rights { get; }
@@ -61,10 +36,48 @@ namespace InboxWatcher
         X509CertificateCollection ClientCertificates { get; set; }
         RemoteCertificateValidationCallback ServerCertificateValidationCallback { get; set; }
         IPEndPoint LocalEndPoint { get; set; }
+
+        Task ConnectTask { get; set; }
+        Task AuthTask { get; set; }
+        Task InboxOpenTask { get; set; }
+
+
+        void Compress(CancellationToken cancellationToken);
+        Task CompressAsync(CancellationToken cancellationToken);
+        void EnableQuickResync(CancellationToken cancellationToken);
+        void EnableUTF8(CancellationToken cancellationToken);
+        Task EnableUTF8Async(CancellationToken cancellationToken);
+        ImapImplementation Identify(ImapImplementation clientImplementation, CancellationToken cancellationToken);
+
+        Task<ImapImplementation> IdentifyAsync(ImapImplementation clientImplementation,
+            CancellationToken cancellationToken);
+
+        void Authenticate(ICredentials credentials, CancellationToken cancellationToken);
+
+        void Connect(string host, int port, SecureSocketOptions options, CancellationToken cancellationToken);
+
+        void Connect(Socket socket, string host, int port, SecureSocketOptions options,
+            CancellationToken cancellationToken);
+
+        void Disconnect(bool quit, CancellationToken cancellationToken);
+        void NoOp(CancellationToken cancellationToken);
+        void Idle(CancellationToken doneToken, CancellationToken cancellationToken);
+        Task IdleAsync(CancellationToken doneToken, CancellationToken cancellationToken);
+        IMailFolder GetFolder(SpecialFolder folder);
+        IMailFolder GetFolder(FolderNamespace @namespace);
+        IMailFolder GetFolder(string path, CancellationToken cancellationToken);
+
+
+        IEnumerable<IMailFolder> GetFolders(FolderNamespace @namespace, bool subscribedOnly,
+            CancellationToken cancellationToken);
+
         Task EnableQuickResyncAsync(CancellationToken cancellationToken);
-        Task<IEnumerable<IMailFolder>> GetFoldersAsync(FolderNamespace @namespace, bool subscribedOnly, CancellationToken cancellationToken);
+
+        Task<IEnumerable<IMailFolder>> GetFoldersAsync(FolderNamespace @namespace, bool subscribedOnly,
+            CancellationToken cancellationToken);
+
         Task<IMailFolder> GetFolderAsync(string path, CancellationToken cancellationToken);
-        
+
         event EventHandler<AlertEventArgs> Alert;
         Task ConnectAsync(string host, int port, SecureSocketOptions options, CancellationToken cancellationToken);
         void Connect(Uri uri, CancellationToken cancellationToken);
@@ -76,14 +89,10 @@ namespace InboxWatcher
         Task AuthenticateAsync(string userName, string password, CancellationToken cancellationToken);
         Task DisconnectAsync(bool quit, CancellationToken cancellationToken);
         Task NoOpAsync(CancellationToken cancellationToken);
-        
+
         void Dispose();
         event EventHandler<EventArgs> Connected;
         event EventHandler<EventArgs> Disconnected;
         event EventHandler<AuthenticatedEventArgs> Authenticated;
-
-        Task ConnectTask { get; set; }
-        Task AuthTask { get; set; }
-        Task InboxOpenTask { get; set; }
     }
 }

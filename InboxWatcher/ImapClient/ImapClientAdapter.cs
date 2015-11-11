@@ -15,11 +15,11 @@ namespace InboxWatcher
 {
     public class ImapClientAdapter : IImapClient
     {
-        private ImapClient _imapClient;
+        private readonly ImapClient _imapClient;
 
         public ImapClientAdapter()
         {
-            this._imapClient = new ImapClient();
+            _imapClient = new ImapClient();
         }
 
         public Task ConnectAsync(string host, int port = 0, SecureSocketOptions options = SecureSocketOptions.Auto,
@@ -38,27 +38,32 @@ namespace InboxWatcher
             return _imapClient.ConnectAsync(uri, cancellationToken);
         }
 
-        public void Connect(string host, int port, bool useSsl, CancellationToken cancellationToken = new CancellationToken())
+        public void Connect(string host, int port, bool useSsl,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             _imapClient.Connect(host, port, useSsl, cancellationToken);
         }
 
-        public Task ConnectAsync(string host, int port, bool useSsl, CancellationToken cancellationToken = new CancellationToken())
+        public Task ConnectAsync(string host, int port, bool useSsl,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             return _imapClient.ConnectAsync(host, port, useSsl, cancellationToken);
         }
 
-        public Task AuthenticateAsync(ICredentials credentials, CancellationToken cancellationToken = new CancellationToken())
+        public Task AuthenticateAsync(ICredentials credentials,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             return _imapClient.AuthenticateAsync(credentials, cancellationToken);
         }
 
-        public void Authenticate(string userName, string password, CancellationToken cancellationToken = new CancellationToken())
+        public void Authenticate(string userName, string password,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             _imapClient.Authenticate(userName, password, cancellationToken);
         }
 
-        public Task AuthenticateAsync(string userName, string password, CancellationToken cancellationToken = new CancellationToken())
+        public Task AuthenticateAsync(string userName, string password,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             return _imapClient.AuthenticateAsync(userName, password, cancellationToken);
         }
@@ -136,7 +141,8 @@ namespace InboxWatcher
             return _imapClient.GetFoldersAsync(@namespace, subscribedOnly, cancellationToken);
         }
 
-        public Task<IMailFolder> GetFolderAsync(string path, CancellationToken cancellationToken = new CancellationToken())
+        public Task<IMailFolder> GetFolderAsync(string path,
+            CancellationToken cancellationToken = new CancellationToken())
         {
             return _imapClient.GetFolderAsync(path, cancellationToken);
         }
@@ -195,7 +201,8 @@ namespace InboxWatcher
             _imapClient.Connect(host, port, options, cancellationToken);
         }
 
-        public void Connect(Socket socket, string host, int port = 0, SecureSocketOptions options = SecureSocketOptions.Auto,
+        public void Connect(Socket socket, string host, int port = 0,
+            SecureSocketOptions options = SecureSocketOptions.Auto,
             CancellationToken cancellationToken = new CancellationToken())
         {
             _imapClient.Connect(socket, host, port, options, cancellationToken);
