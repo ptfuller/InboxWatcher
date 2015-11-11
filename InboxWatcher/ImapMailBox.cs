@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using MailKit;
 
@@ -9,17 +10,24 @@ namespace InboxWatcher
     {
         private readonly ImapIdler _imapIdler;
         private readonly ImapPoller _imapPoller;
+        public List<IMessageSummary> EmailList { get; set; }
+        public static ImapClientDirector ImapClientDirector { get; set; }
 
-        public ImapMailBox()
+        public event EventHandler NewMessageReceived;
+        public event EventHandler MessageRemoved;
+
+        public ImapMailBox(ImapClientDirector icd)
         {
-            _imapPoller = new ImapPoller(ImapClientDirector.GetReadyClient());
-            _imapIdler = new ImapIdler(ImapClientDirector.GetReadyClient());
+            ImapClientDirector = icd;
+            _imapPoller = new ImapPoller(ImapClientDirector);
+            _imapIdler = new ImapIdler(ImapClientDirector);
             EmailList = new List<IMessageSummary>();
 
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
-        }
+            _imapIdler.MessageExpunged += ImapIdlerOnMessageArrived;
 
-        public IList<IMessageSummary> EmailList { get; set; }
+            SetupEvent();
+        }
 
         //for testing - need to setup event handler on mocks
         public void SetupEvent()
@@ -34,12 +42,24 @@ namespace InboxWatcher
 
             if (messages == null || messages.Count == 0) return;
 
-            foreach (
-                var message in
-                    messages.Where(
-                        message => !EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))))
+            //find the messages that were removed from the queue
+            for(int i = 0; i < EmailList.Count; i++)
             {
-                EmailList.Add(message);
+                if (!messages.Contains(EmailList[i]))
+                {
+                    MessageRemoved?.Invoke(EmailList[i], EventArgs.Empty);
+                    EmailList.RemoveAt(i);
+                }
+            }
+
+            //find the messages that were added to the queue
+            foreach (var message in messages)
+            {
+                if (!EmailList.Contains(message))
+                {
+                    EmailList.Add(message);
+                    NewMessageReceived?.Invoke(message, EventArgs.Empty);
+                }
             }
         }
     }

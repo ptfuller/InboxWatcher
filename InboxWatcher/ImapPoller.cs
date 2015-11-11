@@ -5,29 +5,27 @@ using MailKit;
 
 namespace InboxWatcher
 {
-    public class ImapPoller
+    public class ImapPoller : ImapIdler
     {
-        private IImapClient _client;
         private CancellationTokenSource _fetchCancellationToken;
-        private ImapIdler _idler;
 
-        public ImapPoller(IImapClient client)
+        public ImapPoller(ImapClientDirector director) : base(director)
         {
-            _client = client;
-            _client.Disconnected += ClientOnDisconnected;
-        }
-
-        //get a new client
-        private void ClientOnDisconnected(object sender, EventArgs eventArgs)
-        {
-            _client = ImapClientDirector.GetReadyClient();
         }
 
         public IList<IMessageSummary> GetMessageSummaries()
         {
+            _doneToken.Cancel();
+
             _fetchCancellationToken = new CancellationTokenSource();
-            return _client.Inbox.Fetch(0, -1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
+
+            var results = ImapClient.Inbox.Fetch(0, -1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
                 _fetchCancellationToken.Token);
+
+            StartIdling();
+
+            return results;
         }
+
     }
 }

@@ -78,9 +78,11 @@
     </Compile>
     <Compile Include="ImapClient\ImapClientAdapter.cs" />
     <Compile Include="ImapClient\ImapClientBuilder.cs" />
+    <Compile Include="ImapClient\ImapClientConfiguration.cs" />
     <Compile Include="ImapClient\ImapClientDirector.cs" />
     <Compile Include="ImapMailBox.cs" />
     <Compile Include="ImapPoller.cs" />
+    <Compile Include="Interface\IClientConfiguration.cs" />
     <Compile Include="Interface\IImapClient.cs" />
     <Compile Include="ImapIdler.cs" />
     <Compile Include="MailModel.Context.cs">

@@ -16,11 +16,15 @@ namespace InboxWatcherTests
     {
         private Mock<IImapClient> _client;
         private Mock<IMailFolder> _inbox;
+        private ImapClientConfiguration _config;
+
+        private ImapClientDirector ImapClientDirector { get; set; }
 
         [TestInitialize]
         public void ImapIdlerTestInitialization()
         {
             _client = new Mock<IImapClient>();
+            _client.Name = "ImapIdlerTestInitialization Mock Imap Client";
 
             //return true for IsIdle if we've asked the client to idle
             _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
@@ -29,12 +33,26 @@ namespace InboxWatcherTests
             //setup the client's inbox
             _inbox = new Mock<IMailFolder>();
             _client.Setup(x => x.Inbox).Returns(_inbox.Object);
+
+            _config = new ImapClientConfiguration()
+            {
+                HostName = "outlook.office365.com",
+                Password = Settings.Default.TestPassword,
+                Port = 993,
+                UserName = Settings.Default.TestUserName,
+                UseSecure = true
+            };
+
+            ImapClientDirector = new ImapClientDirector(_config);
         }
 
         [TestMethod]
         public void TestStartIdling()
         {
-            var idle = new ImapIdler(_client.Object);
+            var director = new Mock<ImapClientDirector>(_config);
+            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var idle = new ImapIdler(director.Object);
 
             idle.StartIdling();
 
@@ -44,7 +62,10 @@ namespace InboxWatcherTests
         [TestMethod]
         public void TestMessageReceivedEventHandler()
         {
-            var idle = new ImapIdler(_client.Object);
+            var director = new Mock<ImapClientDirector>(_config);
+            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var idle = new ImapIdler(director.Object);
             idle.StartIdling();
 
             var eventWasDispatched = false;
@@ -59,7 +80,10 @@ namespace InboxWatcherTests
         [TestMethod]
         public void TestTimerIdle()
         {
-            var idle = new ImapIdler(_client.Object);
+            var director = new Mock<ImapClientDirector>(_config);
+            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var idle = new ImapIdler(director.Object);
             idle.StartIdling();
 
             Assert.IsTrue(_client.Object.IsIdle);
@@ -73,8 +97,12 @@ namespace InboxWatcherTests
         [TestMethod]
         public void TestIdleLoop()
         {
-            var idle = new ImapIdler(_client.Object);
+            var directorMock = new Mock<ImapClientDirector>(_config);
+            directorMock.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var idle = new ImapIdler(directorMock.Object);
             var timerPvt = new PrivateObject(idle);
+            timerPvt.SetFieldOrProperty("ImapClient", _client.Object);
 
             idle.StartIdling();
 

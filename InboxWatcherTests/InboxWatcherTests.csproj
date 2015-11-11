@@ -84,6 +84,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ImapClientBuilderTests.cs" />
+    <Compile Include="ImapClientDirectorTests.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

@@ -1,28 +1,30 @@
 ﻿namespace InboxWatcher
 {
-    public static class ImapClientDirector
+    public class ImapClientDirector
     {
-        static ImapClientDirector()
-        {
-            Builder = new ImapClientBuilder();
+        private ImapClientBuilder Builder { get; set; }
 
-            //todo confiugre builder via config db
+        public ImapClientDirector(IClientConfiguration configuration)
+        {
+            Builder = new ImapClientBuilder()
+                .WithHost(configuration.HostName)
+                .WithPassword(configuration.Password)
+                .WithPort(configuration.Port)
+                .WithUseSecure(configuration.UseSecure)
+                .WithUserName(configuration.UserName);
         }
 
-        //todo make private
-        public static ImapClientBuilder Builder { get; set; }
-
-        public static IImapClient GetClient()
+        public virtual IImapClient GetClient()
         {
             return Builder.Build();
         }
 
-        public static IImapClient GetReadyClient()
+        public virtual IImapClient GetReadyClient()
         {
             return Builder.BuildReady();
         }
 
-        public static IImapClient GetThisClientReady(IImapClient client)
+        public virtual IImapClient GetThisClientReady(IImapClient client)
         {
             return Builder.GetReady(client);
         }

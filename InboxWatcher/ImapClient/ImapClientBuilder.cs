@@ -4,7 +4,7 @@ namespace InboxWatcher
 {
     public class ImapClientBuilder
     {
-        private string _host = "outlook.office365.com";
+        private string _host;
         private string _password;
         private int _port = 993;
         private string _userName;
@@ -12,9 +12,7 @@ namespace InboxWatcher
 
         public ImapClientBuilder()
         {
-            //TODO set these via config from db later - inject config object
-            _userName = "";
-            _password = "";
+            
         }
 
         public static IImapClient ToIImapClient(ImapClientBuilder instance)

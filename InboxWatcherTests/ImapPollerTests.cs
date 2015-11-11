@@ -17,6 +17,9 @@ namespace InboxWatcherTests
         private Mock<IImapClient> _client;
         private Mock<IMailFolder> _inbox;
 
+        private ImapClientDirector ImapClientDirector { get; set; }
+        private ImapClientConfiguration _config;
+
         [TestInitialize]
         public void ImapPollerTestInitialization()
         {
@@ -30,17 +33,28 @@ namespace InboxWatcherTests
             _inbox = new Mock<IMailFolder>();
             _client.Setup(x => x.Inbox).Returns(_inbox.Object);
 
-            ImapClientDirector.Builder = ImapClientDirector.Builder.WithUserName(Settings.Default.TestUserName)
-                .WithPassword(Settings.Default.TestPassword);
+            _config = new ImapClientConfiguration()
+            {
+                HostName = "outlook.office365.com",
+                Password = Settings.Default.TestPassword,
+                Port = 993,
+                UserName = Settings.Default.TestUserName,
+                UseSecure = true
+            };
+
+            ImapClientDirector = new ImapClientDirector(_config);
         }
 
         [TestMethod]
         public void TestPollerGetsCallFromIdleLoop()
         {
-            var inbox = new ImapMailBox();
+            var director = new Mock<ImapClientDirector>(_config);
+            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var inbox = new ImapMailBox(director.Object);
             var pvt = new PrivateObject(inbox);
 
-            var idler = new ImapIdler(_client.Object);
+            var idler = new ImapIdler(director.Object);
             pvt.SetField("_imapIdler", idler);
 
             Assert.AreEqual(idler, pvt.GetFieldOrProperty("_imapIdler") as ImapIdler);
@@ -51,7 +65,10 @@ namespace InboxWatcherTests
 
             idler.StartIdling();
 
-            var poller = new ImapPoller(client2.Object);
+            var poller = new ImapPoller(director.Object);
+            var pollerPvt = new PrivateObject(poller);
+            pollerPvt.SetFieldOrProperty("ImapClient", client2.Object);
+
             pvt.SetField("_imapPoller", poller);
 
             Assert.AreEqual(poller, pvt.GetFieldOrProperty("_imapPoller") as ImapPoller);
@@ -69,7 +86,10 @@ namespace InboxWatcherTests
         [TestMethod]
         public void TestPollerGetsNewClientOnDisconnect()
         {
-            var idler = new ImapIdler(_client.Object);
+            var director = new Mock<ImapClientDirector>(_config);
+            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+
+            var idler = new ImapIdler(director.Object);
 
             var client2 = new Mock<IImapClient>();
             var client2Inbox = new Mock<IMailFolder>();
@@ -77,12 +97,12 @@ namespace InboxWatcherTests
 
             idler.StartIdling();
 
-            var poller = new ImapPoller(client2.Object);
+            var poller = new ImapPoller(ImapClientDirector);
 
             client2.Raise(x => x.Disconnected += null, new EventArgs());
 
             var pvt = new PrivateObject(poller);
-            var concreteClient = pvt.GetFieldOrProperty("_client") as IImapClient;
+            var concreteClient = pvt.GetFieldOrProperty("ImapClient") as IImapClient;
 
             Assert.IsTrue(concreteClient.IsConnected);
             Assert.IsTrue(concreteClient.IsAuthenticated);
