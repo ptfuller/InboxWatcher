@@ -75,7 +75,7 @@ namespace InboxWatcherTests
 
             pollerClient.Setup(x => x.Inbox).Returns(pollerInbox.Object);
 
-            var poller = pvt.GetFieldOrProperty("_imapPoller") as ImapPoller;
+            var poller = pvt.GetFieldOrProperty("_imapPoller") as ImapWorker;
             var idler = pvt.GetFieldOrProperty("_imapIdler") as ImapIdler;
 
             var pollerPvt = new PrivateObject(poller);
@@ -93,7 +93,7 @@ namespace InboxWatcherTests
 
             //make sure the fields were set correctly
             Assert.AreEqual(idler, pvt.GetField("_imapIdler") as ImapIdler);
-            Assert.AreEqual(poller, pvt.GetField("_imapPoller") as ImapPoller);
+            Assert.AreEqual(poller, pvt.GetField("_imapPoller") as ImapWorker);
 
             //raise the event
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));

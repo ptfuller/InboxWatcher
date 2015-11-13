@@ -89,7 +89,7 @@ namespace InboxWatcherTests
             Assert.IsTrue(_client.Object.IsIdle);
             
             var timerPvt = new PrivateObject(idle);
-            var timer = timerPvt.GetFieldOrProperty("_timeout") as System.Timers.Timer;
+            var timer = timerPvt.GetFieldOrProperty("Timeout") as System.Timers.Timer;
             
             Assert.IsTrue(timer.Enabled);
         }
@@ -106,8 +106,8 @@ namespace InboxWatcherTests
 
             idle.StartIdling();
 
-            var timer = timerPvt.GetFieldOrProperty("_timeout") as System.Timers.Timer;
-            var doneToken = timerPvt.GetFieldOrProperty("_doneToken") as CancellationTokenSource;
+            var timer = timerPvt.GetFieldOrProperty("Timeout") as System.Timers.Timer;
+            var doneToken = timerPvt.GetFieldOrProperty("DoneToken") as CancellationTokenSource;
 
             var eventWasDispatched = false;
 
@@ -127,7 +127,7 @@ namespace InboxWatcherTests
             Assert.IsTrue(doneToken.IsCancellationRequested);
 
             //get the new timer
-            timer = timerPvt.GetFieldOrProperty("_timeout") as System.Timers.Timer;
+            timer = timerPvt.GetFieldOrProperty("Timeout") as System.Timers.Timer;
 
             //check that elapsed reset
             Assert.IsTrue(timer.Interval == (9 * 60 * 1000));
@@ -139,7 +139,7 @@ namespace InboxWatcherTests
             Assert.IsTrue(_client.Object.IsIdle);
 
             //check that token is not cancelled
-            doneToken = timerPvt.GetFieldOrProperty("_doneToken") as CancellationTokenSource;
+            doneToken = timerPvt.GetFieldOrProperty("DoneToken") as CancellationTokenSource;
             Assert.IsFalse(doneToken.IsCancellationRequested);
         }
     }

@@ -28,5 +28,6 @@ namespace InboxWatcher
         public virtual DbSet<Email> Emails { get; set; }
         public virtual DbSet<EmailLog> EmailLogs { get; set; }
         public virtual DbSet<EmailFilter> EmailFilters { get; set; }
+        public virtual DbSet<ImapMailBoxConfiguration> ImapMailBoxConfigurations { get; set; }
     }
 }

@@ -5,17 +5,17 @@ using MailKit;
 
 namespace InboxWatcher
 {
-    public class ImapPoller : ImapIdler
+    public class ImapWorker : ImapIdler
     {
         private CancellationTokenSource _fetchCancellationToken;
 
-        public ImapPoller(ImapClientDirector director) : base(director)
+        public ImapWorker(ImapClientDirector director) : base(director)
         {
         }
 
         public IList<IMessageSummary> GetMessageSummaries()
         {
-            _doneToken.Cancel();
+            StopIdle();
 
             _fetchCancellationToken = new CancellationTokenSource();
 

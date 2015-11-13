@@ -5,68 +5,78 @@
   <edmx:Runtime>
     <!-- SSDL content -->
     <edmx:StorageModels>
-      <Schema Namespace="MailModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012"
-              xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator"
-              xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
-        <EntityContainer Name="MailModelStoreContainer">
-          <EntitySet Name="Emails" EntityType="MailModel.Store.Emails" store:Type="Tables" Schema="dbo" />
-          <EntitySet Name="EmailLogs" EntityType="MailModel.Store.EmailLogs" store:Type="Tables" Schema="dbo" />
-          <EntitySet Name="EmailFilters" EntityType="MailModel.Store.EmailFilters" store:Type="Tables" Schema="dbo" />
-          <AssociationSet Name="EmailLogEntry" Association="MailModel.Store.EmailLogEntry">
-            <End Role="Email" EntitySet="Emails" />
-            <End Role="EmailLog" EntitySet="EmailLogs" />
-          </AssociationSet>
-        </EntityContainer>
-        <EntityType Name="Emails">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="InQueue" Type="bit" Nullable="false" />
-          <Property Name="Minutes" Type="int" Nullable="false" />
-          <Property Name="Sender" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="TimeReceived" Type="datetime" Nullable="false" />
-          <Property Name="Subject" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="MarkedAsRead" Type="bit" Nullable="false" />
-          <Property Name="BodyText" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="EnvelopeID" Type="nvarchar(max)" Nullable="false" />
-        </EntityType>
-        <EntityType Name="EmailLogs">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="TakenBy" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="Action" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="TimeActionTaken" Type="datetime" Nullable="false" />
-          <Property Name="EmailId" Type="int" Nullable="false" />
-        </EntityType>
-        <EntityType Name="EmailFilters">
-          <Key>
-            <PropertyRef Name="Id" />
-          </Key>
-          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
-          <Property Name="FilterName" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="SubjectContains" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="SentFromContains" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="ForwardToAddress" Type="nvarchar(max)" Nullable="false" />
-          <Property Name="ForwardThis" Type="bit" Nullable="false" />
-          <Property Name="MoveToFolder" Type="nvarchar(max)" Nullable="false" />
-        </EntityType>
-        <Association Name="EmailLogEntry">
-          <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1" />
-          <End Role="EmailLog" Type="MailModel.Store.EmailLogs" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Email">
-              <PropertyRef Name="Id" />
-            </Principal>
-            <Dependent Role="EmailLog">
-              <PropertyRef Name="EmailId" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-      </Schema>
-    </edmx:StorageModels>
+    <Schema Namespace="MailModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="MailModelStoreContainer">
+    <EntitySet Name="Emails" EntityType="MailModel.Store.Emails" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="EmailLogs" EntityType="MailModel.Store.EmailLogs" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="EmailFilters" EntityType="MailModel.Store.EmailFilters" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="ImapMailBoxConfigurations" EntityType="MailModel.Store.ImapMailBoxConfigurations" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="EmailLogEntry" Association="MailModel.Store.EmailLogEntry">
+      <End Role="Email" EntitySet="Emails" />
+      <End Role="EmailLog" EntitySet="EmailLogs" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="Emails">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="InQueue" Type="bit" Nullable="false" />
+    <Property Name="Minutes" Type="int" Nullable="false" />
+    <Property Name="Sender" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="TimeReceived" Type="datetime" Nullable="false" />
+    <Property Name="Subject" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="MarkedAsRead" Type="bit" Nullable="false" />
+    <Property Name="BodyText" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="EnvelopeID" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <EntityType Name="EmailLogs">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="TakenBy" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Action" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="TimeActionTaken" Type="datetime" Nullable="false" />
+    <Property Name="EmailId" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="EmailFilters">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="FilterName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SubjectContains" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SentFromContains" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ForwardToAddress" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ForwardThis" Type="bit" Nullable="false" />
+    <Property Name="MoveToFolder" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <EntityType Name="ImapMailBoxConfigurations">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="UserName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Password" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="HostName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="UseSecure" Type="bit" Nullable="false" />
+    <Property Name="Port" Type="int" Nullable="false" />
+    <Property Name="MailBoxName" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
+  <Association Name="EmailLogEntry">
+    <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1" />
+    <End Role="EmailLog" Type="MailModel.Store.EmailLogs" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Email">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="EmailLog">
+        <PropertyRef Name="EmailId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm"
@@ -83,6 +93,7 @@
             <End Role="EmailLog" EntitySet="EmailLogs" />
           </AssociationSet>
           <EntitySet Name="EmailFilters" EntityType="MailModel.EmailFilter" />
+          <EntitySet Name="ImapMailBoxConfigurations" EntityType="MailModel.ImapMailBoxConfiguration" />
         </EntityContainer>
         <EntityType Name="Email">
           <Key>
@@ -135,55 +146,78 @@
           <Property Name="ForwardThis" Type="Boolean" Nullable="false" />
           <Property Name="MoveToFolder" Type="String" Nullable="false" />
         </EntityType>
+        <EntityType Name="ImapMailBoxConfiguration">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserName" Type="String" Nullable="false" />
+          <Property Name="Password" Type="String" Nullable="false" />
+          <Property Name="HostName" Type="String" Nullable="false" />
+          <Property Name="UseSecure" Type="Boolean" Nullable="false" />
+          <Property Name="Port" Type="Int32" Nullable="false" />
+          <Property Name="MailBoxName" Type="String" Nullable="false" />
+        </EntityType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
-      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
-        <EntityContainerMapping StorageEntityContainer="MailModelStoreContainer"
-                                CdmEntityContainer="MailModelContainer">
-          <EntitySetMapping Name="Emails">
-            <EntityTypeMapping TypeName="IsTypeOf(MailModel.Email)">
-              <MappingFragment StoreEntitySet="Emails">
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="InQueue" ColumnName="InQueue" />
-                <ScalarProperty Name="Minutes" ColumnName="Minutes" />
-                <ScalarProperty Name="Sender" ColumnName="Sender" />
-                <ScalarProperty Name="TimeReceived" ColumnName="TimeReceived" />
-                <ScalarProperty Name="Subject" ColumnName="Subject" />
-                <ScalarProperty Name="MarkedAsRead" ColumnName="MarkedAsRead" />
-                <ScalarProperty Name="BodyText" ColumnName="BodyText" />
-                <ScalarProperty Name="EnvelopeID" ColumnName="EnvelopeID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="EmailLogs">
-            <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailLog)">
-              <MappingFragment StoreEntitySet="EmailLogs">
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="TakenBy" ColumnName="TakenBy" />
-                <ScalarProperty Name="Action" ColumnName="Action" />
-                <ScalarProperty Name="TimeActionTaken" ColumnName="TimeActionTaken" />
-                <ScalarProperty Name="EmailId" ColumnName="EmailId" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="EmailFilters">
-            <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailFilter)">
-              <MappingFragment StoreEntitySet="EmailFilters">
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="FilterName" ColumnName="FilterName" />
-                <ScalarProperty Name="SubjectContains" ColumnName="SubjectContains" />
-                <ScalarProperty Name="SentFromContains" ColumnName="SentFromContains" />
-                <ScalarProperty Name="ForwardToAddress" ColumnName="ForwardToAddress" />
-                <ScalarProperty Name="ForwardThis" ColumnName="ForwardThis" />
-                <ScalarProperty Name="MoveToFolder" ColumnName="MoveToFolder" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-        </EntityContainerMapping>
-      </Mapping>
-    </edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="MailModelStoreContainer" CdmEntityContainer="MailModelContainer">
+    <EntitySetMapping Name="Emails">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.Email)">
+        <MappingFragment StoreEntitySet="Emails">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="InQueue" ColumnName="InQueue" />
+          <ScalarProperty Name="Minutes" ColumnName="Minutes" />
+          <ScalarProperty Name="Sender" ColumnName="Sender" />
+          <ScalarProperty Name="TimeReceived" ColumnName="TimeReceived" />
+          <ScalarProperty Name="Subject" ColumnName="Subject" />
+          <ScalarProperty Name="MarkedAsRead" ColumnName="MarkedAsRead" />
+          <ScalarProperty Name="BodyText" ColumnName="BodyText" />
+          <ScalarProperty Name="EnvelopeID" ColumnName="EnvelopeID" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="EmailLogs">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailLog)">
+        <MappingFragment StoreEntitySet="EmailLogs">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="TakenBy" ColumnName="TakenBy" />
+          <ScalarProperty Name="Action" ColumnName="Action" />
+          <ScalarProperty Name="TimeActionTaken" ColumnName="TimeActionTaken" />
+          <ScalarProperty Name="EmailId" ColumnName="EmailId" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="EmailFilters">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.EmailFilter)">
+        <MappingFragment StoreEntitySet="EmailFilters">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="FilterName" ColumnName="FilterName" />
+          <ScalarProperty Name="SubjectContains" ColumnName="SubjectContains" />
+          <ScalarProperty Name="SentFromContains" ColumnName="SentFromContains" />
+          <ScalarProperty Name="ForwardToAddress" ColumnName="ForwardToAddress" />
+          <ScalarProperty Name="ForwardThis" ColumnName="ForwardThis" />
+          <ScalarProperty Name="MoveToFolder" ColumnName="MoveToFolder" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="ImapMailBoxConfigurations">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.ImapMailBoxConfiguration)">
+        <MappingFragment StoreEntitySet="ImapMailBoxConfigurations">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="UserName" ColumnName="UserName" />
+          <ScalarProperty Name="Password" ColumnName="Password" />
+          <ScalarProperty Name="HostName" ColumnName="HostName" />
+          <ScalarProperty Name="UseSecure" ColumnName="UseSecure" />
+          <ScalarProperty Name="Port" ColumnName="Port" />
+          <ScalarProperty Name="MailBoxName" ColumnName="MailBoxName" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
   </edmx:Runtime>
   <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
   <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">

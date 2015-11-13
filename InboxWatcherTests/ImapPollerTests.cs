@@ -65,13 +65,13 @@ namespace InboxWatcherTests
 
             idler.StartIdling();
 
-            var poller = new ImapPoller(director.Object);
+            var poller = new ImapWorker(director.Object);
             var pollerPvt = new PrivateObject(poller);
             pollerPvt.SetFieldOrProperty("ImapClient", client2.Object);
 
             pvt.SetField("_imapPoller", poller);
 
-            Assert.AreEqual(poller, pvt.GetFieldOrProperty("_imapPoller") as ImapPoller);
+            Assert.AreEqual(poller, pvt.GetFieldOrProperty("_imapPoller") as ImapWorker);
 
             inbox.SetupEvent();
 
@@ -97,7 +97,7 @@ namespace InboxWatcherTests
 
             idler.StartIdling();
 
-            var poller = new ImapPoller(ImapClientDirector);
+            var poller = new ImapWorker(ImapClientDirector);
 
             client2.Raise(x => x.Disconnected += null, new EventArgs());
 

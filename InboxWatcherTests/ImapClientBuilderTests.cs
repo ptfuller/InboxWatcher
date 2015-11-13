@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using InboxWatcher;
 using InboxWatcherTests.Properties;
 using MailKit.Net.Imap;
@@ -38,5 +40,6 @@ namespace InboxWatcherTests
             Assert.AreEqual(true, client.IsAuthenticated);
             Assert.AreEqual(true, client.Inbox.IsOpen);
         }
+
     }
 }

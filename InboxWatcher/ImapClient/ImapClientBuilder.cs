@@ -94,8 +94,14 @@ namespace InboxWatcher
             }
 
             if (client.IsConnected && client.IsAuthenticated)
+            {
+                if (!client.Inbox.IsOpen)
+                {
+                    client.Inbox.Open(FolderAccess.ReadWrite);
+                }
                 return client;
-
+            }
+                
             return BuildReady();
         }
     }

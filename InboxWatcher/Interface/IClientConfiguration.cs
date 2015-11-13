@@ -7,5 +7,6 @@
         string HostName { get; set; }
         int Port { get; set; }
         bool UseSecure { get; set; }
+        string MailBoxName { get; set; }
     }
 }
