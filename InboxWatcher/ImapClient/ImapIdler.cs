@@ -24,6 +24,11 @@ namespace InboxWatcher
         public ImapIdler(ImapClientDirector director)
         {
             Director = director;
+            Setup();
+        }
+
+        protected virtual void Setup()
+        {
             ImapClient = Director.GetReadyClient();
             ImapClient.Disconnected += (sender, args) => { ImapClient = Director.GetReadyClient(); };
         }
@@ -52,10 +57,7 @@ namespace InboxWatcher
 
         protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)
         {
-            if (MessageArrived == null) return;
-
-            MessageArrived.Invoke(sender, messagesArrivedEventArgs);
-            Debug.WriteLine(this.GetType().Name + " - ImapIdler - InboxOnMessagesArrived - " + MessageArrived.GetInvocationList().Length + " - subscribers");
+            MessageArrived?.Invoke(sender, messagesArrivedEventArgs);
         }
 
         protected virtual void IdleLoop()

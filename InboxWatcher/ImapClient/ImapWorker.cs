@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using MailKit;
 
@@ -19,8 +20,19 @@ namespace InboxWatcher
 
             _fetchCancellationToken = new CancellationTokenSource();
 
-            var results = ImapClient.Inbox.Fetch(0, -1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
-                _fetchCancellationToken.Token);
+            var results = new List<IMessageSummary>();
+
+            try
+            {
+                results.AddRange(ImapClient.Inbox.Fetch(0, -1,
+                    MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
+                    _fetchCancellationToken.Token));
+            }
+            catch (Exception ex)
+            {
+                Debug.Write(ex.Message);
+                return null;
+            }
 
             StartIdling();
 

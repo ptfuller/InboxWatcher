@@ -73,7 +73,7 @@ namespace InboxWatcherTests
 
             Assert.AreEqual(poller, pvt.GetFieldOrProperty("_imapPoller") as ImapWorker);
 
-            inbox.SetupEvent();
+            inbox.Setup();
 
             //raise message arrived event in the idler
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));

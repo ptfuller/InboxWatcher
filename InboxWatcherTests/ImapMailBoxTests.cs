@@ -89,7 +89,7 @@ namespace InboxWatcherTests
             pvt.SetField("_imapPoller", poller);
 
             //reset the event handler
-            inbox.SetupEvent();
+            inbox.Setup();
 
             //make sure the fields were set correctly
             Assert.AreEqual(idler, pvt.GetField("_imapIdler") as ImapIdler);

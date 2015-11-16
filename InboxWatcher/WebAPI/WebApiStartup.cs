@@ -10,7 +10,12 @@ namespace InboxWatcher.WebAPI
         public void Configuration(IAppBuilder appBuilder)
         {
             // Configure Web API for self-host. 
-            HttpConfiguration config = new HttpConfiguration();
+            var config = new HttpConfiguration();
+
+            //attribute routing
+            config.MapHttpAttributeRoutes();
+
+            //convention based routing
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",

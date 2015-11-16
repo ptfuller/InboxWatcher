@@ -1,4 +1,7 @@
-﻿using MailKit;
+﻿using System;
+using System.Diagnostics;
+using System.Net.Sockets;
+using MailKit;
 
 namespace InboxWatcher
 {
@@ -78,6 +81,7 @@ namespace InboxWatcher
 
         public IImapClient GetReady(IImapClient client)
         {
+            
             if (!client.ConnectTask.IsCompleted)
             {
                 if (!client.ConnectTask.Wait(5000)) return BuildReady();

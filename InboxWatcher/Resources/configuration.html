@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <title>Configuration</title>
+    <script src="/api/Jquery"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Inbox Watcher Configuration</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    Current Mail Boxes:
+                </div>
+                <div class="panel-body">
+                    <div id="allConfigs">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Mail Box Name</th>
+                                    <th>Host Name</th>
+                                    <th>Port</th>
+                                    <th>User Name</th>
+                                    <th>Password</th>
+                                    <th>Secure</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableAppend"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    Add a new Mail Box
+                </div>
+                <div class="panel-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <div class="col-md-12">
+                                <label for="inputMailBoxName">Mail Box Name: </label>
+                                <input type="text" name="mailboxname" id="inputMailBoxName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-6">
+                                <label for="hostName">Host Name: </label>
+                                <input type="text" name="hostname" id="hostName" class="form-control"/>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="port">Port: </label>
+                                <input type="number" name="port" id="port" class="form-control"/>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" id="useSecure" /> Use Secure?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-6">
+                                <label for="userName">User Name: </label>
+                                <input type="text" name="username" id="userName" class="form-control"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password">Password: </label>
+                                <input type="text" name="password" id="password" class="form-control"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                <button class="btn btn-primary" id="formButton">Submit</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+<script>
+    $(document).ready(function() {
+        SetupTable();
+
+        $("#formButton").click(function () {
+
+            var conf = {};
+            conf.MailBoxName = $("#inputMailBoxName").val();
+            conf.HostName = $("#hostName").val();
+            conf.Port = $("#port").val();
+            conf.UserName = $("#userName").val();
+            conf.Password = $("#password").val();
+            conf.UseSecure = $("#useSecure").is(":checked");
+
+            console.log(JSON.stringify(conf));
+
+            $.ajax({
+                type: "POST",
+                url: "/config",
+                data: conf,
+                success: function(data) {
+                    console.log(data);
+                    setTimeout(SetupTable(), 1000);
+                }
+            });
+        });
+    });
+
+    function SetupTable() {
+
+        $.getJSON("/config/all", function (data) {
+            var items = [];
+
+            for (var i = 0; i < data.length; i++) {
+                items.push("<tr>");
+                items.push("<td>" + data[i].Id + "</td>");
+                items.push("<td>" + data[i].MailBoxName + "</td>");
+                items.push("<td>" + data[i].HostName + "</td>");
+                items.push("<td>" + data[i].Port + "</td>");
+                items.push("<td>" + data[i].UserName + "</td>");
+                items.push("<td>" + data[i].Password + "</td>");
+                items.push("<td>" + data[i].UseSecure + "</td>");
+                items.push("</tr>");
+            }
+            $("#tableAppend").html(items.join(''));
+        });
+    }
+</script>
