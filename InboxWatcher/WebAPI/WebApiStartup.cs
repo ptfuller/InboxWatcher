@@ -1,4 +1,5 @@
 ﻿using System.Web.Http;
+using Newtonsoft.Json.Serialization;
 using Owin;
 
 namespace InboxWatcher.WebAPI
@@ -12,6 +13,8 @@ namespace InboxWatcher.WebAPI
             // Configure Web API for self-host. 
             var config = new HttpConfiguration();
 
+            
+
             //attribute routing
             config.MapHttpAttributeRoutes();
 
@@ -23,6 +26,12 @@ namespace InboxWatcher.WebAPI
             );
 
             appBuilder.UseWebApi(config);
+
+            var serSettings = config.Formatters.JsonFormatter.SerializerSettings;
+            var contractResolver = (DefaultContractResolver) serSettings.ContractResolver;
+            contractResolver.IgnoreSerializableAttribute = true;
+
+            config.EnsureInitialized();
         }
     }
 }

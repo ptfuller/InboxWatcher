@@ -14,7 +14,7 @@ namespace InboxWatcher
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
 
-        protected List<INotificationAction> NotificationActions = new List<INotificationAction>();
+        protected List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public static ImapClientDirector ImapClientDirector { get; set; }
@@ -23,13 +23,13 @@ namespace InboxWatcher
         public event EventHandler NewMessageReceived;
         public event EventHandler MessageRemoved;
 
-        public ImapMailBox(ImapClientDirector icd, string mailBoxName, IEnumerable<INotificationAction> notificationActions) :
+        public ImapMailBox(ImapClientDirector icd, string mailBoxName, IEnumerable<AbstractNotification> notificationActions) :
                 this(icd, mailBoxName)
         {
             NotificationActions.AddRange(notificationActions);
         }
         
-        public ImapMailBox(ImapClientDirector icd, string mailBoxName, INotificationAction notificationAction) :
+        public ImapMailBox(ImapClientDirector icd, string mailBoxName, AbstractNotification notificationAction) :
             this(icd, mailBoxName)
         {
             NotificationActions.Add(notificationAction);
@@ -90,7 +90,7 @@ namespace InboxWatcher
             return true;
         }
 
-        public void AddNotification(INotificationAction action)
+        public void AddNotification(AbstractNotification action)
         {
             NotificationActions.Add(action);
         }

@@ -2,8 +2,8 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 11/12/2015 09:04:21
--- Generated from EDMX file: C:\Users\pfuller\documents\visual studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
+-- Date Created: 11/16/2015 11:38:47
+-- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
 SET QUOTED_IDENTIFIER OFF;
@@ -90,6 +90,15 @@ CREATE TABLE [dbo].[ImapMailBoxConfigurations] (
 );
 GO
 
+-- Creating table 'NotificationConfigurations'
+CREATE TABLE [dbo].[NotificationConfigurations] (
+    [Id] int IDENTITY(1,1) NOT NULL,
+    [ConfigurationXml] nvarchar(max)  NOT NULL,
+    [ImapMailBoxConfigurationId] int  NOT NULL,
+    [NotificationType] nvarchar(max)  NOT NULL
+);
+GO
+
 -- --------------------------------------------------
 -- Creating all PRIMARY KEY constraints
 -- --------------------------------------------------
@@ -118,6 +127,12 @@ ADD CONSTRAINT [PK_ImapMailBoxConfigurations]
     PRIMARY KEY CLUSTERED ([Id] ASC);
 GO
 
+-- Creating primary key on [Id] in table 'NotificationConfigurations'
+ALTER TABLE [dbo].[NotificationConfigurations]
+ADD CONSTRAINT [PK_NotificationConfigurations]
+    PRIMARY KEY CLUSTERED ([Id] ASC);
+GO
+
 -- --------------------------------------------------
 -- Creating all FOREIGN KEY constraints
 -- --------------------------------------------------
@@ -135,6 +150,21 @@ GO
 CREATE INDEX [IX_FK_EmailLogEntry]
 ON [dbo].[EmailLogs]
     ([EmailId]);
+GO
+
+-- Creating foreign key on [ImapMailBoxConfigurationId] in table 'NotificationConfigurations'
+ALTER TABLE [dbo].[NotificationConfigurations]
+ADD CONSTRAINT [FK_NotificationConfigurationImapMailBoxConfiguration]
+    FOREIGN KEY ([ImapMailBoxConfigurationId])
+    REFERENCES [dbo].[ImapMailBoxConfigurations]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_NotificationConfigurationImapMailBoxConfiguration'
+CREATE INDEX [IX_FK_NotificationConfigurationImapMailBoxConfiguration]
+ON [dbo].[NotificationConfigurations]
+    ([ImapMailBoxConfigurationId]);
 GO
 
 -- --------------------------------------------------

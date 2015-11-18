@@ -1,22 +1,23 @@
 ﻿using System;
 using System.IO;
+using System.Net.Http;
+using System.Security.Policy;
 using System.Text;
+using System.Web;
+using System.Xml;
+using System.Xml.Serialization;
 using InboxWatcher.Enum;
 using MailKit;
 using Org.BouncyCastle.Asn1.X509;
 
-namespace InboxWatcher.Notifications
+namespace InboxWatcher
 {
-    public class TextFileNotification : INotificationAction
+    public class TextFileNotification : AbstractNotification
     {
-        private string _filePath;
+        [XmlAttribute]
+        public string FilePath { get; set; } = "";
 
-        public TextFileNotification(string filePath)
-        {
-            _filePath = filePath;
-        }
-
-        public bool Notify(IMessageSummary summary, NotificationType notificationType)
+        public override bool Notify(IMessageSummary summary, NotificationType notificationType)
         {
             var sb = new StringBuilder();
             sb.AppendLine("***** " + DateTime.Now + " : Action Happened *****");
@@ -29,14 +30,27 @@ namespace InboxWatcher.Notifications
 
             try
             {
-                File.AppendAllText(_filePath, sb.ToString());
+                File.AppendAllText(FilePath, sb.ToString());
             }
+
             catch (Exception ex)
             {
                 return false;
             }
 
             return true;
+        }
+
+        public override string GetConfigurationScript()
+        {
+            var script = "function SetupNotificationConfig() {" +
+                         "$('#notificationFormArea').append('<p>Text File Notification:</p>');" +
+                         "$('#notificationFormArea').append('<div class=\"form-group\"><label for=\"textfilepath\">Text File Path</label>" +
+                         "<input type=\"text\" class=\"form-control\" id=\"textfilepath\" name=\"FilePath\" value=\"" + FilePath.Replace(@"\", @"\\") + "\"/></div>');" +
+                         "$('#notificationFormArea').append('<input type=\"hidden\" value=\"-1\" name=\"Id\" id=\"editNotificationId\"/>');" +
+                         "$('#notificationFormArea').append('<div class=\"form-group\"><button class=\"btn btn-default\" id=\"textfilesubmit\">Submit</button></div>');}";
+
+            return script;
         }
     }
 }

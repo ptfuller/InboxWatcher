@@ -11,9 +11,14 @@
     <EntitySet Name="EmailLogs" EntityType="MailModel.Store.EmailLogs" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="EmailFilters" EntityType="MailModel.Store.EmailFilters" store:Type="Tables" Schema="dbo" />
     <EntitySet Name="ImapMailBoxConfigurations" EntityType="MailModel.Store.ImapMailBoxConfigurations" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="NotificationConfigurations" EntityType="MailModel.Store.NotificationConfigurations" store:Type="Tables" Schema="dbo" />
     <AssociationSet Name="EmailLogEntry" Association="MailModel.Store.EmailLogEntry">
       <End Role="Email" EntitySet="Emails" />
       <End Role="EmailLog" EntitySet="EmailLogs" />
+    </AssociationSet>
+    <AssociationSet Name="NotificationConfigurationImapMailBoxConfiguration" Association="MailModel.Store.NotificationConfigurationImapMailBoxConfiguration">
+      <End Role="NotificationConfiguration" EntitySet="NotificationConfigurations" />
+      <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
     </AssociationSet>
   </EntityContainer>
   <EntityType Name="Emails">
@@ -64,6 +69,15 @@
     <Property Name="Port" Type="int" Nullable="false" />
     <Property Name="MailBoxName" Type="nvarchar(max)" Nullable="false" />
   </EntityType>
+  <EntityType Name="NotificationConfigurations">
+    <Key>
+      <PropertyRef Name="Id" />
+    </Key>
+    <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="ConfigurationXml" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ImapMailBoxConfigurationId" Type="int" Nullable="false" />
+    <Property Name="NotificationType" Type="nvarchar(max)" Nullable="false" />
+  </EntityType>
   <Association Name="EmailLogEntry">
     <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1" />
     <End Role="EmailLog" Type="MailModel.Store.EmailLogs" Multiplicity="*" />
@@ -73,6 +87,18 @@
       </Principal>
       <Dependent Role="EmailLog">
         <PropertyRef Name="EmailId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="NotificationConfigurationImapMailBoxConfiguration">
+    <End Role="NotificationConfiguration" Type="MailModel.Store.NotificationConfigurations" Multiplicity="*" />
+    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1" />
+    <ReferentialConstraint>
+      <Principal Role="ImapMailBoxConfiguration">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="NotificationConfiguration">
+        <PropertyRef Name="ImapMailBoxConfigurationId" />
       </Dependent>
     </ReferentialConstraint>
   </Association>
@@ -94,6 +120,11 @@
           </AssociationSet>
           <EntitySet Name="EmailFilters" EntityType="MailModel.EmailFilter" />
           <EntitySet Name="ImapMailBoxConfigurations" EntityType="MailModel.ImapMailBoxConfiguration" />
+          <EntitySet Name="NotificationConfigurations" EntityType="MailModel.NotificationConfiguration" />
+          <AssociationSet Name="NotificationConfigurationImapMailBoxConfiguration" Association="MailModel.NotificationConfigurationImapMailBoxConfiguration">
+            <End Role="NotificationConfiguration" EntitySet="NotificationConfigurations" />
+            <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="Email">
           <Key>
@@ -157,7 +188,30 @@
           <Property Name="UseSecure" Type="Boolean" Nullable="false" />
           <Property Name="Port" Type="Int32" Nullable="false" />
           <Property Name="MailBoxName" Type="String" Nullable="false" />
+          <NavigationProperty Name="NotificationConfigurations" Relationship="MailModel.NotificationConfigurationImapMailBoxConfiguration" FromRole="ImapMailBoxConfiguration" ToRole="NotificationConfiguration" />
         </EntityType>
+        <EntityType Name="NotificationConfiguration">
+          <Key>
+            <PropertyRef Name="Id" />
+          </Key>
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ConfigurationXml" Type="String" Nullable="false" />
+          <NavigationProperty Name="ImapMailBoxConfiguration" Relationship="MailModel.NotificationConfigurationImapMailBoxConfiguration" FromRole="NotificationConfiguration" ToRole="ImapMailBoxConfiguration" />
+          <Property Name="ImapMailBoxConfigurationId" Type="Int32" Nullable="false" />
+          <Property Name="NotificationType" Type="String" Nullable="false" />
+        </EntityType>
+        <Association Name="NotificationConfigurationImapMailBoxConfiguration">
+          <End Type="MailModel.NotificationConfiguration" Role="NotificationConfiguration" Multiplicity="*" />
+          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="ImapMailBoxConfiguration">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="NotificationConfiguration">
+              <PropertyRef Name="ImapMailBoxConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -213,6 +267,16 @@
           <ScalarProperty Name="UseSecure" ColumnName="UseSecure" />
           <ScalarProperty Name="Port" ColumnName="Port" />
           <ScalarProperty Name="MailBoxName" ColumnName="MailBoxName" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="NotificationConfigurations">
+      <EntityTypeMapping TypeName="IsTypeOf(MailModel.NotificationConfiguration)">
+        <MappingFragment StoreEntitySet="NotificationConfigurations">
+          <ScalarProperty Name="Id" ColumnName="Id" />
+          <ScalarProperty Name="ConfigurationXml" ColumnName="ConfigurationXml" />
+          <ScalarProperty Name="ImapMailBoxConfigurationId" ColumnName="ImapMailBoxConfigurationId" />
+          <ScalarProperty Name="NotificationType" ColumnName="NotificationType" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

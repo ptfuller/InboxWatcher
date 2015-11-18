@@ -11,5 +11,6 @@ namespace InboxWatcher
         public int Port { get; set; }
         public bool UseSecure { get; set; }
         public string MailBoxName { get; set; }
+        public int Id { get; set; }
     }
 }

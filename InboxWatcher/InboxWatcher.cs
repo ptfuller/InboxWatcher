@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.ServiceProcess;
 using System.Web.Http;
-using InboxWatcher.Notifications;
 using InboxWatcher.WebAPI;
 using MailKit;
 using Microsoft.Owin.Hosting;
@@ -54,16 +53,25 @@ namespace InboxWatcher
             }
         }
 
-        private IEnumerable<INotificationAction> SetupNotifications()
+        private IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
         {
-            var notifications = new List<INotificationAction>();
-            var notification = new HttpNotification()
-                .WithContentType("application/x-www-form-urlencoded")
-                .WithMethod(WebRequestMethods.Http.Post)
-                .WithUrl("http://localhost:9000/api/Hello");
+            var notifications = new List<AbstractNotification>();
 
+            using (var ctx = new MailModelContainer())
+            {
+                var configurations =
+                    ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == imapMailBoxConfigId)
+                        .ToList();
 
-            notifications.Add(notification);
+                foreach (var configuration in configurations)
+                {
+                    var t = Type.GetType(configuration.NotificationType);
+
+                    if (t == null) continue;
+                    var action = (AbstractNotification) Activator.CreateInstance(t);
+                    notifications.Add(action.DeSerialize(configuration.ConfigurationXml));
+                }
+            }
 
             return notifications;
         }
@@ -77,10 +85,17 @@ namespace InboxWatcher
             foreach (var clientConfiguration in configs)
             {
                 var director = new ImapClientDirector(clientConfiguration);
-                var mailbox = new ImapMailBox(director, clientConfiguration.MailBoxName, SetupNotifications());
+                var mailbox = new ImapMailBox(director, clientConfiguration.MailBoxName);
+
+                foreach (var action in SetupNotifications(clientConfiguration.Id))
+                {
+                    mailbox.AddNotification(action);
+                }
+
                 MailBoxes.Add(mailbox);
             }
-
+            
+            //todo remove this - it's for debugging
             foreach (var imapMailBox in MailBoxes)
             {
                 imapMailBox.NewMessageReceived += (sender, eventArgs) =>

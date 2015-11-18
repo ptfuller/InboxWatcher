@@ -18,16 +18,18 @@ namespace InboxWatcher
         public MailModelContainer()
             : base("name=MailModelContainer")
         {
+            Configuration.ProxyCreationEnabled = false;
         }
     
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             throw new UnintentionalCodeFirstException();
         }
-    
+        
         public virtual DbSet<Email> Emails { get; set; }
         public virtual DbSet<EmailLog> EmailLogs { get; set; }
         public virtual DbSet<EmailFilter> EmailFilters { get; set; }
         public virtual DbSet<ImapMailBoxConfiguration> ImapMailBoxConfigurations { get; set; }
+        public virtual DbSet<NotificationConfiguration> NotificationConfigurations { get; set; }
     }
 }

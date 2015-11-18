@@ -150,6 +150,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>MailModel.edmx</DependentUpon>
     </Compile>
+    <Compile Include="NotificationConfiguration.cs">
+      <DependentUpon>MailModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Notifications\AbstractNotification.cs" />
     <Compile Include="Notifications\HttpNotification.cs" />
     <Compile Include="Notifications\MessageSummaryToListKeyValuePair.cs" />
     <Compile Include="Notifications\TextFileNotification.cs" />

@@ -8,5 +8,6 @@
         int Port { get; set; }
         bool UseSecure { get; set; }
         string MailBoxName { get; set; }
+        int Id { get; set; }
     }
 }

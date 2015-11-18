@@ -10,6 +10,8 @@
         <AssociationConnector Association="MailModel.EmailLogEntry" />
         <EntityTypeShape EntityType="MailModel.EmailFilter" Width="1.5" PointX="5" PointY="0.5" />
         <EntityTypeShape EntityType="MailModel.ImapMailBoxConfiguration" Width="1.5" PointX="2.75" PointY="3.5" />
+        <EntityTypeShape EntityType="MailModel.NotificationConfiguration" Width="1.5" PointX="5.25" PointY="3.5" />
+        <AssociationConnector Association="MailModel.NotificationConfigurationImapMailBoxConfiguration" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

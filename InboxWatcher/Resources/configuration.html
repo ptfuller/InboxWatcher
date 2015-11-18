@@ -23,24 +23,24 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-8">
             <div class="panel panel-success">
                 <div class="panel-heading">
                     Current Mail Boxes:
                 </div>
                 <div class="panel-body">
                     <div id="allConfigs">
-                        <table class="table table-striped table-hover">
+                        <table class="table table-striped table-hover" id="mailboxtable">
                             <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Mail Box Name</th>
-                                    <th>Host Name</th>
-                                    <th>Port</th>
-                                    <th>User Name</th>
-                                    <th>Password</th>
-                                    <th>Secure</th>
-                                </tr>
+                            <tr>
+                                <th>#</th>
+                                <th>Mail Box Name</th>
+                                <th>Host Name</th>
+                                <th>Port</th>
+                                <th>User Name</th>
+                                <th>Password</th>
+                                <th>Secure</th>
+                            </tr>
                             </thead>
                             <tbody id="tableAppend"></tbody>
                         </table>
@@ -48,17 +48,38 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    Mail Box Notifications:
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped table-hover" id="notificationsTable">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Notification Type</th>
+                            <th>Mail Box ID</th>
+                        </tr>
+                        </thead>
+                        <tbody id="notificationsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
         <div class="col-md-6">
             <div class="panel panel-success">
                 <div class="panel-heading">
-                    Add a new Mail Box
+                    Add a new Mail Box:
                 </div>
                 <div class="panel-body">
                     <form class="form-horizontal">
                         <div class="form-group">
                             <div class="col-md-12">
                                 <label for="inputMailBoxName">Mail Box Name: </label>
-                                <input type="text" name="mailboxname" id="inputMailBoxName" class="form-control" />
+                                <input type="text" name="mailboxname" id="inputMailBoxName" class="form-control"/>
                             </div>
                         </div>
                         <div class="form-group">
@@ -73,7 +94,7 @@
                             <div class="col-md-3">
                                 <div class="checkbox">
                                     <label>
-                                        <input type="checkbox" id="useSecure" /> Use Secure?
+                                        <input type="checkbox" id="useSecure"/> Use Secure?
                                     </label>
                                 </div>
                             </div>
@@ -97,55 +118,199 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    Edit Mail Box Notification:
+                </div>
+                <div class="panel-body">
+                    <div class="form">
+                        <div class="form-group">
+                            <select class="form-control" id="notificationTypeSelect">
+
+                            </select>
+                        </div>
+                        <div id="notificationFormArea">
+
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-danger" id="notificationDelete">Delete Notification</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 </body>
 </html>
 <script>
+    var selectedMailBox = 0;
+
     $(document).ready(function() {
         SetupTable();
 
-        $("#formButton").click(function () {
+        //table row click setup - shows notifications attached to config
+        $("#mailboxtable").on('click', 'tr', function(e) {
+            e.preventDefault();
 
-            var conf = {};
-            conf.MailBoxName = $("#inputMailBoxName").val();
-            conf.HostName = $("#hostName").val();
-            conf.Port = $("#port").val();
-            conf.UserName = $("#userName").val();
-            conf.Password = $("#password").val();
-            conf.UseSecure = $("#useSecure").is(":checked");
+            $("#mailboxtable tr").removeClass('info');
 
-            console.log(JSON.stringify(conf));
+            $(this).addClass('info');
 
-            $.ajax({
-                type: "POST",
-                url: "/config",
-                data: conf,
-                success: function(data) {
-                    console.log(data);
-                    setTimeout(SetupTable(), 1000);
+            var id = $(this).attr('value');
+            selectedMailBox = id;
+
+            $.getJSON("/config/notifications/" + id, function(data) {
+                var items = [];
+
+                for (var i = 0; i < data.length; i++) {
+                    items.push("<tr value='" + data[i].Id + "'>");
+                    items.push("<td>" + data[i].Id + "</td>");
+                    items.push("<td>" + data[i].NotificationType + "</td>");
+                    items.push("<td>" + data[i].ImapMailBoxConfigurationId + "</td>");
+                    items.push("</tr>");
                 }
+
+                $("#notificationsTableBody").html(items.join(''));
+            });
+
+            //show registered notification types in add new select
+            $.getJSON("/config/notifications/types", function(data) {
+                var items = [];
+
+                for (var i = 0; i < data.length; i++) {
+                    items.push("<option value='" + data[i] + "'>" + data[i] + "</option>");
+                }
+
+                $("#notificationTypeSelect").html(items.join(''));
+
+                var selection = $("#notificationTypeSelect").val();
+                NewNotification(selection);
+            });
+
+            $("#notificationTypeSelect").change(function() {
+                var selection = $("#notificationTypeSelect").val();
+                NewNotification(selection);
+            });
+        });
+
+        $("#notificationsTable").on('click', 'tr', function(e) {
+
+            var notType = $('td', this)[1];
+
+            console.log($(notType).text());
+
+            $("#notificationTypeSelect").val($(notType).text());
+
+            $("#notificationsTable tr").removeClass('info');
+
+            $(this).addClass('info');
+
+            e.preventDefault();
+            var id = $(this).attr('value');
+
+            $("#notificationDelete").click(function() {
+                $.ajax({
+                    type: "DELETE",
+                    url: "/config/notifications/id/" + id,
+                    success: function(result) {
+                        location.reload();
+                    }
+                });
+            });
+
+            $.getScript("/config/notifications/id/" + id, function() {
+                $('#notificationFormArea').html('');
+
+                SetupNotificationConfig();
+
+                $("#editNotificationId").val(id);
+
+                SetupNotificationListen();
+            });
+
+            //submit add new mailbox form
+            $("#formButton").click(function() {
+
+                var conf = {};
+                conf.MailBoxName = $("#inputMailBoxName").val();
+                conf.HostName = $("#hostName").val();
+                conf.Port = $("#port").val();
+                conf.UserName = $("#userName").val();
+                conf.Password = $("#password").val();
+                conf.UseSecure = $("#useSecure").is(":checked");
+
+                console.log(JSON.stringify(conf));
+
+                $.ajax({
+                    type: "POST",
+                    url: "/config",
+                    data: conf,
+                    success: function(data) {
+                        console.log(data);
+                        setTimeout(SetupTable(), 1000);
+                    }
+                });
             });
         });
     });
 
-    function SetupTable() {
+        function SetupTable() {
 
-        $.getJSON("/config/all", function (data) {
-            var items = [];
+            $.getJSON("/config/all", function(data) {
+                var items = [];
 
-            for (var i = 0; i < data.length; i++) {
-                items.push("<tr>");
-                items.push("<td>" + data[i].Id + "</td>");
-                items.push("<td>" + data[i].MailBoxName + "</td>");
-                items.push("<td>" + data[i].HostName + "</td>");
-                items.push("<td>" + data[i].Port + "</td>");
-                items.push("<td>" + data[i].UserName + "</td>");
-                items.push("<td>" + data[i].Password + "</td>");
-                items.push("<td>" + data[i].UseSecure + "</td>");
-                items.push("</tr>");
-            }
-            $("#tableAppend").html(items.join(''));
-        });
-    }
+                for (var i = 0; i < data.length; i++) {
+                    items.push("<tr value='" + data[i].Id + "'>");
+                    items.push("<td>" + data[i].Id + "</td>");
+                    items.push("<td>" + data[i].MailBoxName + "</td>");
+                    items.push("<td>" + data[i].HostName + "</td>");
+                    items.push("<td>" + data[i].Port + "</td>");
+                    items.push("<td>" + data[i].UserName + "</td>");
+                    items.push("<td>" + data[i].Password + "</td>");
+                    items.push("<td>" + data[i].UseSecure + "</td>");
+                    items.push("</tr>");
+                }
+                $("#tableAppend").html(items.join(''));
+            });
+        }
+
+        function NewNotification(selection) {
+            $.getScript("/config/notifications/data/" + selection, function() {
+                $('#notificationFormArea').html('');
+
+                SetupNotificationConfig();
+
+                SetupNotificationListen();
+            });
+        }
+
+        function SetupNotificationListen() {
+            $("#notificationFormArea .btn").click(function () {
+
+                var formData = $("#notificationFormArea :input");
+                var postData = {};
+                for (var i = 0; i < formData.length; i++) {
+                    postData[formData[i].name] = formData[i].value;
+                }
+
+                postData.Type = $("#notificationTypeSelect").val();
+                postData.MailBoxId = selectedMailBox;
+
+                //console.log(data);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/config/notifications",
+                    contentType: "application/json",
+                    data: JSON.stringify(postData),
+                    success: function (d) {
+                        console.log(d);
+                        setTimeout(location.reload(), 1000);
+                    }
+                });
+            });
+        }
+
 </script>
