@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using InboxWatcher;
 using InboxWatcherTests.Properties;
 using MailKit;
@@ -29,6 +30,9 @@ namespace InboxWatcherTests
             _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
                 .Callback(() => _client.SetupGet(x => x.IsIdle).Returns(true));
 
+            _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new ImapClientAdapter()));
+
             //setup the client's inbox
             _inbox = new Mock<IMailFolder>();
             _client.Setup(x => x.Inbox).Returns(_inbox.Object);
@@ -52,35 +56,14 @@ namespace InboxWatcherTests
             director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
 
             var inbox = new ImapMailBox(director.Object);
-            var pvt = new PrivateObject(inbox);
 
-            var idler = new ImapIdler(director.Object);
-            pvt.SetField("_imapIdler", idler);
+            var eventHappened = false;
 
-            Assert.AreEqual(idler, pvt.GetFieldOrProperty("_imapIdler") as ImapIdler);
+            _inbox.Object.MessagesArrived += (sender, args) => { eventHappened = true; };
 
-            var client2 = new Mock<IImapClient>();
-            var client2Inbox = new Mock<IMailFolder>();
-            client2.Setup(x => x.Inbox).Returns(client2Inbox.Object);
-
-            idler.StartIdling();
-
-            var poller = new ImapWorker(director.Object);
-            var pollerPvt = new PrivateObject(poller);
-            pollerPvt.SetFieldOrProperty("ImapClient", client2.Object);
-
-            pvt.SetField("_imapPoller", poller);
-
-            Assert.AreEqual(poller, pvt.GetFieldOrProperty("_imapPoller") as ImapWorker);
-
-            inbox.Setup();
-
-            //raise message arrived event in the idler
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));
 
-            //verify that poller fetches messages
-            client2Inbox.Verify(x => x.Fetch(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(), It.IsAny<CancellationToken>()),
-                "Fetch was not called");
+            Assert.IsTrue(eventHappened);
         }
 
         [TestMethod]

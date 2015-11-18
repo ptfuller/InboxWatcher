@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using InboxWatcher;
 using InboxWatcherTests.Properties;
 using MailKit;
@@ -33,6 +34,9 @@ namespace InboxWatcherTests
             //setup the client's inbox
             _inbox = new Mock<IMailFolder>();
             _client.Setup(x => x.Inbox).Returns(_inbox.Object);
+
+            _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new ImapClientAdapter()));
 
             _config = new ImapClientConfiguration()
             {
@@ -134,9 +138,6 @@ namespace InboxWatcherTests
 
             //check that new timer running
             Assert.IsTrue(timer.Enabled);
-
-            //check that client is idling again
-            Assert.IsTrue(_client.Object.IsIdle);
 
             //check that token is not cancelled
             doneToken = timerPvt.GetFieldOrProperty("DoneToken") as CancellationTokenSource;

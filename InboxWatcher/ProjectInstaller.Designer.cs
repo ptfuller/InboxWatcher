@@ -39,6 +39,7 @@
             // 
             // serviceInstaller1
             // 
+            this.serviceInstaller1.DisplayName = "https://github.com/ptfuller/InboxWatcher";
             this.serviceInstaller1.ServiceName = "InboxWatcher";
             // 
             // ProjectInstaller
