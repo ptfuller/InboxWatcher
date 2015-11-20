@@ -135,6 +135,7 @@
                         </div>
                         <div class="form-group">
                             <button class="btn btn-danger" id="notificationDelete">Delete Notification</button>
+                            <button class="btn btn-info" id="notificationTest">Test Notification</button>
                         </div>
                     </div>
                 </div>
@@ -197,6 +198,9 @@
 
         $("#notificationsTable").on('click', 'tr', function(e) {
 
+            $("#notificationDelete").off();
+            $("#notificationTest").off();
+
             var notType = $('td', this)[1];
 
             console.log($(notType).text());
@@ -216,6 +220,18 @@
                     url: "/config/notifications/id/" + id,
                     success: function(result) {
                         location.reload();
+                    }
+                });
+            });
+
+            $("#notificationTest").click(function() {
+                $.ajax({
+                    type: "POST",
+                    url: "/config/notifications/id/test/" + id,
+                    Accept: "application/json",
+                    success: function (result) {
+                        console.log(result);
+                        alert("Tested and got result: " + result);
                     }
                 });
             });

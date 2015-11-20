@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InboxWatcher", "InboxWatche
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InboxWatcherTests", "InboxWatcherTests\InboxWatcherTests.csproj", "{4847B9D3-B2D3-403F-A9FE-E7344A66D70F}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup Project", "Setup Project\Setup Project.vdproj", "{64673C2C-2172-4F34-8B62-24159408D781}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,8 @@ Global
 		{4847B9D3-B2D3-403F-A9FE-E7344A66D70F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4847B9D3-B2D3-403F-A9FE-E7344A66D70F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4847B9D3-B2D3-403F-A9FE-E7344A66D70F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64673C2C-2172-4F34-8B62-24159408D781}.Debug|Any CPU.ActiveCfg = Debug
+		{64673C2C-2172-4F34-8B62-24159408D781}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

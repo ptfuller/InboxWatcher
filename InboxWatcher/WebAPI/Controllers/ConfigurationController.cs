@@ -141,6 +141,25 @@ namespace InboxWatcher
         }
 
         [HttpPost]
+        [Route("notifications/id/test/{id:int}")]
+        public HttpResponseMessage TestNotification(int id)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selectedConfig = ctx.NotificationConfigurations.First(x => x.Id == id);
+
+                var t = Type.GetType(selectedConfig.NotificationType);
+                if (t == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+                var action = (AbstractNotification) Activator.CreateInstance(t);
+                action = action.DeSerialize(selectedConfig.ConfigurationXml);
+                action.TestNotification();
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        [HttpPost]
         [Route("notifications")]
         public HttpResponseMessage PostNotification(Dictionary<string, object> data)
         {

@@ -22,10 +22,7 @@ namespace InboxWatcher
         [XmlAttribute]
         public virtual string Type { get; set; }
 
-        public virtual bool Notify(IMessageSummary summary, NotificationType notificationType)
-        {
-            return false;
-        }
+        public abstract bool Notify(IMessageSummary summary, NotificationType notificationType);
 
         public virtual string Serialize()
         {
@@ -47,9 +44,19 @@ namespace InboxWatcher
             return Convert.ChangeType(serilaizer.Deserialize(xmlReader), GetType()) as AbstractNotification;
         }
 
-        public virtual string GetConfigurationScript()
+        public abstract string GetConfigurationScript();
+
+        public void TestNotification()
         {
-            return "function SetupNotificationConfig() {$('#notificationFormArea').html('<p>No configuration script supplied</p>');}";
+            var testSummary = new MessageSummary(0);
+            var env = new Envelope();
+            env.Subject = "testNotificationSubject";
+            env.From.Add(new MailboxAddress("testNotificationName", "TestNotificationAddress"));
+            env.MessageId = "123TestAbc";
+            env.Date = DateTime.Now;
+            testSummary.Envelope = env;
+
+            Notify(testSummary, NotificationType.Received);
         }
     }
 }

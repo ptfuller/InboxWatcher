@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Web;
 using System.Xml;
 using System.Xml.Serialization;
 using InboxWatcher.Enum;
 using MailKit;
+using MimeKit;
+using Newtonsoft.Json;
 
 namespace InboxWatcher
 {
@@ -23,76 +28,60 @@ namespace InboxWatcher
         [XmlAttribute]
         public string ContentType { get; set; }
 
-        [XmlAttribute]
-        public NotificationType NotificationType { get; set; }
-
         protected List<KeyValuePair<string, string>> Kvp;
 
         public override bool Notify(IMessageSummary summary, NotificationType notificationType)
         {
-            NotificationType = notificationType;
+            var client = new WebClient();
 
-            var client = new HttpClient();
-            
-            var content = new FormUrlEncodedContent(MessageSummaryToListKeyValuePair.Convert(summary));
+            var sum = JsonConvert.SerializeObject(summary.Envelope);
 
-            var response = client.PostAsync(Url, content).Result;
+            string response;
 
-            return response.IsSuccessStatusCode;
-        }
-
-        public override AbstractNotification DeSerialize(string xmlString)
-        {
-            var serilaizer = new XmlSerializer(GetType());
-            var sr = new StringReader(xmlString);
-            var xmlReader = XmlReader.Create(sr);
-
-            var temp = (HttpNotification) serilaizer.Deserialize(xmlReader);
-            Url = temp.Url;
-            HttpMethod = temp.HttpMethod;
-            ContentType = temp.ContentType;
-            NotificationType = temp.NotificationType;
-
-            return this;
-        }
-
-        public HttpNotification WithUrl(string url)
-        {
-            Url = url;
-            return this;
-        }
-
-        public HttpNotification WithPostData(List<KeyValuePair<string,string>> kvp)
-        {
-            Kvp = kvp;
-            return this;
-        }
-
-        public HttpNotification WithMethod(string method)
-        {
-            HttpMethod = method.ToUpper();
-            return this;
-        }
-
-        public HttpNotification WithContentType(string contentType)
-        {
-            ContentType = contentType;
-            return this;
-        }
-
-        protected string GetRequestMethod(string m)
-        {
-            if (m.Equals(WebRequestMethods.Http.Post))
+            if (HttpMethod == WebRequestMethods.Http.Post)
             {
-                return WebRequestMethods.Http.Post;
+                client.Headers[HttpRequestHeader.ContentType] = "application/json";
+                response = client.UploadString(Url, "POST", sum);
             }
 
-            if (m.Equals(WebRequestMethods.Http.Get))
+            if (HttpMethod == WebRequestMethods.Http.Get)
             {
-                return WebRequestMethods.Http.Get;
+                var data = MessageSummaryToListKeyValuePair.Convert(summary);
+                var ub = new UriBuilder(Url);
+                ub.Query = HttpUtility.UrlEncode(
+                    string.Join("&",data.Select(x => 
+                        string.Format("{0}={1}", x.Key, x.Value))));
+                try
+                {
+                    response = client.DownloadString(ub.Uri);
+                }
+                catch (WebException ex)
+                {
+                    return false;
+                }
             }
 
-            return null;
+            return true;
+        }
+
+        public override string GetConfigurationScript()
+        {
+            var selectedOption = "";
+
+            if (!string.IsNullOrEmpty(HttpMethod))
+            {
+                selectedOption = "<option value=\"" + HttpMethod + "\" selected=\"selected\">" + HttpMethod + "</option>";
+            }
+
+            var script = "function SetupNotificationConfig() {" +
+                         "$('#notificationFormArea').append('<div class=\"form\"><div class=\"form-group\">" +
+                         "<label for=\"httpMethodSelect\">HTTP Method:</label><select class=\"form-control\" id=\"httpMethodSelect\" name=\"HttpMethod\" value=\"" + HttpMethod + "\">" +
+                         "<option value=\"POST\">POST JSON</option><option value=\"GET\">GET Query String</option>" + selectedOption + "</select></div>" +
+                         "<input type=\"hidden\" value=\"-1\" name=\"Id\" id=\"editNotificationId\"/>" +
+                         "<div class=\"form-group\"><label for=\"urlInput\">URL:</label><input type=\"text\" class=\"form-control\" id=\"urlInput\" name=\"Url\" value=\"" + Url +"\"/>" +
+                         "</div></div><div class=\"form-group\"><button class=\"btn btn-default\" id=\"textfilesubmit\">Submit</button></div>');}";
+
+            return script;
         }
     }
 }

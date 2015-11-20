@@ -1,4 +1,5 @@
 ﻿using System.Web.Http;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Owin;
 
@@ -27,10 +28,10 @@ namespace InboxWatcher.WebAPI
 
             appBuilder.UseWebApi(config);
 
-            var serSettings = config.Formatters.JsonFormatter.SerializerSettings;
-            var contractResolver = (DefaultContractResolver) serSettings.ContractResolver;
-            contractResolver.IgnoreSerializableAttribute = true;
-
+            //var serSettings = config.Formatters.JsonFormatter.SerializerSettings;
+            //var contractResolver = (DefaultContractResolver) serSettings.ContractResolver;
+            //contractResolver.IgnoreSerializableAttribute = true;
+            //config.Formatters.JsonFormatter.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
             config.EnsureInitialized();
         }
     }

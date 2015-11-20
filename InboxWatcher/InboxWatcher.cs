@@ -27,7 +27,7 @@ namespace InboxWatcher
         protected override void OnStart(string[] args)
         {
             //todo remove
-            Debugger.Launch();
+            //Debugger.Launch();
 
             StartWebApi();
 
