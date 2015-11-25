@@ -17,21 +17,21 @@ namespace InboxWatcher
 {
     public partial class InboxWatcher : ServiceBase
     {
+        public static List<ImapMailBox> MailBoxes { get; set; } = new List<ImapMailBox>();
+
         public InboxWatcher()
         {
             InitializeComponent();
         }
 
-        public static List<ImapMailBox> MailBoxes { get; set; } = new List<ImapMailBox>();
-
         protected override void OnStart(string[] args)
         {
             //todo remove
-            //Debugger.Launch();
+            Debugger.Launch();
 
             StartWebApi();
 
-            ConfigureMailBoxes();
+            //ConfigureMailBoxes();
         }
 
         protected override void OnStop()

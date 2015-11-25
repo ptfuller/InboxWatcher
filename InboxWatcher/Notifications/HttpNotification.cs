@@ -14,6 +14,7 @@ using InboxWatcher.Enum;
 using MailKit;
 using MimeKit;
 using Newtonsoft.Json;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace InboxWatcher
 {
@@ -32,35 +33,37 @@ namespace InboxWatcher
 
         public override bool Notify(IMessageSummary summary, NotificationType notificationType)
         {
-            var client = new WebClient();
-
-            var sum = JsonConvert.SerializeObject(summary.Envelope);
-
             string response;
 
             if (HttpMethod == WebRequestMethods.Http.Post)
             {
-                client.Headers[HttpRequestHeader.ContentType] = "application/json";
-                response = client.UploadString(Url, "POST", sum);
+                using (var client = new HttpClient())
+                {
+                    var summ = new Summary(summary);
+                   var result = client.PostAsJsonAsync(Url, summ).Result;
+                }
             }
 
             if (HttpMethod == WebRequestMethods.Http.Get)
             {
-                var data = MessageSummaryToListKeyValuePair.Convert(summary);
-                var ub = new UriBuilder(Url);
-                ub.Query = HttpUtility.UrlEncode(
-                    string.Join("&",data.Select(x => 
-                        string.Format("{0}={1}", x.Key, x.Value))));
-                try
+                using (var client = new WebClient())
                 {
-                    response = client.DownloadString(ub.Uri);
-                }
-                catch (WebException ex)
-                {
-                    return false;
+                    var data = MessageSummaryToListKeyValuePair.Convert(summary);
+                    var ub = new UriBuilder(Url);
+                    ub.Query = HttpUtility.UrlEncode(
+                        string.Join("&", data.Select(x =>
+                            string.Format("{0}={1}", x.Key, x.Value))));
+                    try
+                    {
+                        response = client.DownloadString(ub.Uri);
+                    }
+                    catch (WebException ex)
+                    {
+                        return false;
+                    }
                 }
             }
-
+            
             return true;
         }
 

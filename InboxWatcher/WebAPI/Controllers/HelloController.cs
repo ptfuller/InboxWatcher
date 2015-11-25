@@ -8,14 +8,16 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using MailKit;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
     public class HelloController : ApiController
     {
-        public Envelope Post([FromBody] Envelope summary)
+        public Summary Post(JObject summary)
         {
-            return summary;
+            return summary.ToObject<Summary>();
         }
 
         public string Get()

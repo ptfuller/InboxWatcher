@@ -32,6 +32,8 @@ namespace InboxWatcher.WebAPI
             //var contractResolver = (DefaultContractResolver) serSettings.ContractResolver;
             //contractResolver.IgnoreSerializableAttribute = true;
             //config.Formatters.JsonFormatter.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            //config.Formatters.JsonFormatter.SerializerSettings.TypeNameHandling = TypeNameHandling.All;
+
             config.EnsureInitialized();
         }
     }
