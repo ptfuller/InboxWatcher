@@ -31,7 +31,7 @@ namespace InboxWatcher
 
             StartWebApi();
 
-            //ConfigureMailBoxes();
+            ConfigureMailBoxes();
         }
 
         protected override void OnStop()

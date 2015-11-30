@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using MailKit;
+using MimeKit;
 
 namespace InboxWatcher
 {
@@ -37,6 +38,19 @@ namespace InboxWatcher
             StartIdling();
 
             return results;
+        }
+
+        public MimeMessage GetMessage(UniqueId uid)
+        {
+            StopIdle();
+
+            var getToken = new CancellationTokenSource();
+
+            var message = ImapClient.Inbox.GetMessage(uid, getToken.Token);
+
+            StartIdling();
+
+            return message;
         }
 
     }

@@ -15,9 +15,9 @@ namespace InboxWatcher.WebAPI.Controllers
 {
     public class HelloController : ApiController
     {
-        public Summary Post(JObject summary)
+        public ISummary Post(Summary summary)
         {
-            return summary.ToObject<Summary>();
+            return summary;
         }
 
         public string Get()

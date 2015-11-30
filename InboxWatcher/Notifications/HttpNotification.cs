@@ -39,7 +39,7 @@ namespace InboxWatcher
             {
                 using (var client = new HttpClient())
                 {
-                    var summ = new Summary(summary);
+                   var summ = new Summary(summary);
                    var result = client.PostAsJsonAsync(Url, summ).Result;
                 }
             }

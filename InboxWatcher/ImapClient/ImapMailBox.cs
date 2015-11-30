@@ -6,6 +6,8 @@ using System.Linq;
 using System.Net.Sockets;
 using InboxWatcher.Enum;
 using MailKit;
+using MailKit.Net.Smtp;
+using MimeKit;
 
 namespace InboxWatcher
 {
@@ -140,6 +142,87 @@ namespace InboxWatcher
                     NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received));
                 }
             }
+        }
+
+        public MimeMessage GetMessage(uint uniqueId)
+        {
+            var uid = new UniqueId(uniqueId);
+            return _imapWorker.GetMessage(uid);
+        }
+
+        public bool SendMail(uint uniqueId, string emailDestination)
+        {
+            try
+            {
+                var client = ImapClientDirector.GetSmtpClientAsync();
+                var message = GetMessage(uniqueId);
+
+                var buildMessage = new MimeMessage();
+                buildMessage.From.Add(new MailboxAddress(ImapClientDirector.SendAs, ImapClientDirector.UserName));
+                buildMessage.To.Add(new MailboxAddress(emailDestination, emailDestination));
+
+                buildMessage.ReplyTo.AddRange(message.From.Mailboxes);
+                buildMessage.ReplyTo.AddRange(message.Cc.Mailboxes);
+                buildMessage.From.AddRange(message.From.Mailboxes);
+                buildMessage.From.AddRange(message.Cc.Mailboxes);
+                buildMessage.Subject = message.Subject;
+
+                var builder = new BodyBuilder();
+
+                foreach (
+                    var bodyPart in message.BodyParts.Where(bodyPart => !bodyPart.ContentType.MediaType.Equals("text")))
+                {
+                    builder.LinkedResources.Add(bodyPart);
+                }
+
+                string addresses = message.From.Mailboxes.Aggregate("",
+                        (current, address) => current + (address.Address + " "));
+
+                string ccAddresses = message.Cc.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
+
+                string toAddresses = message.To.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
+
+                if (message.TextBody != null)
+                {
+                    builder.TextBody = "***Message From " + MailBoxName + " *** \nSent from: " + addresses +
+                                       "\nSent to: " + toAddresses +
+                                       "\nCC'd on email: " + ccAddresses + "\nMessage Date: " + message.Date.ToLocalTime().ToString("F")
+                                       + "\n---\n\n" + message.TextBody;
+                }
+
+                if (message.HtmlBody != null)
+                {
+                    builder.HtmlBody = "<p>***Message From " + MailBoxName + " ***<br/><p>Sent from: " + addresses +
+                                       "<br/><p>Sent to: " + toAddresses +
+                                       "<br/><p>CC'd on email: " + ccAddresses + "<br/><p>Message Date:" + message.Date.ToLocalTime().ToString("F") +
+                                       "<br/>---<br/><br/>" + message.HtmlBody;
+                }
+
+                buildMessage.Body = builder.ToMessageBody();
+
+                if (!client.ConnectTask.IsCompleted)
+                {
+                    client.ConnectTask.Wait(5000);
+                }
+
+                if (!client.AuthTask.IsCompleted)
+                {
+                    client.AuthTask.Wait(5000);
+                }
+
+                if (!client.IsConnected || !client.IsAuthenticated)
+                {
+                    client = ImapClientDirector.GetSmtpClient();
+                }
+                
+                client.Send(buildMessage);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

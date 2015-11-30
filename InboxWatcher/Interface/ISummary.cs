@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using MimeKit;
 
 namespace InboxWatcher
 {
@@ -6,7 +8,9 @@ namespace InboxWatcher
     {
         string Subject { get; set; } 
         DateTime Received { get; set; }
-        string Sender { get; set; }
-        string UniqueId { get; set; }
+        Dictionary<string, string> Sender { get; set; }
+        string EnvelopeId { get; set; }
+        uint UniqueId { get; set; }
+        Dictionary<string, string> CcLine { get; set; }
     }
 }
