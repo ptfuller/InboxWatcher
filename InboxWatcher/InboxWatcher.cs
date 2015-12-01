@@ -60,8 +60,7 @@ namespace InboxWatcher
             using (var ctx = new MailModelContainer())
             {
                 var configurations =
-                    ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == imapMailBoxConfigId)
-                        .ToList();
+                    ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == imapMailBoxConfigId);
 
                 foreach (var configuration in configurations)
                 {
@@ -85,7 +84,7 @@ namespace InboxWatcher
             foreach (var clientConfiguration in configs)
             {
                 var director = new ImapClientDirector(clientConfiguration);
-                var mailbox = new ImapMailBox(director, clientConfiguration.MailBoxName);
+                var mailbox = new ImapMailBox(director, clientConfiguration);
 
                 foreach (var action in SetupNotifications(clientConfiguration.Id))
                 {

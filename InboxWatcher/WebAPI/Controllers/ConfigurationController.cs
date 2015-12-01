@@ -12,6 +12,7 @@ using System.Web;
 using System.Web.Http;
 using System.Xml;
 using System.Xml.Serialization;
+using InboxWatcher.DTO;
 using InboxWatcher.Properties;
 using RazorEngine;
 using RazorEngine.Templating;
@@ -50,11 +51,21 @@ namespace InboxWatcher
         }
 
         [Route("all")]
-        public IEnumerable<ImapMailBoxConfiguration> GetMailBoxConfigurations()
+        public IEnumerable<IClientConfiguration> GetMailBoxConfigurations()
         {
             using (var ctx = new MailModelContainer())
             {
                 return ctx.ImapMailBoxConfigurations.ToList();
+                //return Enumerable.Cast<IClientConfiguration>(ctx.ImapMailBoxConfigurations.Select(config => new ClientConfigurationDto()
+                //{
+                //    HostName = config.HostName,
+                //    Id = config.Id,
+                //    MailBoxName = config.MailBoxName,
+                //    Password = config.Password,
+                //    Port = config.Port,
+                //    UserName = config.UserName,
+                //    UseSecure = config.UseSecure
+                //})).ToList();
             }
         }
 

@@ -15,6 +15,7 @@ namespace InboxWatcher
     {
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
+        private readonly IClientConfiguration _config;
 
         protected List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
@@ -25,26 +26,23 @@ namespace InboxWatcher
         public event EventHandler NewMessageReceived;
         public event EventHandler MessageRemoved;
 
-        public ImapMailBox(ImapClientDirector icd, string mailBoxName, IEnumerable<AbstractNotification> notificationActions) :
-                this(icd, mailBoxName)
+        public ImapMailBox(ImapClientDirector icd, IEnumerable<AbstractNotification> notificationActions, IClientConfiguration config) :
+                this(icd, config)
         {
             NotificationActions.AddRange(notificationActions);
         }
         
-        public ImapMailBox(ImapClientDirector icd, string mailBoxName, AbstractNotification notificationAction) :
-            this(icd, mailBoxName)
+        public ImapMailBox(ImapClientDirector icd, AbstractNotification notificationAction, IClientConfiguration config) :
+            this(icd, config)
         {
             NotificationActions.Add(notificationAction);
         }
 
-        public ImapMailBox(ImapClientDirector icd, string mailBoxName) : this(icd)
-        {
-            MailBoxName = mailBoxName;
-        }
-
-        public ImapMailBox(ImapClientDirector icd)
+        public ImapMailBox(ImapClientDirector icd, IClientConfiguration config)
         {
             ImapClientDirector = icd;
+            _config = config;
+            MailBoxName = _config.MailBoxName;
             Setup();
         }
 
@@ -58,6 +56,7 @@ namespace InboxWatcher
 
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
             _imapIdler.MessageExpunged += ImapIdlerOnMessageArrived;
+            _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
 
             _imapIdler.StartIdling();
             _imapWorker.StartIdling();
@@ -113,6 +112,7 @@ namespace InboxWatcher
                 foreach (var messageSummary in EmailList)
                 {
                     MessageRemoved?.Invoke(messageSummary, EventArgs.Empty);
+                    MailBoxLogger.LogEmailRemoved(messageSummary, _config);
                     NotificationActions.ForEach(x => x?.Notify(messageSummary, NotificationType.Removed));
                 }
 
@@ -127,6 +127,7 @@ namespace InboxWatcher
                 if (!messages.Any(x => x.Envelope.MessageId.Equals(EmailList[i].Envelope.MessageId)))
                 {
                     MessageRemoved?.Invoke(EmailList[i], EventArgs.Empty);
+                    MailBoxLogger.LogEmailRemoved(EmailList[i], _config);
                     NotificationActions.ForEach(x => x?.Notify(EmailList[i], NotificationType.Removed));
                     EmailList.RemoveAt(i);
                 }
@@ -139,6 +140,7 @@ namespace InboxWatcher
                 {
                     EmailList.Add(message);
                     NewMessageReceived?.Invoke(message, EventArgs.Empty);
+                    MailBoxLogger.LogEmailReceived(message, _config);
                     NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received));
                 }
             }
@@ -150,6 +152,8 @@ namespace InboxWatcher
             return _imapWorker.GetMessage(uid);
         }
 
+
+        //this probably doesn't belong here - maybe another class has this responsibility?
         public bool SendMail(uint uniqueId, string emailDestination)
         {
             try
@@ -184,7 +188,7 @@ namespace InboxWatcher
 
                 if (message.TextBody != null)
                 {
-                    builder.TextBody = "***Message From " + MailBoxName + " *** \nSent from: " + addresses +
+                    builder.TextBody = "***Message From " + _config.MailBoxName + "*** \nSent from: " + addresses +
                                        "\nSent to: " + toAddresses +
                                        "\nCC'd on email: " + ccAddresses + "\nMessage Date: " + message.Date.ToLocalTime().ToString("F")
                                        + "\n---\n\n" + message.TextBody;
@@ -192,7 +196,7 @@ namespace InboxWatcher
 
                 if (message.HtmlBody != null)
                 {
-                    builder.HtmlBody = "<p>***Message From " + MailBoxName + " ***<br/><p>Sent from: " + addresses +
+                    builder.HtmlBody = "<p>***Message From " + _config.MailBoxName + "***<br/><p>Sent from: " + addresses +
                                        "<br/><p>Sent to: " + toAddresses +
                                        "<br/><p>CC'd on email: " + ccAddresses + "<br/><p>Message Date:" + message.Date.ToLocalTime().ToString("F") +
                                        "<br/>---<br/><br/>" + message.HtmlBody;
@@ -219,10 +223,20 @@ namespace InboxWatcher
             }
             catch (Exception ex)
             {
+                //send an email with error message
                 return false;
             }
 
             return true;
+        }
+
+        private void ImapIdlerOnMessageSeen(object sender, MessageFlagsChangedEventArgs eventArgs)
+        {
+            if (eventArgs.UniqueId == null) return;
+
+            var message = _imapWorker.GetMessageSummary((UniqueId) eventArgs.UniqueId);
+            MailBoxLogger.LogEmailSeen(_config, message);
+
         }
     }
 }

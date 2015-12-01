@@ -25,7 +25,7 @@ namespace InboxWatcher
         {
             throw new UnintentionalCodeFirstException();
         }
-        
+    
         public virtual DbSet<Email> Emails { get; set; }
         public virtual DbSet<EmailLog> EmailLogs { get; set; }
         public virtual DbSet<EmailFilter> EmailFilters { get; set; }

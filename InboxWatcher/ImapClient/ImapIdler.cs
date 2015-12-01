@@ -20,6 +20,7 @@ namespace InboxWatcher
 
         public event EventHandler MessageArrived;
         public event EventHandler MessageExpunged;
+        public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
 
         public ImapIdler(ImapClientDirector director)
         {
@@ -42,12 +43,21 @@ namespace InboxWatcher
             {
                 ImapClient.Inbox.MessagesArrived += InboxOnMessagesArrived;
                 ImapClient.Inbox.MessageExpunged += Inbox_MessageExpunged;
+                ImapClient.Inbox.MessageFlagsChanged += InboxOnMessageFlagsChanged;
                 AreEventsSubscribed = true;
             }
 
             IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
 
             IdleLoop();
+        }
+
+        private void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)
+        {
+            if (messageFlagsChangedEventArgs.Flags.HasFlag(MessageFlags.Seen))
+            {
+                MessageSeen?.Invoke(sender, messageFlagsChangedEventArgs);
+            }
         }
 
         protected virtual void Inbox_MessageExpunged(object sender, MessageEventArgs e)

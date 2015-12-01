@@ -22,17 +22,17 @@ namespace InboxWatcher
 
         public Message(MimeMessage inMessage)
         {
+            MessageId = inMessage.MessageId;
+            From = inMessage.From.InternetAddressListToDictionary();
+            Cc = inMessage.Cc.InternetAddressListToDictionary();
+            Bcc = inMessage.Bcc.InternetAddressListToDictionary();
+            Date = inMessage.Date;
+            Subject = inMessage.Subject;
             MessageText = inMessage.GetTextBody(TextFormat.Text);
             if (string.IsNullOrEmpty(MessageText))
             {
-                MessageText = HtmlToText.ConvertHtml(inMessage.HtmlBody).Replace("\r", "").Replace("\n","");
+                MessageText = HtmlToText.ConvertHtml(inMessage.HtmlBody).Replace("\r", "").Replace("\n", "");
             }
-            Bcc = inMessage.Bcc.InternetAddressListToDictionary();
-            Cc = inMessage.Cc.InternetAddressListToDictionary();
-            Date = inMessage.Date;
-            From = inMessage.From.InternetAddressListToDictionary();
-            Subject = inMessage.Subject;
-            MessageId = inMessage.MessageId;
         }
     }
 }

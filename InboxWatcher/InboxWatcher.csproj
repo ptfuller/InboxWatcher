@@ -204,6 +204,7 @@
     <Compile Include="Areas\RouteDebugger\RequestHelper.cs" />
     <Compile Include="Areas\RouteDebugger\RouteDebuggerAreaRegistration.cs" />
     <Compile Include="Areas\RouteDebugger\RouteDebuggerConfig.cs" />
+    <Compile Include="DTO\ClientConfigurationDto.cs" />
     <Compile Include="Email.cs">
       <DependentUpon>MailModel.tt</DependentUpon>
     </Compile>
@@ -232,6 +233,7 @@
     <Compile Include="Interface\IMessage.cs" />
     <Compile Include="Interface\INotificationAction.cs" />
     <Compile Include="Interface\ISummary.cs" />
+    <Compile Include="MailBoxLogger.cs" />
     <Compile Include="MailModel.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

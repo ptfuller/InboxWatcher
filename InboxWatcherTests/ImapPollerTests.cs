@@ -55,7 +55,7 @@ namespace InboxWatcherTests
             var director = new Mock<ImapClientDirector>(_config);
             director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
 
-            var inbox = new ImapMailBox(director.Object);
+            var inbox = new ImapMailBox(director.Object, null);
 
             var eventHappened = false;
 

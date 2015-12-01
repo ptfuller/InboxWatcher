@@ -55,7 +55,7 @@ namespace InboxWatcherTests
         public void TestMailBoxMessageReceived()
         {
             //setup the inbox, idler, and poller client
-            var mailbox = new ImapMailBox(ImapClientDirector.Object);
+            var mailbox = new ImapMailBox(ImapClientDirector.Object, null);
 
             //raise message received
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));

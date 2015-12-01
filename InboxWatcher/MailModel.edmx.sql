@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 11/19/2015 11:57:00
+-- Date Created: 12/01/2015 08:52:10
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
@@ -58,7 +58,8 @@ CREATE TABLE [dbo].[Emails] (
     [Subject] nvarchar(max)  NOT NULL,
     [MarkedAsRead] bit  NOT NULL,
     [BodyText] nvarchar(max)  NOT NULL,
-    [EnvelopeID] nvarchar(max)  NOT NULL
+    [EnvelopeID] nvarchar(max)  NOT NULL,
+    [ImapMailBoxConfigurationId] int  NOT NULL
 );
 GO
 
@@ -170,6 +171,21 @@ GO
 -- Creating non-clustered index for FOREIGN KEY 'FK_NotificationConfigurationImapMailBoxConfiguration'
 CREATE INDEX [IX_FK_NotificationConfigurationImapMailBoxConfiguration]
 ON [dbo].[NotificationConfigurations]
+    ([ImapMailBoxConfigurationId]);
+GO
+
+-- Creating foreign key on [ImapMailBoxConfigurationId] in table 'Emails'
+ALTER TABLE [dbo].[Emails]
+ADD CONSTRAINT [FK_ImapMailBoxConfigurationEmail]
+    FOREIGN KEY ([ImapMailBoxConfigurationId])
+    REFERENCES [dbo].[ImapMailBoxConfigurations]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_ImapMailBoxConfigurationEmail'
+CREATE INDEX [IX_FK_ImapMailBoxConfigurationEmail]
+ON [dbo].[Emails]
     ([ImapMailBoxConfigurationId]);
 GO
 

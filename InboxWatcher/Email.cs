@@ -29,8 +29,10 @@ namespace InboxWatcher
         public bool MarkedAsRead { get; set; }
         public string BodyText { get; set; }
         public string EnvelopeID { get; set; }
+        public int ImapMailBoxConfigurationId { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<EmailLog> EmailLogs { get; set; }
+        public virtual ImapMailBoxConfiguration ImapMailBoxConfiguration { get; set; }
     }
 }

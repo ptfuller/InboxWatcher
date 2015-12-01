@@ -20,6 +20,10 @@
       <End Role="NotificationConfiguration" EntitySet="NotificationConfigurations" />
       <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
     </AssociationSet>
+    <AssociationSet Name="ImapMailBoxConfigurationEmail" Association="MailModel.Store.ImapMailBoxConfigurationEmail">
+      <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
+      <End Role="Email" EntitySet="Emails" />
+    </AssociationSet>
   </EntityContainer>
   <EntityType Name="Emails">
     <Key>
@@ -34,6 +38,7 @@
     <Property Name="MarkedAsRead" Type="bit" Nullable="false" />
     <Property Name="BodyText" Type="nvarchar(max)" Nullable="false" />
     <Property Name="EnvelopeID" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ImapMailBoxConfigurationId" Type="int" Nullable="false" />
   </EntityType>
   <EntityType Name="EmailLogs">
     <Key>
@@ -102,6 +107,18 @@
       </Dependent>
     </ReferentialConstraint>
   </Association>
+  <Association Name="ImapMailBoxConfigurationEmail">
+    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1" />
+    <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="ImapMailBoxConfiguration">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="Email">
+        <PropertyRef Name="ImapMailBoxConfigurationId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
 </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
@@ -125,6 +142,10 @@
             <End Role="NotificationConfiguration" EntitySet="NotificationConfigurations" />
             <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
           </AssociationSet>
+          <AssociationSet Name="ImapMailBoxConfigurationEmail" Association="MailModel.ImapMailBoxConfigurationEmail">
+            <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
+            <End Role="Email" EntitySet="Emails" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="Email">
           <Key>
@@ -141,6 +162,8 @@
           <Property Name="EnvelopeID" Type="String" Nullable="false" />
           <NavigationProperty Name="EmailLogs" Relationship="MailModel.EmailLogEntry" FromRole="Email"
                               ToRole="EmailLog" />
+          <NavigationProperty Name="ImapMailBoxConfiguration" Relationship="MailModel.ImapMailBoxConfigurationEmail" FromRole="Email" ToRole="ImapMailBoxConfiguration" />
+          <Property Name="ImapMailBoxConfigurationId" Type="Int32" Nullable="false" />
         </EntityType>
         <EntityType Name="EmailLog">
           <Key>
@@ -189,6 +212,7 @@
           <Property Name="Port" Type="Int32" Nullable="false" />
           <Property Name="MailBoxName" Type="String" Nullable="false" />
           <NavigationProperty Name="NotificationConfigurations" Relationship="MailModel.NotificationConfigurationImapMailBoxConfiguration" FromRole="ImapMailBoxConfiguration" ToRole="NotificationConfiguration" />
+          <NavigationProperty Name="Emails" Relationship="MailModel.ImapMailBoxConfigurationEmail" FromRole="ImapMailBoxConfiguration" ToRole="Email" />
         </EntityType>
         <EntityType Name="NotificationConfiguration">
           <Key>
@@ -212,6 +236,18 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="ImapMailBoxConfigurationEmail">
+          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" />
+          <End Type="MailModel.Email" Role="Email" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ImapMailBoxConfiguration">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="Email">
+              <PropertyRef Name="ImapMailBoxConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -230,6 +266,7 @@
           <ScalarProperty Name="MarkedAsRead" ColumnName="MarkedAsRead" />
           <ScalarProperty Name="BodyText" ColumnName="BodyText" />
           <ScalarProperty Name="EnvelopeID" ColumnName="EnvelopeID" />
+          <ScalarProperty Name="ImapMailBoxConfigurationId" ColumnName="ImapMailBoxConfigurationId" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

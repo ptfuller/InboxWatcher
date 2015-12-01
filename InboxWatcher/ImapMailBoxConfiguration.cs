@@ -18,6 +18,7 @@ namespace InboxWatcher
         public ImapMailBoxConfiguration()
         {
             this.NotificationConfigurations = new HashSet<NotificationConfiguration>();
+            this.Emails = new HashSet<Email>();
         }
     
         public int Id { get; set; }
@@ -30,5 +31,7 @@ namespace InboxWatcher
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<NotificationConfiguration> NotificationConfigurations { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Email> Emails { get; set; }
     }
 }

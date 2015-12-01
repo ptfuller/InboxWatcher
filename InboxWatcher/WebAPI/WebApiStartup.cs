@@ -28,6 +28,8 @@ namespace InboxWatcher.WebAPI
 
             appBuilder.UseWebApi(config);
 
+            config.Formatters.Remove(config.Formatters.XmlFormatter);
+
             //var serSettings = config.Formatters.JsonFormatter.SerializerSettings;
             //var contractResolver = (DefaultContractResolver) serSettings.ContractResolver;
             //contractResolver.IgnoreSerializableAttribute = true;

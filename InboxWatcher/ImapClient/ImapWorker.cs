@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using MailKit;
 using MimeKit;
@@ -38,6 +39,17 @@ namespace InboxWatcher
             StartIdling();
 
             return results;
+        }
+
+        public IMessageSummary GetMessageSummary(UniqueId uid)
+        {
+            StopIdle();
+
+            var result = ImapClient.Inbox.Fetch(new List<UniqueId> { uid }, MessageSummaryItems.Envelope);
+
+            StartIdling();
+
+            return result.First();
         }
 
         public MimeMessage GetMessage(UniqueId uid)

@@ -12,6 +12,7 @@
         <EntityTypeShape EntityType="MailModel.ImapMailBoxConfiguration" Width="1.5" PointX="2.75" PointY="3.5" />
         <EntityTypeShape EntityType="MailModel.NotificationConfiguration" Width="1.5" PointX="5.25" PointY="3.5" />
         <AssociationConnector Association="MailModel.NotificationConfigurationImapMailBoxConfiguration" />
+        <AssociationConnector Association="MailModel.ImapMailBoxConfigurationEmail" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>
