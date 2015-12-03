@@ -9,7 +9,6 @@ using System.Xml.Serialization;
 using InboxWatcher.Attributes;
 using InboxWatcher.Enum;
 using MailKit;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace InboxWatcher
 {

@@ -10,7 +10,6 @@ using System.Xml.Serialization;
 using InboxWatcher.Enum;
 using MailKit;
 using MimeKit;
-using Org.BouncyCastle.Apache.Bzip2;
 
 namespace InboxWatcher
 {

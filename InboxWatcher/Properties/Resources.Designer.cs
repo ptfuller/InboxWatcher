@@ -65,19 +65,83 @@ namespace InboxWatcher.Properties {
         ///
         ///&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
         ///&lt;head&gt;
-        ///    &lt;meta charset=&quot;utf-8&quot; /&gt;
-        ///    &lt;title&gt;&lt;/title&gt;
-        ///&lt;/head&gt;
-        ///&lt;body&gt;
-        ///&lt;h2&gt;Inbox Watcher Configuration&lt;/h2&gt;
-        ///&lt;br/&gt;
-        ///Current configurations:
-        ///&lt;/body&gt;
-        ///&lt;/html&gt;.
+        ///    &lt;meta charset=&quot;utf-8&quot;/&gt;
+        ///    &lt;title&gt;Configuration&lt;/title&gt;
+        ///    &lt;script src=&quot;/api/Jquery&quot;&gt;&lt;/script&gt;
+        ///    &lt;!-- Latest compiled and minified CSS --&gt;
+        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css&quot; integrity=&quot;sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==&quot; crossorigin=&quot;anonymous&quot;&gt;
+        ///
+        ///    &lt;!-- Optional theme --&gt;
+        ///    &lt;link  [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string configuration {
             get {
                 return ResourceManager.GetString("configuration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;!DOCTYPE html&gt;
+        ///
+        ///&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+        ///&lt;head&gt;
+        ///    &lt;meta charset=&quot;utf-8&quot; /&gt;
+        ///    &lt;title&gt;Inbox Watcher Dashboard&lt;/title&gt;
+        ///    &lt;script src=&quot;/api/Jquery&quot;&gt;&lt;/script&gt;
+        ///    &lt;!-- Latest compiled and minified CSS --&gt;
+        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css&quot; integrity=&quot;sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==&quot; crossorigin=&quot;anonymous&quot;&gt;
+        ///
+        ///    &lt;!-- Optional theme --&gt;        /// [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string dashboard {
+            get {
+                return ResourceManager.GetString("dashboard", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to /*
+        /// * Base structure
+        /// */
+        ///
+        ////* Move down content because we have a fixed navbar that is 50px tall */
+        ///body {
+        ///  padding-top: 50px;
+        ///}
+        ///
+        ///
+        ////*
+        /// * Global add-ons
+        /// */
+        ///
+        ///.sub-header {
+        ///  padding-bottom: 10px;
+        ///  border-bottom: 1px solid #eee;
+        ///}
+        ///
+        ////*
+        /// * Top navigation
+        /// * Hide default border to remove 1px line.
+        /// */
+        ///.navbar-fixed-top {
+        ///  border: 0;
+        ///}
+        ///
+        ////*
+        /// * Sidebar
+        /// */
+        ///
+        ////* Hide for mobile, show later */
+        ///.sidebar {
+        ///  display: none;
+        ///}
+        ///@media (min-width: 768px) {
+        ///  .sidebar {
+        ///    position: fi [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string dashboard1 {
+            get {
+                return ResourceManager.GetString("dashboard1", resourceCulture);
             }
         }
         

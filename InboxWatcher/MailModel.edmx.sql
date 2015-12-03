@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 12/03/2015 10:44:00
+-- Date Created: 12/03/2015 13:55:59
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
@@ -153,7 +153,7 @@ ADD CONSTRAINT [FK_EmailLogEntry]
     FOREIGN KEY ([EmailId])
     REFERENCES [dbo].[Emails]
         ([Id])
-    ON DELETE NO ACTION ON UPDATE NO ACTION;
+    ON DELETE CASCADE ON UPDATE NO ACTION;
 GO
 
 -- Creating non-clustered index for FOREIGN KEY 'FK_EmailLogEntry'

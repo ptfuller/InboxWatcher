@@ -20,10 +20,16 @@ namespace InboxWatcher.WebAPI.Controllers
             return summary;
         }
 
-        public string Get()
+        [Route("")]
+        public HttpResponseMessage Get()
         {
-            var queryString = Request.GetQueryNameValuePairs();
-            return string.Join("&",queryString.Select(x => string.Format("{0}={1}", x.Key, x.Value)));
+            var response = new HttpResponseMessage(HttpStatusCode.Redirect);
+
+            var link = Url.Link("ui", new {});
+
+            response.Headers.Location = new Uri(link);
+
+            return response;
         }
     }
 }

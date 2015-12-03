@@ -84,7 +84,9 @@
     <Property Name="NotificationType" Type="nvarchar(max)" Nullable="false" />
   </EntityType>
   <Association Name="EmailLogEntry">
-    <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1" />
+    <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
     <End Role="EmailLog" Type="MailModel.Store.EmailLogs" Multiplicity="*" />
     <ReferentialConstraint>
       <Principal Role="Email">
@@ -97,7 +99,9 @@
   </Association>
   <Association Name="NotificationConfigurationImapMailBoxConfiguration">
     <End Role="NotificationConfiguration" Type="MailModel.Store.NotificationConfigurations" Multiplicity="*" />
-    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1" />
+    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
     <ReferentialConstraint>
       <Principal Role="ImapMailBoxConfiguration">
         <PropertyRef Name="Id" />
@@ -108,7 +112,9 @@
     </ReferentialConstraint>
   </Association>
   <Association Name="ImapMailBoxConfigurationEmail">
-    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1" />
+    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
     <End Role="Email" Type="MailModel.Store.Emails" Multiplicity="*" />
     <ReferentialConstraint>
       <Principal Role="ImapMailBoxConfiguration">
@@ -177,8 +183,11 @@
           <Property Name="EmailId" Type="Int32" Nullable="false" />
         </EntityType>
         <Association Name="EmailLogEntry">
-          <End Type="MailModel.Email" Role="Email" Multiplicity="1" />
-          <End Type="MailModel.EmailLog" Role="EmailLog" Multiplicity="*" />
+          <End Type="MailModel.Email" Role="Email" Multiplicity="1" >
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="MailModel.EmailLog" Role="EmailLog" Multiplicity="*" >
+          </End>
           <ReferentialConstraint>
             <Principal Role="Email">
               <PropertyRef Name="Id" />

@@ -13,6 +13,13 @@ namespace InboxWatcher.WebAPI.Controllers
 {
     public class MailController : ApiController
     {
+        [Route("mailboxes")]
+        [HttpGet]
+        public IEnumerable<string> GetMailboxes()
+        {
+            return InboxWatcher.MailBoxes.Select(x => x.MailBoxName).ToList();
+        }
+
         [Route("mailboxes/{mailBoxName}/messages")]
         [HttpGet]
         public IEnumerable<Summary> Get(string mailBoxName)

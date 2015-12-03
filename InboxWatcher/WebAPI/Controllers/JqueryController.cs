@@ -17,5 +17,16 @@ namespace InboxWatcher.WebAPI.Controllers
 
             return response;
         }
+
+        [Route("css/dashboard.css")]
+        public HttpResponseMessage GetCss()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            response.Content = new StringContent(Resources.dashboard1);
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/css");
+
+            return response;
+        }
     }
 }

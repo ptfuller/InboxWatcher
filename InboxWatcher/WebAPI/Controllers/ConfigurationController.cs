@@ -25,7 +25,7 @@ namespace InboxWatcher
     [RoutePrefix("config")]
     public class ConfigurationController : ApiController
     {
-        [Route("ui")]
+        [Route("ui", Name = "ui")]
         public HttpResponseMessage Get()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
