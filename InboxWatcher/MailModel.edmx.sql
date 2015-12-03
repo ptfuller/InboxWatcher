@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 12/01/2015 08:52:10
+-- Date Created: 12/03/2015 10:44:00
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
@@ -22,6 +22,9 @@ IF OBJECT_ID(N'[dbo].[FK_EmailLogEntry]', 'F') IS NOT NULL
 GO
 IF OBJECT_ID(N'[dbo].[FK_NotificationConfigurationImapMailBoxConfiguration]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[NotificationConfigurations] DROP CONSTRAINT [FK_NotificationConfigurationImapMailBoxConfiguration];
+GO
+IF OBJECT_ID(N'[dbo].[FK_ImapMailBoxConfigurationEmail]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[Emails] DROP CONSTRAINT [FK_ImapMailBoxConfigurationEmail];
 GO
 
 -- --------------------------------------------------
@@ -165,7 +168,7 @@ ADD CONSTRAINT [FK_NotificationConfigurationImapMailBoxConfiguration]
     FOREIGN KEY ([ImapMailBoxConfigurationId])
     REFERENCES [dbo].[ImapMailBoxConfigurations]
         ([Id])
-    ON DELETE NO ACTION ON UPDATE NO ACTION;
+    ON DELETE CASCADE ON UPDATE NO ACTION;
 GO
 
 -- Creating non-clustered index for FOREIGN KEY 'FK_NotificationConfigurationImapMailBoxConfiguration'
@@ -180,7 +183,7 @@ ADD CONSTRAINT [FK_ImapMailBoxConfigurationEmail]
     FOREIGN KEY ([ImapMailBoxConfigurationId])
     REFERENCES [dbo].[ImapMailBoxConfigurations]
         ([Id])
-    ON DELETE NO ACTION ON UPDATE NO ACTION;
+    ON DELETE CASCADE ON UPDATE NO ACTION;
 GO
 
 -- Creating non-clustered index for FOREIGN KEY 'FK_ImapMailBoxConfigurationEmail'

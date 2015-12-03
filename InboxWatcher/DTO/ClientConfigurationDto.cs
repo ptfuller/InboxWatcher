@@ -12,5 +12,21 @@ namespace InboxWatcher.DTO
         public bool UseSecure { get; set; }
         public string MailBoxName { get; set; }
         public int Id { get; set; }
+
+        public ImapMailBoxConfiguration GetMailBoxConfiguration()
+        {
+            var config = new ImapMailBoxConfiguration()
+            {
+                HostName = HostName,
+                Id = Id,
+                MailBoxName = MailBoxName,
+                Password = Password,
+                Port = Port,
+                UseSecure = UseSecure,
+                UserName = UserName
+            };
+
+            return config;
+        }
     }
 }

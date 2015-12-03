@@ -12,7 +12,7 @@ namespace InboxWatcher
     using System;
     using System.Collections.Generic;
     
-    public partial class ImapMailBoxConfiguration : IClientConfiguration
+    public partial class ImapMailBoxConfiguration
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public ImapMailBoxConfiguration()

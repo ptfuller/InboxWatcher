@@ -204,6 +204,7 @@
     <Compile Include="Areas\RouteDebugger\RequestHelper.cs" />
     <Compile Include="Areas\RouteDebugger\RouteDebuggerAreaRegistration.cs" />
     <Compile Include="Areas\RouteDebugger\RouteDebuggerConfig.cs" />
+    <Compile Include="Attributes\NotificationAttribute.cs" />
     <Compile Include="DTO\ClientConfigurationDto.cs" />
     <Compile Include="Email.cs">
       <DependentUpon>MailModel.tt</DependentUpon>
@@ -221,6 +222,7 @@
     <Compile Include="ImapClient\ImapClientConfiguration.cs" />
     <Compile Include="ImapClient\ImapClientDirector.cs" />
     <Compile Include="ImapClient\ImapMailBox.cs" />
+    <Compile Include="ImapClient\ImapMailBoxConfiguration.cs" />
     <Compile Include="ImapClient\ImapWorker.cs" />
     <Compile Include="ImapClient\Message.cs" />
     <Compile Include="ImapClient\SendClient.cs" />

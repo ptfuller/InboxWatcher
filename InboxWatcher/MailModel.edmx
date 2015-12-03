@@ -225,8 +225,11 @@
           <Property Name="NotificationType" Type="String" Nullable="false" />
         </EntityType>
         <Association Name="NotificationConfigurationImapMailBoxConfiguration">
-          <End Type="MailModel.NotificationConfiguration" Role="NotificationConfiguration" Multiplicity="*" />
-          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" />
+          <End Type="MailModel.NotificationConfiguration" Role="NotificationConfiguration" Multiplicity="*" >
+          </End>
+          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" >
+            <OnDelete Action="Cascade" />
+          </End>
           <ReferentialConstraint>
             <Principal Role="ImapMailBoxConfiguration">
               <PropertyRef Name="Id" />
@@ -237,7 +240,9 @@
           </ReferentialConstraint>
         </Association>
         <Association Name="ImapMailBoxConfigurationEmail">
-          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" />
+          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" >
+            <OnDelete Action="Cascade" />
+          </End>
           <End Type="MailModel.Email" Role="Email" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="ImapMailBoxConfiguration">

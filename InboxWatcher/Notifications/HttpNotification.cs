@@ -15,9 +15,11 @@ using MailKit;
 using MimeKit;
 using Newtonsoft.Json;
 using Formatting = Newtonsoft.Json.Formatting;
+using InboxWatcher.Attributes;
 
 namespace InboxWatcher
 {
+    [NotificationAttribute("HttpNotification")]
     public class HttpNotification : AbstractNotification
     {
         [XmlAttribute]

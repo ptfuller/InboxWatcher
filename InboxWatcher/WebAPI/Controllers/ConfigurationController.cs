@@ -8,12 +8,15 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Xml;
 using System.Xml.Serialization;
+using InboxWatcher.Attributes;
 using InboxWatcher.DTO;
 using InboxWatcher.Properties;
+using Newtonsoft.Json.Linq;
 using RazorEngine;
 using RazorEngine.Templating;
 
@@ -46,7 +49,10 @@ namespace InboxWatcher
         {
             using (var ctx = new MailModelContainer())
             {
-                return ctx.ImapMailBoxConfigurations.First(x => x.Id == id);
+                var selection = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.Id == id);
+                if (selection != null) return selection;
+
+                return new ImapMailBoxConfiguration();
             }
         }
 
@@ -55,30 +61,53 @@ namespace InboxWatcher
         {
             using (var ctx = new MailModelContainer())
             {
-                return ctx.ImapMailBoxConfigurations.ToList();
-                //return Enumerable.Cast<IClientConfiguration>(ctx.ImapMailBoxConfigurations.Select(config => new ClientConfigurationDto()
-                //{
-                //    HostName = config.HostName,
-                //    Id = config.Id,
-                //    MailBoxName = config.MailBoxName,
-                //    Password = config.Password,
-                //    Port = config.Port,
-                //    UserName = config.UserName,
-                //    UseSecure = config.UseSecure
-                //})).ToList();
+                var selection = ctx.ImapMailBoxConfigurations.ToList();
+                return selection;
             }
         }
 
         [Route("")]
-        public string Post(ImapMailBoxConfiguration conf)
+        [HttpPost]
+        public HttpResponseMessage Post(ClientConfigurationDto conf)
         {
             using (var ctx = new MailModelContainer())
             {
-                ctx.ImapMailBoxConfigurations.Add(conf);
+                //update
+                if (ctx.ImapMailBoxConfigurations.Any(x => x.Id == conf.Id))
+                {
+                    var toReplace = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.Id == conf.Id);
+
+                    if (toReplace == null) return RedirectToUi(Request);
+
+                    ctx.Entry(toReplace).CurrentValues.SetValues(conf.GetMailBoxConfiguration());
+                }
+                else //add new
+                {
+                    ctx.ImapMailBoxConfigurations.Add(conf.GetMailBoxConfiguration());
+                }
                 ctx.SaveChanges();
             }
 
-            return "great success!";
+            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
+
+            return RedirectToUi(Request);
+        }
+
+        [Route("mailbox/delete/{id:int}")]
+        [HttpDelete]
+        public HttpResponseMessage DeleteMailBox(int id)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selection = ctx.ImapMailBoxConfigurations.First(x => x.Id == id);
+                ctx.ImapMailBoxConfigurations.Attach(selection);
+                ctx.ImapMailBoxConfigurations.Remove(selection);
+                ctx.SaveChanges();
+            }
+
+            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
         [Route("notifications/{id:int}")]
@@ -86,7 +115,9 @@ namespace InboxWatcher
         {
             using (var ctx = new MailModelContainer())
             {
-                return ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == id).ToList();
+                var selectedNotifications = ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == id).ToList();
+                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[1]);
+                return selectedNotifications;
             }
         }
 
@@ -128,16 +159,28 @@ namespace InboxWatcher
         [Route("notifications/types")]
         public IEnumerable<string> GetNotificationConfigurationTypes()
         {
-            using (var ctx = new MailModelContainer())
-            {
-                return ctx.NotificationConfigurations.Select(x => x.NotificationType).Distinct().ToList();
-            }
+            var types = FindNotificationConfigurationTypes();
+
+            return types.Select(t => t.Name).ToList();
+        }
+
+        private IEnumerable<Type> FindNotificationConfigurationTypes()
+        {
+            var ass = Assembly.GetExecutingAssembly().GetTypes();
+            var types = from t in ass
+                        let attributes = t.GetCustomAttributes(typeof(NotificationAttribute), true)
+                        where attributes != null && attributes.Length > 0
+                        select new { Type = t, Attributes = attributes.Cast<NotificationAttribute>() };
+
+            return types.Select(x => x.Type).ToList();
         }
 
         [Route("notifications/data/{type}")]
         public HttpResponseMessage GetNotificationScript(string type)
         {
-            var t = Type.GetType(type);
+            var notificationTypes = FindNotificationConfigurationTypes();
+
+            var t = notificationTypes.First(x => x.Name.Equals(type));
 
             if (t == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
 
@@ -174,9 +217,10 @@ namespace InboxWatcher
         [Route("notifications")]
         public HttpResponseMessage PostNotification(Dictionary<string, object> data)
         {
+            var notificationTypes = FindNotificationConfigurationTypes();
+
             //determine type of notification
-            string notificationType = data.First(x => x.Key.Equals("Type")).Value.ToString();
-            var t = Type.GetType(notificationType);
+            var t = notificationTypes.First(x => x.Name.Equals(data.First(y => y.Key.Equals("Type")).Value.ToString()));
 
             //get the notification's ID.  If -1 it's a new notification otherwise we are editing an existing notification
             var id = int.Parse(data.First(x => x.Key.Equals("Id")).Value.ToString());
@@ -227,7 +271,18 @@ namespace InboxWatcher
                 }
             }
 
+            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
+
             return new HttpResponseMessage(HttpStatusCode.Accepted);
+        }
+
+        private HttpResponseMessage RedirectToUi(HttpRequestMessage request)
+        {
+            var response = request.CreateResponse(HttpStatusCode.Redirect);
+            var url = request.RequestUri.GetLeftPart(UriPartial.Authority);
+            response.Headers.Location = new Uri(url + "/config/ui");
+
+            return response;
         }
     }
 }

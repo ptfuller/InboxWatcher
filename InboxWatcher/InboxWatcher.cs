@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,7 +19,7 @@ namespace InboxWatcher
 {
     public partial class InboxWatcher : ServiceBase
     {
-        public static List<ImapMailBox> MailBoxes { get; set; } = new List<ImapMailBox>();
+        public static List<ImapMailBox> MailBoxes { get; set; }
 
         public InboxWatcher()
         {
@@ -30,7 +32,7 @@ namespace InboxWatcher
             Debugger.Launch();
 
             StartWebApi();
-
+            
             ConfigureMailBoxes();
         }
 
@@ -45,7 +47,7 @@ namespace InboxWatcher
             WebApp.Start<WebApiStartup>(baseAddress);
         }
 
-        private IEnumerable<IClientConfiguration> GetConfigs()
+        private static IEnumerable<IClientConfiguration> GetConfigs()
         {
             using (var ctx = new MailModelContainer())
             {
@@ -53,7 +55,7 @@ namespace InboxWatcher
             }
         }
 
-        private IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
+        private static IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
         {
             var notifications = new List<AbstractNotification>();
 
@@ -75,8 +77,10 @@ namespace InboxWatcher
             return notifications;
         }
 
-        private void ConfigureMailBoxes()
+        public static void ConfigureMailBoxes()
         {
+            MailBoxes = new List<ImapMailBox>();
+
             //get configuration objects from database
             var configs = GetConfigs();
 
