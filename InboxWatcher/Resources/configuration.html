@@ -15,6 +15,8 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
 
     <script src="http://cdn.jsdelivr.net/jquery.validation/1.14.0/jquery.validate.min.js"></script>
+
+    <link rel="stylesheet" href="/css/dashboard.css" />
 </head>
 <body>
 
@@ -305,7 +307,7 @@
 
         function SetupTable() {
 
-            $.getJSON("/config/all", function(data) {
+            $.getJSON("/config/", function(data) {
                 var items = [];
 
                 for (var i = 0; i < data.length; i++) {

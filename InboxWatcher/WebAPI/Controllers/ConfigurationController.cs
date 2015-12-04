@@ -32,20 +32,16 @@ namespace InboxWatcher
 
             var model = new HttpNotification();
 
-            var parsedView = Engine.Razor.RunCompile(
-                Resources.configuration,
-                "templateKey", 
-                modelType: typeof(HttpNotification),
-                model: model);
+            var content = new StringContent(Resources.configuration);
 
-            response.Content = new StringContent(parsedView);
+            response.Content = content;
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/html");
             
             return response;
         }
 
         [Route("{id:int}")]
-        public ImapMailBoxConfiguration Get(int id)
+        public IClientConfiguration Get(int id)
         {
             using (var ctx = new MailModelContainer())
             {
@@ -56,7 +52,8 @@ namespace InboxWatcher
             }
         }
 
-        [Route("all")]
+        [Route("")]
+        [HttpGet]
         public IEnumerable<IClientConfiguration> GetMailBoxConfigurations()
         {
             using (var ctx = new MailModelContainer())
