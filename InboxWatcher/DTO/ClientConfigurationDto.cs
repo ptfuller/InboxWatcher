@@ -28,5 +28,21 @@ namespace InboxWatcher.DTO
 
             return config;
         }
+
+        public ClientConfigurationDto()
+        {
+            
+        }
+
+        public ClientConfigurationDto(IClientConfiguration conf)
+        {
+            UserName = conf.UserName;
+            Password = conf.Password;
+            HostName = conf.HostName;
+            Port = conf.Port;
+            UseSecure = conf.UseSecure;
+            MailBoxName = conf.MailBoxName;
+            Id = conf.Id;
+        }
     }
 }

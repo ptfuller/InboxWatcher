@@ -242,8 +242,9 @@
     <Compile Include="WebAPI\Controllers\ConfigurationController.cs" />
     <Compile Include="WebAPI\Controllers\DashboardController.cs" />
     <Compile Include="WebAPI\Controllers\HelloController.cs" />
-    <Compile Include="WebAPI\Controllers\JqueryController.cs" />
+    <Compile Include="WebAPI\Controllers\ContentController.cs" />
     <Compile Include="WebAPI\Controllers\MailController.cs" />
+    <Compile Include="WebAPI\Controllers\NotificationController.cs" />
     <Compile Include="WebAPI\WebApiStartup.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -286,9 +287,12 @@
       <LastGenOutput>MailModel.cs</LastGenOutput>
       <DependentUpon>MailModel.edmx</DependentUpon>
     </Content>
+    <Content Include="Resources\backbone.js" />
     <Content Include="Resources\configuration.html" />
     <Content Include="Resources\dashboard.css" />
     <Content Include="Resources\dashboard.html" />
+    <Content Include="Resources\epoxy.js" />
+    <Content Include="Resources\underscore.js" />
     <None Include="packages.config" />
     <None Include="Resources\jquery-2.1.4.min.js" />
   </ItemGroup>

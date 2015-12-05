@@ -13,14 +13,24 @@ namespace InboxWatcher.WebAPI.Controllers
 {
     public class MailController : ApiController
     {
+        [Route("mailboxes/{mailBoxName}/emails")]
+        [HttpGet]
+        public IEnumerable<Email> GetEmails(string mailBoxName)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                return ctx.ImapMailBoxConfigurations.First(x => x.MailBoxName.Equals(mailBoxName)).Emails.ToList();
+            }
+        }
+
         [Route("mailboxes")]
         [HttpGet]
         public IEnumerable<string> GetMailboxes()
         {
-            return InboxWatcher.MailBoxes.Select(x => x.MailBoxName).ToList();
+            return InboxWatcher.MailBoxes != null && InboxWatcher.MailBoxes.Count > 0 ? InboxWatcher.MailBoxes.Select(x => x.MailBoxName).ToList() : new List<string>();
         }
 
-        [Route("mailboxes/{mailBoxName}/messages")]
+        [Route("mailboxes/{mailBoxName}")]
         [HttpGet]
         public IEnumerable<Summary> Get(string mailBoxName)
         {
@@ -28,7 +38,7 @@ namespace InboxWatcher.WebAPI.Controllers
             return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList();
         }
 
-        [Route("mailboxes/{mailBoxName}/messages/{uniqueId}")]
+        [Route("mailboxes/{mailBoxName}/{uniqueId}")]
         [HttpGet]
         public Message Get(string mailBoxName, uint uniqueId)
         {
@@ -36,7 +46,7 @@ namespace InboxWatcher.WebAPI.Controllers
             return new Message(selectedMailBox?.GetMessage(uniqueId));
         }
 
-        [Route("mailboxes/{mailBoxName}/messages/{uniqueId}/sendto/{emailDestination}")]
+        [Route("mailboxes/{mailBoxName}/{uniqueId}/sendto/{emailDestination}")]
         [HttpGet]
         public string Get(string mailBoxName, uint uniqueId, string emailDestination)
         {

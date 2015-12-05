@@ -61,18 +61,38 @@ namespace InboxWatcher.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to //     Backbone.js 1.2.3
+        ///
+        /////     (c) 2010-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters &amp; Editors
+        /////     Backbone may be freely distributed under the MIT license.
+        /////     For all details and documentation:
+        /////     http://backbonejs.org
+        ///
+        ///(function (factory) {
+        ///
+        ///    // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
+        ///    // We use `self` instead of `window` for `WebWorker` support.
+        ///    var root = (typeof self == &apos;object&apos; &amp;&amp; self.self == self &amp;&amp;  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string backbone {
+            get {
+                return ResourceManager.GetString("backbone", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;!DOCTYPE html&gt;
         ///
         ///&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
         ///&lt;head&gt;
         ///    &lt;meta charset=&quot;utf-8&quot;/&gt;
         ///    &lt;title&gt;Configuration&lt;/title&gt;
-        ///    &lt;script src=&quot;/api/Jquery&quot;&gt;&lt;/script&gt;
-        ///    &lt;!-- Latest compiled and minified CSS --&gt;
-        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css&quot; integrity=&quot;sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==&quot; crossorigin=&quot;anonymous&quot;&gt;
+        ///    &lt;script src=&quot;/js/jquery.js&quot;&gt;&lt;/script&gt;
+        ///    &lt;script src=&quot;/js/underscore.js&quot;&gt;&lt;/script&gt;
+        ///    &lt;script src=&quot;/js/backbone.js&quot;&gt;&lt;/script&gt;
         ///
-        ///    &lt;!-- Optional theme --&gt;
-        ///    &lt;link  [rest of string was truncated]&quot;;.
+        ///    &lt;!-- Latest compiled and minified CSS --&gt;
+        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css&quot; integrity=&quot;sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7A [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string configuration {
             get {
@@ -85,13 +105,16 @@ namespace InboxWatcher.Properties {
         ///
         ///&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
         ///&lt;head&gt;
-        ///    &lt;meta charset=&quot;utf-8&quot; /&gt;
-        ///    &lt;title&gt;Inbox Watcher Dashboard&lt;/title&gt;
-        ///    &lt;script src=&quot;/api/Jquery&quot;&gt;&lt;/script&gt;
-        ///    &lt;!-- Latest compiled and minified CSS --&gt;
-        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css&quot; integrity=&quot;sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==&quot; crossorigin=&quot;anonymous&quot;&gt;
+        ///    &lt;meta charset=&quot;utf-8&quot;/&gt;
+        ///    &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt;
+        ///    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
         ///
-        ///    &lt;!-- Optional theme --&gt;        /// [rest of string was truncated]&quot;;.
+        ///    &lt;title&gt;Inbox Watcher Dashboard&lt;/title&gt;
+        ///
+        ///    &lt;script src=&quot;/api/Jquery&quot;&gt;&lt;/script&gt;
+        ///
+        ///    &lt;!-- Latest compiled and minified CSS --&gt;
+        ///    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css&quot; integrity=&quot;sha384-1q8mTJOA [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string dashboard {
             get {
@@ -146,12 +169,50 @@ namespace InboxWatcher.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to // Backbone.Epoxy 1.3.3
+        ///// (c) 2015 Greg MacWilliam
+        ///// Freely distributed under the MIT license
+        ///// http://epoxyjs.org
+        ///(function (t, e) { &quot;undefined&quot; != typeof exports ? module.exports = e(require(&quot;underscore&quot;), require(&quot;backbone&quot;)) : &quot;function&quot; == typeof define &amp;&amp; define.amd ? define([&quot;underscore&quot;, &quot;backbone&quot;], e) : e(t._, t.Backbone) })(this, function (t, e) { function n(t, e, n) { return t._super.prototype[e].apply(t, n) } function i(e, n, r, o) { for (var s in n) if (n.hasOwnProperty(s)) { var u = n[ [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string epoxy {
+            get {
+                return ResourceManager.GetString("epoxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to /*! jQuery v2.1.4 | (c) 2005, 2015 jQuery Foundation, Inc. | jquery.org/license */
         ///!function(a,b){&quot;object&quot;==typeof module&amp;&amp;&quot;object&quot;==typeof module.exports?module.exports=a.document?b(a,!0):function(a){if(!a.document)throw new Error(&quot;jQuery requires a window with a document&quot;);return b(a)}:b(a)}(&quot;undefined&quot;!=typeof window?window:this,function(a,b){var c=[],d=c.slice,e=c.concat,f=c.push,g=c.indexOf,h={},i=h.toString,j=h.hasOwnProperty,k={},l=a.document,m=&quot;2.1.4&quot;,n=function(a,b){return new n.fn.init(a,b)},o=/^[ [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string jquery_2_1_4_min {
             get {
                 return ResourceManager.GetString("jquery_2_1_4_min", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to //     Underscore.js 1.8.3
+        /////     http://underscorejs.org
+        /////     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters &amp; Editors
+        /////     Underscore may be freely distributed under the MIT license.
+        ///
+        ///(function () {
+        ///
+        ///    // Baseline setup
+        ///    // --------------
+        ///
+        ///    // Establish the root object, `window` in the browser, or `exports` on the server.
+        ///    var root = this;
+        ///
+        ///    // Save the previous value of the `_` variable.
+        ///    var previousUnderscore = root._;
+        ///
+        ///    // Save bytes in [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string underscore {
+            get {
+                return ResourceManager.GetString("underscore", resourceCulture);
             }
         }
     }
