@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -107,6 +108,40 @@ namespace InboxWatcher
         {
             DoneToken.Cancel();
             IdleTask.Wait(5000);
+        }
+
+        public IEnumerable<IMailFolder> GetMailFolders()
+        {
+            if(ImapClient.IsIdle) StopIdle();
+
+            if(ImapClient.Inbox.IsOpen) ImapClient.Inbox.Close();
+
+            var allFolders = new List<IMailFolder>();
+            var root = ImapClient.GetFolder(ImapClient.PersonalNamespaces[0]);
+            allFolders.AddRange(GetMoreFolders(root));
+
+            ImapClient.Inbox.Open(FolderAccess.ReadWrite);
+
+            StartIdling();
+
+            return allFolders;
+        }
+
+        protected IEnumerable<IMailFolder> GetMoreFolders(IMailFolder folder)
+        {
+            var results = new List<IMailFolder>();
+
+            foreach (var f in folder.GetSubfolders())
+            {
+                results.Add(f);
+
+                if (f.Attributes.HasFlag(FolderAttributes.HasChildren))
+                {
+                    results.AddRange(GetMoreFolders(f));
+                }
+            }
+
+            return results;
         }
     }
 }

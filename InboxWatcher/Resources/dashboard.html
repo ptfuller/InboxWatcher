@@ -101,17 +101,19 @@
                 <div class="table-responsive">
                     <table class="wrap-table table table-bordered table-condensed table-hover">
                         <thead>
-                            <tr>
-                                <th>Sent From</th>
-                                <th style="width:40%">Subject</th>
-                                <th>Time Received</th>
-                                <th>CC'd</th>
-                                <th>UniqueID</th>
-                            </tr>
+                        <tr>
+                            <th>Sent From</th>
+                            <th style="width: 40%">Subject</th>
+                            <th>Time Received</th>
+                            <th>CC'd</th>
+                            <th>UniqueID</th>
+                        </tr>
                         </thead>
                         <tbody id="mailTable"></tbody>
                     </table>
                 </div>
+                <h2 class="sub-header" id="foldersHeader"></h2>
+                <div id="folders"></div>
             </div>
         </div>
     </div>
@@ -235,7 +237,9 @@ $(document).ready(function (){
 		        notifications = new NotificationCollection();
 				notifications.url = 'notifications/mailboxes/' + val;
 				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
-            
+
+		    GetFolders(val);
+
 				$(function () {
 				    $('[data-toggle="tooltip"]').tooltip({
 				        container: 'body'
@@ -260,6 +264,8 @@ $(document).ready(function (){
 				notifications.url = 'notifications/mailboxes/' + MailBoxes[0];
 				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
 
+	    GetFolders(MailBoxes[0]);
+
 				$(function () {
 				    $('[data-toggle="tooltip"]').tooltip({
 				        container: 'body'
@@ -268,6 +274,19 @@ $(document).ready(function (){
 
 	});
 });
+
+        function GetFolders(val) {
+            $.getJSON('/mailboxes/' + val + '/folders', function (folders) {
+                var f = [];
+                f.push('<button class="btn btn-default" data-toggle="collapse" data-target="#flist">Folders</button>');
+                f.push('<ul class="list-unstyled collapse" id="flist">');
+                $.each(folders, function (key, val) {
+                    f.push('<li><p>' + val + '</p></li>');
+                });
+                f.push('</ul>');
+                $("#folders").html(f.join(""));
+            });
+        }
     </script>
 </body>
 </html>

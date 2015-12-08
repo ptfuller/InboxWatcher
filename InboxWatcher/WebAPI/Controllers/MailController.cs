@@ -43,6 +43,14 @@ namespace InboxWatcher.WebAPI.Controllers
             }
         }
 
+        [Route("mailboxes/{mailBoxName}/folders")]
+        [HttpGet]
+        public IEnumerable<string> GetFolders(string mailBoxName)
+        {
+            var mailbox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            return mailbox?.EmailFolders.Select(x => x.FullName);
+        }
+
         [Route("mailboxes")]
         [HttpGet]
         public IEnumerable<string> GetMailboxes()

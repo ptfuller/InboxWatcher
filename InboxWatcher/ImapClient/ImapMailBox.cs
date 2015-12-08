@@ -19,6 +19,7 @@ namespace InboxWatcher
 
         protected List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
+        public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public static ImapClientDirector ImapClientDirector { get; set; }
         public string MailBoxName { get; private set; }
@@ -61,11 +62,14 @@ namespace InboxWatcher
             _imapIdler.MessageExpunged += ImapIdlerOnMessageArrived;
             _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
 
-            _imapIdler.StartIdling();
+            //_imapIdler.StartIdling();
             _imapWorker.StartIdling();
 
             //make worker get initial list of messages and then start idling
             ImapIdlerOnMessageArrived(null, null);
+
+            //get folders
+            EmailFolders = _imapIdler.GetMailFolders();
         }
 
         private bool SetupClients()
