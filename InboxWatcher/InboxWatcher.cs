@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.ServiceProcess;
 using System.Web.Http;
 using InboxWatcher.WebAPI;
@@ -20,6 +21,7 @@ namespace InboxWatcher
     public partial class InboxWatcher : ServiceBase
     {
         public static List<ImapMailBox> MailBoxes { get; set; }
+        public static string ResourcePath { get; private set; }
 
         public InboxWatcher()
         {
@@ -31,13 +33,16 @@ namespace InboxWatcher
             //todo remove
             Debugger.Launch();
 
+            ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
+
             StartWebApi();
             
-            //ConfigureMailBoxes();
+            ConfigureMailBoxes();
         }
 
         protected override void OnStop()
         {
+            
         }
 
 

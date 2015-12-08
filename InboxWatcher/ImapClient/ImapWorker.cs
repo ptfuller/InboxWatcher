@@ -33,7 +33,7 @@ namespace InboxWatcher
             catch (Exception ex)
             {
                 Debug.Write(ex.Message);
-                return null;
+                return new List<IMessageSummary>();
             }
 
             StartIdling();

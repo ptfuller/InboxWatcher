@@ -12,7 +12,7 @@ namespace InboxWatcher
     using System;
     using System.Collections.Generic;
     
-    public partial class EmailLog
+    public partial class EmailLog : IEmailLog
     {
         public int Id { get; set; }
         public string TakenBy { get; set; }

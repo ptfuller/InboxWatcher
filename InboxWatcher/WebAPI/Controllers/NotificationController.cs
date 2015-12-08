@@ -27,6 +27,17 @@ namespace InboxWatcher.WebAPI.Controllers
             }
         }
 
+        [Route("mailboxes/{mbname}")]
+        [HttpGet]
+        public IEnumerable<NotificationConfiguration> GetNotificationConfigurations(string mbname)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selectedNotifications = ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfiguration.MailBoxName.Equals(mbname)).ToList();
+                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[1]);
+                return selectedNotifications;
+            }
+        }
 
         [Route("{id:int}")]
         [HttpGet]

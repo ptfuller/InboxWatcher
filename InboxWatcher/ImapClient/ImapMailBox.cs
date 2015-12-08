@@ -23,6 +23,9 @@ namespace InboxWatcher
         public static ImapClientDirector ImapClientDirector { get; set; }
         public string MailBoxName { get; private set; }
 
+        public DateTime WorkerStartTime { get; private set; } 
+        public DateTime IdlerStartTime { get; private set; }
+
         public event EventHandler NewMessageReceived;
         public event EventHandler MessageRemoved;
 
@@ -70,7 +73,9 @@ namespace InboxWatcher
             try
             {
                 _imapWorker = new ImapWorker(ImapClientDirector);
+                WorkerStartTime = DateTime.Now;
                 _imapIdler = new ImapIdler(ImapClientDirector);
+                IdlerStartTime = DateTime.Now;
             }
             catch (AggregateException ex)
             {
@@ -153,7 +158,7 @@ namespace InboxWatcher
         }
 
 
-        //this probably doesn't belong here - maybe another class has this responsibility?
+        //todo this probably doesn't belong here - maybe another class has this responsibility?
         public bool SendMail(uint uniqueId, string emailDestination)
         {
             try

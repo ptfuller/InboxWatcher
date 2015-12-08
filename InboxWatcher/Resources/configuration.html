@@ -2,185 +2,181 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
     <title>Configuration</title>
     <script src="/js/jquery.js"></script>
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/js/epoxy.js"></script>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/bootstrap.css" />
 
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
 
 
-    <link rel="stylesheet" href="/css/dashboard.css"/>
+    <link rel="stylesheet" href="/css/dashboard.css" />
 </head>
 <body>
 
-<nav class="navbar navbar-inverse navbar-fixed-top">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Inbox Watcher</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/configs/ui">Settings</a></li>
+                    <li><a href="/documentation">Help</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
     <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">Inbox Watcher</a>
-        </div>
-        <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="/dashboard">Dashboard</a></li>
-                <li><a href="/config/ui">Settings</a></li>
-                <li><a href="/documentation">Help</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<div class="container-fluid">
-
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Inbox Watcher Configuration</h2>
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Inbox Watcher Configuration</h2>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    Current Mail Box Configurations:
+        <div class="row">
+            <div class="col-md-8">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Current Mail Box Configurations:
+                    </div>
+                    <div class="panel-body">
+                        <div id="allConfigs">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Mail Box Name</th>
+                                        <th>Host Name</th>
+                                        <th>Port</th>
+                                        <th>User Name</th>
+                                        <th>Password</th>
+                                        <th>Secure</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mailboxtable"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <div id="allConfigs">
-                        <table class="table table-striped table-hover">
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Selected Mail Box Notifications:
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-striped table-hover" id="notificationsTable">
                             <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Mail Box Name</th>
-                                <th>Host Name</th>
-                                <th>Port</th>
-                                <th>User Name</th>
-                                <th>Password</th>
-                                <th>Secure</th>
-                            </tr>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Notification Type</th>
+                                    <th>Mail Box ID</th>
+                                </tr>
                             </thead>
-                            <tbody id="mailboxtable"></tbody>
+                            <tbody id="notificationsTableBody"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    Selected Mail Box Notifications:
-                </div>
-                <div class="panel-body">
-                    <table class="table table-striped table-hover" id="notificationsTable">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Notification Type</th>
-                            <th>Mail Box ID</th>
-                        </tr>
-                        </thead>
-                        <tbody id="notificationsTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    Add/Edit a Mail Box:
-                </div>
-                <div class="panel-body">
-                    <div class="form-horizontal" id="newMailBoxForm">
-                        <input type="hidden" name="id" id="mailBoxId" data-bind="value:Id"/>
-                        <div class="form-group">
-                            <div class="col-md-12">
-                                <label for="inputMailBoxName">Mail Box Name: </label>
-                                <input type="text" name="mailboxname" id="inputMailBoxName" class="form-control" data-bind="value:MailBoxName"/>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Add/Edit a Mail Box:
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-horizontal" id="newMailBoxForm">
+                            <input type="hidden" name="id" id="mailBoxId" data-bind="value:Id" />
+                            <div class="form-group">
+                                <div class="col-md-12">
+                                    <label for="inputMailBoxName">Mail Box Name: </label>
+                                    <input type="text" name="mailboxname" id="inputMailBoxName" class="form-control" data-bind="value:MailBoxName" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-md-6">
-                                <label for="hostName">Host Name: </label>
-                                <input type="text" name="hostname" id="hostName" class="form-control" data-bind="value:HostName"/>
+                            <div class="form-group">
+                                <div class="col-md-6">
+                                    <label for="hostName">Host Name: </label>
+                                    <input type="text" name="hostname" id="hostName" class="form-control" data-bind="value:HostName" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="port">Port: </label>
+                                    <input type="number" name="port" id="port" class="form-control" data-bind="value:Port" />
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" id="useSecure" name="UseSecure" data-bind="checked:UseSecure" /> Use Secure?
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label for="port">Port: </label>
-                                <input type="number" name="port" id="port" class="form-control" data-bind="value:Port"/>
+                            <div class="form-group">
+                                <div class="col-md-6">
+                                    <label for="userName">User Name: </label>
+                                    <input type="text" name="username" id="userName" class="form-control" data-bind="value:UserName" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="password">Password: </label>
+                                    <input type="text" name="password" id="password" class="form-control" data-bind="value:Password" />
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="checkbox">
-                                    <label>
-                                        <input type="checkbox" id="useSecure" name="UseSecure" data-bind="checked:UseSecure"/> Use Secure?
-                                    </label>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-success newBtn">Create as new MailBox</button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-primary subBtn">Save changes to MailBox</button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-danger delBtn">Delete MailBox</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <div class="col-md-6">
-                                <label for="userName">User Name: </label>
-                                <input type="text" name="username" id="userName" class="form-control" data-bind="value:UserName"/>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="password">Password: </label>
-                                <input type="text" name="password" id="password" class="form-control" data-bind="value:Password"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-success newBtn">Create as new MailBox</button>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-primary subBtn">Save changes to MailBox</button>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-danger delBtn">Delete MailBox</button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    Add/Edit Mail Box Notification:
-                </div>
-                <div class="panel-body">
-                    <div class="form">
-                        <div class="form-group">
-                            <select class="form-control" id="notificationTypeSelect">
+            <div class="col-md-6">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        Add/Edit Mail Box Notification:
+                    </div>
+                    <div class="panel-body">
+                        <div class="form">
+                            <div class="form-group">
+                                <select class="form-control" id="notificationTypeSelect"></select>
+                            </div>
+                            <div id="notificationFormArea">
 
-                            </select>
-                        </div>
-                        <div id="notificationFormArea">
-
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-danger" id="notificationDelete">Delete Notification</button>
-                            <button class="btn btn-info" id="notificationTest">Test Notification</button>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-danger" id="notificationDelete">Delete Notification</button>
+                                <button class="btn btn-info" id="notificationTest">Test Notification</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>
-<script type="text/template" id="config-item-templ"></script>
+<script type="text/template" id="config-item-templ">
+</script>
 <script>
 
     var SELECTEDMAILBOX = -1;
@@ -196,7 +192,7 @@
             UseSecure: null,
             MailBoxName: null
         }
-        
+
     });
 
     var NotificationModel = Backbone.Model.extend({
@@ -229,7 +225,7 @@
 
         onClickRow: function (evt) {
             evt.preventDefault();
-            
+
             var id = $(evt.currentTarget).data("id");
 
             SELECTEDMAILBOX = id;
@@ -242,11 +238,11 @@
 
             console.log("clicked item with id: " + id);
 
-            
+
             mbView.onRemove();
-                
+
             mbView = new MailBoxBindView({ model: item });
-            
+
         },
 
         render: function() {
@@ -357,7 +353,7 @@
             $("#notificationDelete").off();
             $("#notificationTest").off();
             var notType = $('td', this)[1];
-            
+
             $("#notificationTypeSelect").val($(notType).text());
             $("#notificationsTable tr").removeClass('info');
             $(this).addClass('info');
@@ -392,7 +388,7 @@
             });
         });
     });
-    
+
 
     function NewNotification(selection) {
         $.getScript("/notifications/data/" + selection, function () {

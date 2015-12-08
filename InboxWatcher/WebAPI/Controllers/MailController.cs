@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Web.Http;
+using InboxWatcher.DTO;
 using MailKit;
 using MimeKit;
 using Newtonsoft.Json;
@@ -13,13 +16,30 @@ namespace InboxWatcher.WebAPI.Controllers
 {
     public class MailController : ApiController
     {
-        [Route("mailboxes/{mailBoxName}/emails")]
+        [Route("mailboxes/{mailBoxName}/emails/{fromtoday:bool?}")]
         [HttpGet]
-        public IEnumerable<Email> GetEmails(string mailBoxName)
+        public IEnumerable<IEmail> GetEmails(string mailBoxName, bool fromtoday = false)
         {
             using (var ctx = new MailModelContainer())
             {
-                return ctx.ImapMailBoxConfigurations.First(x => x.MailBoxName.Equals(mailBoxName)).Emails.ToList();
+                var emails = ctx.Emails.Where(x => x.ImapMailBoxConfigurationId == ctx.ImapMailBoxConfigurations.FirstOrDefault(y => y.MailBoxName.Equals(mailBoxName)).Id).Include(l => l.EmailLogs);
+
+                if (fromtoday)
+                    emails =
+                        emails.Where(
+                            x =>
+                                x.TimeReceived.Year == DateTime.Now.Year && 
+                                x.TimeReceived.Month == DateTime.Now.Month &&
+                                x.TimeReceived.Day == DateTime.Now.Day);
+
+                var emailDtos = new List<IEmail>();
+
+                foreach (var email in emails)
+                {
+                    emailDtos.Add(new EmailDto(email));
+                }
+
+                return emailDtos;
             }
         }
 
@@ -34,7 +54,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public IEnumerable<Summary> Get(string mailBoxName)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
             return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList();
         }
 

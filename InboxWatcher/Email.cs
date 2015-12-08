@@ -12,7 +12,7 @@ namespace InboxWatcher
     using System;
     using System.Collections.Generic;
     
-    public partial class Email
+    public partial class Email : IEmail
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Email()

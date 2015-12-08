@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Web.Http;
@@ -12,7 +13,8 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage Get()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content = new StringContent(Resources.jquery_2_1_4_min);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery-2.1.4.min.js");
+            response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
 
@@ -23,7 +25,8 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetUnderscore()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content = new StringContent(Resources.underscore);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "underscore.js");
+            response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
 
@@ -34,7 +37,8 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetEpoxy()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content = new StringContent(Resources.epoxy);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "epoxy.js");
+            response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
 
@@ -45,7 +49,8 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetBackBone()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content = new StringContent(Resources.backbone);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "backbone.js");
+            response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
 
@@ -56,7 +61,20 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetCss()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            response.Content = new StringContent(Resources.dashboard1);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "dashboard.css");
+            response.Content = new StringContent(File.ReadAllText(content));
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/css");
+
+            return response;
+        }
+
+        [Route("css/bootstrap.css")]
+        public HttpResponseMessage GetBootstrapCss()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "bootstrap.css");
+            response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/css");
 

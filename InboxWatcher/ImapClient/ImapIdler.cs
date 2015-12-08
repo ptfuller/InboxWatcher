@@ -50,6 +50,27 @@ namespace InboxWatcher
             IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
 
             IdleLoop();
+
+            //try
+            //{
+            //    IdleTask.Wait();
+            //}
+            //catch (AggregateException ae)
+            //{
+            //    ae.Handle((x) =>
+            //    {
+            //        Debug.WriteLine(x);
+            //        if (x is InvalidOperationException)
+            //        {
+            //            AreEventsSubscribed = false;
+            //            ImapClient.Dispose();
+            //            Setup();
+            //            StartIdling();
+            //            return true;
+            //        }
+            //        return false;
+            //    });
+            //}
         }
 
         private void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)

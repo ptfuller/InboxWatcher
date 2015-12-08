@@ -29,10 +29,10 @@ namespace InboxWatcher
         public HttpResponseMessage Get()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
+            
+            var configFile = File.ReadAllText(Path.Combine(InboxWatcher.ResourcePath, "configuration.html"));
 
-            var model = new HttpNotification();
-
-            var content = new StringContent(Resources.configuration);
+            var content = new StringContent(configFile);
 
             response.Content = content;
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/html");

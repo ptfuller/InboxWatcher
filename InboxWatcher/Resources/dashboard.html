@@ -2,7 +2,7 @@
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -12,16 +12,12 @@
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/js/epoxy.js"></script>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <link rel="stylesheet" href="/css/dashboard.css"/>
+    <link rel="stylesheet" href="/css/bootstrap.css"/>
 
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="/css/dashboard.css" />
 
 </head>
 <body>
@@ -40,7 +36,7 @@
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li><a href="/dashboard">Dashboard</a></li>
-                    <li><a href="/config/ui">Settings</a></li>
+                    <li><a href="/configs/ui">Settings</a></li>
                     <li><a href="/documentation">Help</a></li>
                 </ul>
             </div>
@@ -50,74 +46,228 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-3 col-md-2 sidebar">
-                <ul class="nav nav-sidebar">
-                    <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
-                    <li><a href="#">Reports</a></li>
-                    <li><a href="#">Analytics</a></li>
-                    <li><a href="#">Export</a></li>
-                </ul>
-                <ul class="nav nav-sidebar">
-                    <li><a href="">Nav item</a></li>
-                    <li><a href="">Nav item again</a></li>
-                    <li><a href="">One more nav</a></li>
-                    <li><a href="">Another nav item</a></li>
-                    <li><a href="">More navigation</a></li>
-                </ul>
-                <ul class="nav nav-sidebar">
-                    <li><a href="">Nav item again</a></li>
-                    <li><a href="">One more nav</a></li>
-                    <li><a href="">Another nav item</a></li>
-                </ul>
+                <strong>Active Mail Boxes:</strong>
+                <ul class="nav nav-sidebar" id="mailBoxList"></ul>
             </div>
-            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-                <h1 class="page-header">Dashboard</h1>
+            <div class="col-sm-9 main">
+                <h1 class="page-header">Inbox Watcher Dashboard</h1>
 
                 <div class="row placeholders">
                     <div class="col-xs-6 col-sm-3 placeholder">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-                        <h4>Label</h4>
-                        <span class="text-muted">Something else</span>
+                        <div class="circle circle-border">
+                            <div class="circle-inner">
+                                <div class="score-text" id="totalEmailsToday">
+                                    0
+                                </div>
+                            </div>
+                        </div>
+                        <h4>Emails Received</h4>
+                        <span class="text-muted">Today</span>
+                        </div>
+                        <div class="col-xs-6 col-sm-3 placeholder">
+                            <div class="circle circle-border">
+                                <div class="circle-inner">
+                                    <div class="score-text" id="totalEmails">
+                                        0
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>Total Emails</h4>
+                            <span class="text-muted">In Database</span>
+                        </div>
+                        <div class="col-xs-6 col-sm-3 placeholder">
+                            <div class="circle circle-border">
+                                <div class="circle-inner">
+                                    <div class="score-text" id="attachedNotifications">
+                                        0
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>Attached Notifications</h4>
+                        </div>
+                        <div class="col-xs-6 col-sm-3 placeholder">
+                            <div class="circle circle-border">
+                                <div class="circle-inner">
+                                    <div class="score-text">
+                                        0
+                                    </div>
+                                </div>
+                            </div>
+                            <h4>Errors</h4>
+                        </div>
                     </div>
-                    <div class="col-xs-6 col-sm-3 placeholder">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-                        <h4>Label</h4>
-                        <span class="text-muted">Something else</span>
-                    </div>
-                    <div class="col-xs-6 col-sm-3 placeholder">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-                        <h4>Label</h4>
-                        <span class="text-muted">Something else</span>
-                    </div>
-                    <div class="col-xs-6 col-sm-3 placeholder">
-                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAHd3dwAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" width="200" height="200" class="img-responsive" alt="Generic placeholder thumbnail">
-                        <h4>Label</h4>
-                        <span class="text-muted">Something else</span>
-                    </div>
-                </div>
 
-                <h2 class="sub-header">Section title</h2>
+                <h2 class="sub-header" id="dbHeader"></h2>
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="wrap-table table table-bordered table-condensed table-hover">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th>Header</th>
-                                <th>Header</th>
-                                <th>Header</th>
-                                <th>Header</th>
+                                <th>Sent From</th>
+                                <th style="width:40%">Subject</th>
+                                <th>Time Received</th>
+                                <th>CC'd</th>
+                                <th>UniqueID</th>
                             </tr>
                         </thead>
-                        <tbody id="mailTable">
-                            
-                        </tbody>
+                        <tbody id="mailTable"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-<script>
-    
-</script>
 
+    <script>
+var MailBoxes = [];
+var mbId = 0;
+
+var MessageSummaryModel = Backbone.Model.extend({
+    idAttribute: 'UniqueId',
+    defaults: {
+		Subject: null,
+		Received: null,
+		Sender: null,
+		EnvelopeId: null,
+		UniqueId: null,
+		CcLine: null
+    }
+});
+
+var MailModel = Backbone.Model.extend({
+    idAttribute: 'Id',
+    defaults: {
+        Id: null,
+        InQueue: null,
+        Minutes: null,
+        Sender: null,
+        TimeReceived: null,
+        Subject: null,
+        MarkedAsRead: null,
+        BodyText: null,
+        EnvelopeID: null,
+        ImapMailBoxConfigurationId: null
+    }
+});
+
+var NotificationModel = Backbone.Model.extend({
+    idAttribute: 'Id',
+    defaults: {
+        Id: null,
+        ConfigurationXml: null,
+        ImapMailBoxConfigurationId: null,
+        NotificationType: null
+    }
+});
+
+var NotificationCollection = Backbone.Collection.extend({
+    model: NotificationModel
+});
+
+var MailCollection = Backbone.Collection.extend({
+    model: MailModel
+});
+
+var MessageSummaryCollection = Backbone.Collection.extend({
+				model: MessageSummaryModel
+});
+
+var emails;
+var allemails;
+
+var notifications;
+var selectedNotifications;
+
+var SummariesView = Backbone.View.extend({
+	el: '#mailTable',
+	initialize: function() {
+            this.listenTo(this.collection, 'sync change', this.render);
+            this.collection.fetch();
+            this.render();
+        },
+	render: function() {
+		var html = '';
+            this.collection.each(function(m) {
+                html += '<tr data-id="' + m.get('Id') + '">';
+                html += '<td data-toggle="tooltip" data-placement="top" title="' + Object.keys(m.get('Sender')).join(", ") + '">' + Object.keys(m.get('Sender')).join(", ") + '</td>';
+                html += '<td data-toggle="tooltip" data-placement="top" title="' + m.get('Subject') + '">' + m.get('Subject') + '</td>';
+                html += '<td>' + m.get('Received') + '</td>';
+                html += '<td data-toggle="tooltip" data-placement="top" title="' + Object.keys(m.get('CcLine')).join(", ") + '">' + Object.keys(m.get('CcLine')).join(", ") + '</td>';
+                html += '<td>' + m.get('UniqueId') + '</td>';
+                html += '</tr>';
+            });
+            this.$el.html(html);
+            return this;
+	}
+});
+
+$(document).ready(function (){
+
+	$.getJSON('/mailboxes', function(data){
+		var items = [];
+		var count = 0;
+		$.each(data, function(key, val){
+			if (count === 0){
+				items.push('<li class="active"><a id="mailbox' + val + '" href="#">' + val + '</a></li>');
+				$("#dbHeader").text(val + ' Current Messages');
+			} else{
+				items.push('<li><a id="mailbox' + val + '" href="#">' + val + '</a></li>');
+			}
+			MailBoxes.push(val);
+
+			count++;
+		});
+		$("#mailBoxList").append(items);
+
+		$.each(MailBoxes, function(key, val){
+		$('#mailbox' + val).click(function() {
+			$(".page-header").html(val + ' Dashboard');
+				var summaries = new MessageSummaryCollection();
+				summaries.url = 'mailboxes/' + val;
+				var view = new SummariesView({ collection: summaries });
+
+				emails = new MailCollection();
+				emails.url = 'mailboxes/' + val + '/emails/true';
+				emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
+
+				allemails = new MailCollection();
+				allemails.url = 'mailboxes/' + val + '/emails';
+				allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
+
+		        notifications = new NotificationCollection();
+				notifications.url = 'notifications/mailboxes/' + val;
+				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
+            
+				$(function () {
+				    $('[data-toggle="tooltip"]').tooltip({
+				        container: 'body'
+				    });
+				});
+		});
+
+		});
+		$(".page-header").html(MailBoxes[0] + ' Dashboard');
+		var summaries = new MessageSummaryCollection();
+				summaries.url = 'mailboxes/' + MailBoxes[0];
+				var view = new SummariesView({ collection: summaries });
+				emails = new MailCollection();
+				emails.url = 'mailboxes/' + MailBoxes[0] + '/emails/true';
+				emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
+
+				allemails = new MailCollection();
+				allemails.url = 'mailboxes/' + MailBoxes[0] + '/emails';
+				allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
+
+				notifications = new NotificationCollection();
+				notifications.url = 'notifications/mailboxes/' + MailBoxes[0];
+				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
+
+				$(function () {
+				    $('[data-toggle="tooltip"]').tooltip({
+				        container: 'body'
+				    });
+				});
+
+	});
+});
+    </script>
 </body>
 </html>
