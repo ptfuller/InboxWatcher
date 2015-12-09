@@ -35,7 +35,7 @@
             </div>
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li class="active"><a href="/dashboard">Dashboard</a></li>
                     <li><a href="/configs/ui">Settings</a></li>
                     <li><a href="/documentation">Help</a></li>
                 </ul>
@@ -86,9 +86,9 @@
                             <h4>Attached Notifications</h4>
                         </div>
                         <div class="col-xs-6 col-sm-3 placeholder">
-                            <div class="circle circle-border">
-                                <div class="circle-inner">
-                                    <div class="score-text">
+                            <div class="circle circle-border" id="exceptionBorder">
+                                <div class="circle-inner" id="exceptionCircle">
+                                    <div class="score-text" id="exceptions">
                                         0
                                     </div>
                                 </div>
@@ -221,7 +221,7 @@ $(document).ready(function (){
 
 		$.each(MailBoxes, function(key, val){
 		$('#mailbox' + val).click(function() {
-			$(".page-header").html(val + ' Dashboard');
+
 				var summaries = new MessageSummaryCollection();
 				summaries.url = 'mailboxes/' + val;
 				var view = new SummariesView({ collection: summaries });
@@ -238,7 +238,8 @@ $(document).ready(function (){
 				notifications.url = 'notifications/mailboxes/' + val;
 				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
 
-		    GetFolders(val);
+				GetFolders(val);
+		    GetStatus(val);
 
 				$(function () {
 				    $('[data-toggle="tooltip"]').tooltip({
@@ -248,7 +249,7 @@ $(document).ready(function (){
 		});
 
 		});
-		$(".page-header").html(MailBoxes[0] + ' Dashboard');
+		
 		var summaries = new MessageSummaryCollection();
 				summaries.url = 'mailboxes/' + MailBoxes[0];
 				var view = new SummariesView({ collection: summaries });
@@ -265,6 +266,7 @@ $(document).ready(function (){
 				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
 
 	    GetFolders(MailBoxes[0]);
+	    GetStatus(MailBoxes[0]);
 
 				$(function () {
 				    $('[data-toggle="tooltip"]').tooltip({
@@ -285,6 +287,21 @@ $(document).ready(function (){
                 });
                 f.push('</ul>');
                 $("#folders").html(f.join(""));
+            });
+        }
+
+        function GetStatus(val) {
+            $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
+                $("#exceptions").html(exceptions.Exceptions.length);
+                $(".page-header").html(val + ' Dashboard - <small>client started ' + exceptions.StartTime + '</small>');
+
+                if (exceptions.Exceptions.length > 0) {
+                    $("#exceptionBorder").removeClass('circle-border');
+                    $("#exceptionBorder").addClass('circle-border-red');
+                    $("#exceptionCircle").click(function() {
+                        window.location.href = '/mailboxes/' + val + '/status';
+                    });
+                }
             });
         }
     </script>

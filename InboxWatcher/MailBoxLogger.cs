@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Validation;
+using System.Diagnostics;
 using System.Linq;
 using InboxWatcher.Interface;
 using MailKit;
@@ -49,12 +50,12 @@ namespace InboxWatcher
                 {
                     foreach (var eve in ex.EntityValidationErrors)
                     {
-                        Console.WriteLine(
+                        Debug.WriteLine(
                             "Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
                             eve.Entry.Entity.GetType().Name, eve.Entry.State);
                         foreach (var ve in eve.ValidationErrors)
                         {
-                            Console.WriteLine("- Property: \"{0}\", Error: \"{1}\"",
+                            Debug.WriteLine("- Property: \"{0}\", Error: \"{1}\"",
                                 ve.PropertyName, ve.ErrorMessage);
                         }
                     }
@@ -120,6 +121,7 @@ namespace InboxWatcher
                 var selectedEmail = Context.Emails.Where(x => x.ImapMailBoxConfigurationId == config.Id);
                 var result = selectedEmail.First(x => x.EnvelopeID.Equals(message.Envelope.MessageId));
                 result.MarkedAsRead = true;
+                Context.SaveChanges();
                 LogEmailChanged(message, config, "Unknown", "Marked Read");
             }
         }

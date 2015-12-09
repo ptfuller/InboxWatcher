@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using MailKit;
+using MailKit.Net.Imap;
 using MimeKit;
 
 namespace InboxWatcher.ImapClient
@@ -32,8 +33,10 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                Debug.Write(ex.Message);
-                return new List<IMessageSummary>();
+                StopIdle();
+                HandleException(ex);
+                Setup();
+                return results;
             }
 
             StartIdling();
@@ -46,6 +49,17 @@ namespace InboxWatcher.ImapClient
             StopIdle();
 
             var result = ImapClient.Inbox.Fetch(new List<UniqueId> { uid }, MessageSummaryItems.Envelope);
+
+            StartIdling();
+
+            return result.First();
+        }
+
+        public IMessageSummary GetMessageSumamry(int index)
+        {
+            StopIdle();
+
+            var result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope);
 
             StartIdling();
 

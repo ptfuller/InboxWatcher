@@ -127,6 +127,10 @@ position: relative;
 border: 3px solid green;
 }
 
+.circle-border-red {
+    border: 3px solid red;
+}
+
 .circle-solid{
 background-color: whitesmoke;
 }

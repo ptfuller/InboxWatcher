@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
@@ -17,11 +18,12 @@ namespace InboxWatcher.ImapClient
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
 
-        protected bool AreEventsSubscribed = false;
+        protected bool AreEventsSubscribed;
 
         public event EventHandler MessageArrived;
         public event EventHandler MessageExpunged;
         public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
+        public event EventHandler ExceptionHappened;
 
         public ImapIdler(ImapClientDirector director)
         {
@@ -31,8 +33,12 @@ namespace InboxWatcher.ImapClient
 
         protected virtual void Setup()
         {
+            AreEventsSubscribed = false;
+
+            ImapClient?.Dispose();
+
             ImapClient = Director.GetReadyClient();
-            ImapClient.Disconnected += (sender, args) => { ImapClient = Director.GetReadyClient(); };
+            ImapClient.Disconnected += (sender, args) => { Setup(); };
         }
 
         public virtual void StartIdling()
@@ -51,27 +57,6 @@ namespace InboxWatcher.ImapClient
             IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
 
             IdleLoop();
-
-            //try
-            //{
-            //    IdleTask.Wait();
-            //}
-            //catch (AggregateException ae)
-            //{
-            //    ae.Handle((x) =>
-            //    {
-            //        Debug.WriteLine(x);
-            //        if (x is InvalidOperationException)
-            //        {
-            //            AreEventsSubscribed = false;
-            //            ImapClient.Dispose();
-            //            Setup();
-            //            StartIdling();
-            //            return true;
-            //        }
-            //        return false;
-            //    });
-            //}
         }
 
         private void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)
@@ -104,10 +89,35 @@ namespace InboxWatcher.ImapClient
             Timeout.Start();
         }
 
+        public virtual bool IsConnected()
+        {
+            return ImapClient.IsConnected;
+        }
+
+        public virtual bool IsIdle()
+        {
+            return ImapClient.IsIdle;
+        }
+
         protected virtual void StopIdle()
         {
             DoneToken.Cancel();
-            IdleTask.Wait(5000);
+
+            try
+            {
+                IdleTask.Wait(5000);
+            }
+            catch (AggregateException ag)
+            {
+                Debug.WriteLine(ag.Message);
+                HandleException(ag);
+                Setup();
+            }
+        }
+
+        protected void HandleException(Exception ex)
+        {
+            ExceptionHappened?.Invoke(ex, EventArgs.Empty);
         }
 
         public IEnumerable<IMailFolder> GetMailFolders()

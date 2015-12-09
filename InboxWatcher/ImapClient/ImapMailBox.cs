@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using InboxWatcher.DTO;
 using InboxWatcher.Enum;
 using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
@@ -20,6 +23,7 @@ namespace InboxWatcher.ImapClient
 
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
+        public List<Exception> Exceptions = new List<Exception>();
         public static ImapClientDirector ImapClientDirector { get; set; }
         public string MailBoxName { get; private set; }
 
@@ -54,12 +58,18 @@ namespace InboxWatcher.ImapClient
             //if setup fails stop here
             if (!SetupClients())
             {
-                return;
+                Task.Factory.StartNew(() =>
+                {
+                    Thread.Sleep(5000);
+                    Setup();
+                });
             }
 
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
             _imapIdler.MessageExpunged += ImapIdlerOnMessageArrived;
             _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
+            _imapIdler.ExceptionHappened += (sender, args) => Exceptions.Add((Exception) sender);
+            _imapWorker.ExceptionHappened += (sender, args) => Exceptions.Add((Exception) sender);
 
             //_imapIdler.StartIdling();
             _imapWorker.StartIdling();
@@ -69,6 +79,21 @@ namespace InboxWatcher.ImapClient
 
             //get folders
             EmailFolders = _imapIdler.GetMailFolders();
+        }
+
+        public MailBoxStatusDto Status()
+        {
+            var status = new MailBoxStatusDto()
+            {
+                Exceptions = Exceptions,
+                IdlerConnected = _imapIdler.IsConnected(),
+                StartTime = IdlerStartTime.ToLocalTime().ToString("f"),
+                IdlerIdle = _imapIdler.IsIdle(),
+                WorkerConnected = _imapWorker.IsConnected(),
+                WorkerIdle = _imapWorker.IsIdle()
+            };
+
+            return status;
         }
 
         private bool SetupClients()
@@ -84,13 +109,13 @@ namespace InboxWatcher.ImapClient
             {
                 foreach (var exception in ex.InnerExceptions)
                 {
-                    //unable to connect/login
-                    if (exception is SocketException)
+                    Exceptions.Add(exception);
+
+                    Task.Factory.StartNew(() =>
                     {
-                        //unregister this mailbox and GTFO
-                        InboxWatcher.MailBoxes.Remove(this);
-                        return false;
-                    }
+                        Thread.Sleep(5000);
+                        SetupClients();
+                    });
 
                     throw exception;
                 }
@@ -240,9 +265,7 @@ namespace InboxWatcher.ImapClient
 
         private void ImapIdlerOnMessageSeen(object sender, MessageFlagsChangedEventArgs eventArgs)
         {
-            if (eventArgs.UniqueId == null) return;
-
-            var message = _imapWorker.GetMessageSummary((UniqueId) eventArgs.UniqueId);
+            var message = _imapWorker.GetMessageSumamry(eventArgs.Index);
             MailBoxLogger.LogEmailSeen(_config, message);
 
         }

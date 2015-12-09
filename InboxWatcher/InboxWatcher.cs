@@ -11,6 +11,8 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Web.Http;
+using AutoMapper;
+using InboxWatcher.DTO;
 using InboxWatcher.ImapClient;
 using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
@@ -36,11 +38,23 @@ namespace InboxWatcher
             //todo remove
             Debugger.Launch();
 
+            ConfigureAutoMapper();
+
             ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
 
             StartWebApi();
             
             ConfigureMailBoxes();
+        }
+
+        private void ConfigureAutoMapper()
+        {
+            Mapper.Initialize(cfg =>
+            {
+                cfg.CreateMap<Email, EmailDto>()
+                .ForMember(x => x.EmailLogs, opt => opt.Ignore())
+                .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
+            });
         }
 
         protected override void OnStop()

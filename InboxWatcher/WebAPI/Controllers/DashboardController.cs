@@ -12,6 +12,7 @@ namespace InboxWatcher.WebAPI.Controllers
     public class DashboardController : ApiController
     {
         [Route("dashboard", Name = "Dashboard")]
+        [HttpGet, HttpPost, HttpPut, HttpDelete, HttpHead, HttpOptions, AcceptVerbs("PATCH")]
         public HttpResponseMessage Get()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);

@@ -24,7 +24,10 @@ namespace InboxWatcher.WebAPI.Controllers
         {
             using (var ctx = new MailModelContainer())
             {
-                var emails = ctx.Emails.Where(x => x.ImapMailBoxConfigurationId == ctx.ImapMailBoxConfigurations.FirstOrDefault(y => y.MailBoxName.Equals(mailBoxName)).Id).Include(l => l.EmailLogs);
+                var emails = ctx.Emails
+                    .Where(x => x.ImapMailBoxConfigurationId == ctx.ImapMailBoxConfigurations.FirstOrDefault(y => y.MailBoxName.Equals(mailBoxName)).Id)
+                    .Include(l => l.EmailLogs)
+                    .Take(500);
 
                 if (fromtoday)
                     emails =
@@ -41,7 +44,7 @@ namespace InboxWatcher.WebAPI.Controllers
                     emailDtos.Add(new EmailDto(email));
                 }
 
-                return emailDtos;
+                return emailDtos.OrderByDescending(x => x.Id);
             }
         }
 
@@ -90,10 +93,20 @@ namespace InboxWatcher.WebAPI.Controllers
             return "There was a problem sending message " + uniqueId + " to " + emailDestination;
         }
 
+
+        [Route("mailboxes/{mailBoxName}/status")]
+        [HttpGet]
+        public MailBoxStatusDto GetStatus(string mailBoxName)
+        {
+            var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
+
+            return selectedMailBox.Status();
+        }
+
         //Get this email and send it.  Also move it to another folder.  Log that we've done this in the DB.
         //public string Get(string mailBoxName, uint uniqueId, string emailDestination, string moveToFolder)
         //{
-            
+
         //}
     }
 }

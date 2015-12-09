@@ -27,6 +27,11 @@ namespace InboxWatcher.WebAPI
                 defaults: new { id = RouteParameter.Optional }
             );
 
+            config.Routes.MapHttpRoute(
+                name: "Error404",
+                routeTemplate: "{*url}",
+                defaults: new {controller = "Dashboard", action = "Dashboard"});
+
             appBuilder.UseWebApi(config);
 
             config.Formatters.Remove(config.Formatters.XmlFormatter);
