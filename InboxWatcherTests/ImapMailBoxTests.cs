@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher;
+using InboxWatcher.ImapClient;
+using InboxWatcher.Interface;
 using InboxWatcherTests.Properties;
 using MailKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -55,7 +57,7 @@ namespace InboxWatcherTests
         public void TestMailBoxMessageReceived()
         {
             //setup the inbox, idler, and poller client
-            var mailbox = new ImapMailBox(ImapClientDirector.Object, null);
+            var mailbox = new ImapMailBox(ImapClientDirector.Object, new ImapClientConfiguration());
 
             //raise message received
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));

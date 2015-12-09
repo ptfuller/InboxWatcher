@@ -11,7 +11,7 @@ using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Security;
 
-namespace InboxWatcher
+namespace InboxWatcher.Interface
 {
     public interface IImapClient
     {

@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Runtime.Remoting.Messaging;
 using MailKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Notifications
 {
     public static class MessageSummaryToListKeyValuePair
     {

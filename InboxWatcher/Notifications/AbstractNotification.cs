@@ -1,17 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Reflection;
-using System.Security.Policy;
 using System.Xml;
 using System.Xml.Serialization;
 using InboxWatcher.Enum;
 using MailKit;
 using MimeKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Notifications
 {
     public abstract class AbstractNotification
     {

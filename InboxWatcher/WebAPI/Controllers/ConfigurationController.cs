@@ -1,26 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
-using System.Xml;
-using System.Xml.Serialization;
-using InboxWatcher.Attributes;
 using InboxWatcher.DTO;
-using InboxWatcher.Properties;
-using Newtonsoft.Json.Linq;
-using RazorEngine;
-using RazorEngine.Templating;
+using InboxWatcher.Interface;
 
-namespace InboxWatcher
+namespace InboxWatcher.WebAPI.Controllers
 {
     [RoutePrefix("configs")]
     public class ConfigurationController : ApiController

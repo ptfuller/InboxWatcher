@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using MailKit.Net.Smtp;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class SendClient : SmtpClient
     {

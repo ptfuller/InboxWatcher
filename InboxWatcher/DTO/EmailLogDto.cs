@@ -1,4 +1,5 @@
 ﻿using System;
+using InboxWatcher.Interface;
 
 namespace InboxWatcher.DTO
 {

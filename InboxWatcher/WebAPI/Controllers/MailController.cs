@@ -7,6 +7,8 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Web.Http;
 using InboxWatcher.DTO;
+using InboxWatcher.ImapClient;
+using InboxWatcher.Interface;
 using MailKit;
 using MimeKit;
 using Newtonsoft.Json;

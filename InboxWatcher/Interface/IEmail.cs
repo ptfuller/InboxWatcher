@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace InboxWatcher
+namespace InboxWatcher.Interface
 {
     public interface IEmail
     {

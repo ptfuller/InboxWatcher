@@ -1,7 +1,6 @@
-﻿using System.Threading.Tasks;
-using MailKit.Net.Smtp;
+﻿using InboxWatcher.Interface;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class ImapClientDirector
     {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using HtmlAgilityPack;
 
-namespace AlchemyInboxWatcher
+namespace InboxWatcher
 {
     public static class HtmlToText
     {

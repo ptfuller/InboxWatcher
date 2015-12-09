@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using InboxWatcher.Interface;
 
 namespace InboxWatcher.DTO
 {
-    class EmailDto : IEmail
+    public class EmailDto : IEmail
     {
         public int Id { get; set; }
         public bool InQueue { get; set; }
@@ -21,10 +22,7 @@ namespace InboxWatcher.DTO
         public ICollection<IEmailLog> EmailLogs { get; set; }
         public ImapMailBoxConfiguration ImapMailBoxConfiguration { get; set; }
 
-        public EmailDto()
-        {
-            
-        }
+        public EmailDto() { }
 
         public EmailDto(Email email)
         {

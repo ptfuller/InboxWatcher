@@ -1,7 +1,7 @@
 ﻿using InboxWatcher.Enum;
 using MailKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Interface
 {
     public interface INotificationAction
     {

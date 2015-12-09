@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using InboxWatcher.Interface;
 using MailKit;
-using MimeKit;
-using WebGrease.Css.Extensions;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class Summary : ISummary
     {

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Web.Http;
 using InboxWatcher.Attributes;
+using InboxWatcher.Notifications;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
@@ -22,7 +23,7 @@ namespace InboxWatcher.WebAPI.Controllers
             using (var ctx = new MailModelContainer())
             {
                 var selectedNotifications = ctx.NotificationConfigurations.ToList();
-                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[1]);
+                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[2]);
                 return selectedNotifications;
             }
         }
@@ -34,7 +35,7 @@ namespace InboxWatcher.WebAPI.Controllers
             using (var ctx = new MailModelContainer())
             {
                 var selectedNotifications = ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfiguration.MailBoxName.Equals(mbname)).ToList();
-                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[1]);
+                selectedNotifications.ForEach(x => x.NotificationType = x.NotificationType.Split('.')[2]);
                 return selectedNotifications;
             }
         }

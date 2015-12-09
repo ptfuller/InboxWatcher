@@ -1,4 +1,4 @@
-namespace InboxWatcher
+namespace InboxWatcher.Interface
 {
     public interface IEmailLog
     {

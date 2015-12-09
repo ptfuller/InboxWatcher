@@ -5,6 +5,8 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher;
+using InboxWatcher.ImapClient;
+using InboxWatcher.Interface;
 using InboxWatcherTests.Properties;
 using MailKit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -49,22 +51,6 @@ namespace InboxWatcherTests
             ImapClientDirector = new ImapClientDirector(_config);
         }
 
-        [TestMethod]
-        public void TestPollerGetsCallFromIdleLoop()
-        {
-            var director = new Mock<ImapClientDirector>(_config);
-            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
-
-            var inbox = new ImapMailBox(director.Object, null);
-
-            var eventHappened = false;
-
-            _inbox.Object.MessagesArrived += (sender, args) => { eventHappened = true; };
-
-            _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));
-
-            Assert.IsTrue(eventHappened);
-        }
 
         [TestMethod]
         public void TestPollerGetsNewClientOnDisconnect()

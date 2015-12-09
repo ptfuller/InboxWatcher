@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using InboxWatcher;
+using InboxWatcher.ImapClient;
 using InboxWatcherTests.Properties;
 using MailKit.Net.Imap;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

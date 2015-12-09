@@ -7,6 +7,8 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+using InboxWatcher.Interface;
+
 namespace InboxWatcher
 {
     using System;

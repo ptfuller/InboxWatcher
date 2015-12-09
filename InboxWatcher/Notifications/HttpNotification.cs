@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Web;
-using System.Xml;
 using System.Xml.Serialization;
-using InboxWatcher.Enum;
-using MailKit;
-using MimeKit;
-using Newtonsoft.Json;
-using Formatting = Newtonsoft.Json.Formatting;
 using InboxWatcher.Attributes;
+using InboxWatcher.Enum;
+using InboxWatcher.ImapClient;
+using MailKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Notifications
 {
-    [NotificationAttribute("HttpNotification")]
+    [Notification("HttpNotification")]
     public class HttpNotification : AbstractNotification
     {
         [XmlAttribute]

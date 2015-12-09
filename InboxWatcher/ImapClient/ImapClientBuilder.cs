@@ -1,11 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.Net.Sockets;
-using System.Threading.Tasks;
+﻿using InboxWatcher.Interface;
 using MailKit;
-using MailKit.Net.Smtp;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class ImapClientBuilder
     {

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using InboxWatcher.Interface;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     [NotMapped]
     public class ImapClientConfiguration : IClientConfiguration

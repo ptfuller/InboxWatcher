@@ -7,6 +7,8 @@ using System.Net.Http.Formatting;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
+using InboxWatcher.ImapClient;
+using InboxWatcher.Interface;
 using MailKit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

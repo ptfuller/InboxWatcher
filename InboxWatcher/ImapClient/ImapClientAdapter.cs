@@ -7,19 +7,20 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using InboxWatcher.Interface;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Security;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class ImapClientAdapter : IImapClient
     {
-        private readonly ImapClient _imapClient;
+        private readonly MailKit.Net.Imap.ImapClient _imapClient;
 
         public ImapClientAdapter()
         {
-            _imapClient = new ImapClient();
+            _imapClient = new MailKit.Net.Imap.ImapClient();
         }
 
         public Task ConnectAsync(string host, int port = 0, SecureSocketOptions options = SecureSocketOptions.Auto,

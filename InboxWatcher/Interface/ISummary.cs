@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using MimeKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Interface
 {
     public interface ISummary
     {

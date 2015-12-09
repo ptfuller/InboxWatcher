@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using InboxWatcher.Interface;
 
 namespace InboxWatcher.DTO
 {

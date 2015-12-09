@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AlchemyInboxWatcher;
+using InboxWatcher.Interface;
 using MimeKit;
 using MimeKit.Text;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class Message : IMessage
     {

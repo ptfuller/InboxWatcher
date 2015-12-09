@@ -1,18 +1,14 @@
 ﻿using System;
 using System.IO;
-using System.Net.Http;
-using System.Security.Policy;
 using System.Text;
-using System.Web;
-using System.Xml;
 using System.Xml.Serialization;
 using InboxWatcher.Attributes;
 using InboxWatcher.Enum;
 using MailKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.Notifications
 {
-    [NotificationAttribute("TextFileNotification")]
+    [Notification("TextFileNotification")]
     public class TextFileNotification : AbstractNotification
     {
         [XmlAttribute]

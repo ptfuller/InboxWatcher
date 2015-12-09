@@ -6,7 +6,7 @@ using System.Threading;
 using MailKit;
 using MimeKit;
 
-namespace InboxWatcher
+namespace InboxWatcher.ImapClient
 {
     public class ImapWorker : ImapIdler
     {
