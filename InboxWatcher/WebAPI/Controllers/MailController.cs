@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Globalization;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -115,18 +117,18 @@ namespace InboxWatcher.WebAPI.Controllers
             return new Message(selectedMailBox?.GetMessage(uniqueId));
         }
 
-        [Route("mailboxes/{mailBoxName}/{uniqueId}/sendto/{emailDestination}")]
+        [Route("mailboxes/{mailBoxName}/{uniqueId}/sendto/{emailDestination}/{moveToDestinationFolder}")]
         [HttpGet]
-        public string Get(string mailBoxName, uint uniqueId, string emailDestination)
+        public HttpResponseMessage Get(string mailBoxName, uint uniqueId, string emailDestination, bool moveToDestinationFolder = false)
         {
             var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
 
-            if (selectedMailBox.SendMail(uniqueId, emailDestination))
+            if (selectedMailBox.SendMail(uniqueId, emailDestination, moveToDestinationFolder))
             {
-                return "Sending message " + uniqueId + " to " + emailDestination;
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
 
-            return "There was a problem sending message " + uniqueId + " to " + emailDestination;
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
         }
 
 
@@ -139,10 +141,5 @@ namespace InboxWatcher.WebAPI.Controllers
             return selectedMailBox?.Status();
         }
 
-        //Get this email and send it.  Also move it to another folder.  Log that we've done this in the DB.
-        //public string Get(string mailBoxName, uint uniqueId, string emailDestination, string moveToFolder)
-        //{
-
-        //}
     }
 }

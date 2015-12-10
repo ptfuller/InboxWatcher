@@ -27,9 +27,12 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                results.AddRange(ImapClient.Inbox.Fetch(0, -1,
-                    MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
-                    _fetchCancellationToken.Token));
+                lock (ImapClient.SyncRoot)
+                {
+                    results.AddRange(ImapClient.Inbox.Fetch(0, -1,
+                        MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
+                        _fetchCancellationToken.Token));
+                }
             }
             catch (Exception ex)
             {
@@ -48,7 +51,12 @@ namespace InboxWatcher.ImapClient
         {
             StopIdle();
 
-            var result = ImapClient.Inbox.Fetch(new List<UniqueId> { uid }, MessageSummaryItems.Envelope);
+            IList<IMessageSummary> result;
+
+            lock (ImapClient.SyncRoot)
+            {
+                result = ImapClient.Inbox.Fetch(new List<UniqueId> {uid}, MessageSummaryItems.Envelope);
+            }
 
             StartIdling();
 
@@ -59,7 +67,12 @@ namespace InboxWatcher.ImapClient
         {
             StopIdle();
 
-            var result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope);
+            IList<IMessageSummary> result;
+
+            lock (ImapClient.SyncRoot)
+            {
+                result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope);
+            }
 
             StartIdling();
 
@@ -72,8 +85,13 @@ namespace InboxWatcher.ImapClient
 
             var getToken = new CancellationTokenSource();
 
-            var message = ImapClient.Inbox.GetMessage(uid, getToken.Token);
-            
+            MimeMessage message;
+
+            lock (ImapClient.SyncRoot)
+            {
+                message = ImapClient.Inbox.GetMessage(uid, getToken.Token);
+            }
+
             StartIdling();
 
             return message;
@@ -85,15 +103,18 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
+                lock (ImapClient.SyncRoot)
                 {
-                    ImapClient.Inbox.Expunge(new[] {uid});
-                }
-                else
-                {
-                    var delToken = new CancellationTokenSource();
-                    ImapClient.Inbox.AddFlags(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
-                    ImapClient.Inbox.Expunge(delToken.Token);
+                    if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
+                    {
+                        ImapClient.Inbox.Expunge(new[] {uid});
+                    }
+                    else
+                    {
+                        var delToken = new CancellationTokenSource();
+                        ImapClient.Inbox.AddFlags(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
+                        ImapClient.Inbox.Expunge(delToken.Token);
+                    }
                 }
             }
             catch (Exception ex)
@@ -105,6 +126,50 @@ namespace InboxWatcher.ImapClient
 
             StartIdling();
             return true;
+        }
+
+        public void MoveMessage(uint uniqueId, string emailDestination, string mbname)
+        {
+            StopIdle();
+
+            lock (ImapClient.SyncRoot)
+            {
+
+                var root = ImapClient.GetFolder(ImapClient.PersonalNamespaces[0]);
+
+                IMailFolder mbfolder;
+                IMailFolder destFolder;
+
+                try
+                {
+                    mbfolder = root.GetSubfolder(mbname);
+                }
+                catch (FolderNotFoundException ice)
+                {
+                    mbfolder = root.Create(mbname, false);
+                }
+
+                try
+                {
+                    destFolder = mbfolder.GetSubfolder(emailDestination);
+                }
+                catch (FolderNotFoundException ice)
+                {
+                    destFolder = mbfolder.Create(emailDestination, true);
+                }
+                try
+                {
+                    ImapClient.Inbox.MoveTo(new UniqueId(uniqueId), destFolder);
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex);
+                    StartIdling();
+                    return;
+                }
+            }
+
+            StartIdling();
         }
     }
 }

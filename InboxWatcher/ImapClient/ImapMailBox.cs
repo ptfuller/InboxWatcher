@@ -212,6 +212,7 @@ namespace InboxWatcher.ImapClient
             }
         }
 
+
         public MimeMessage GetMessage(uint uniqueId)
         {
             var uid = new UniqueId(uniqueId);
@@ -220,7 +221,7 @@ namespace InboxWatcher.ImapClient
 
 
         //todo this probably doesn't belong here - maybe another class has this responsibility?
-        public bool SendMail(uint uniqueId, string emailDestination)
+        public bool SendMail(uint uniqueId, string emailDestination, bool moveToDest)
         {
             try
             {
@@ -284,7 +285,9 @@ namespace InboxWatcher.ImapClient
                 {
                     client = ImapClientDirector.GetSmtpClient();
                 }
-                
+
+                _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
+
                 client.Send(buildMessage);
             }
             catch (Exception ex)

@@ -60,7 +60,7 @@ namespace InboxWatcher
 
         protected override void OnStop()
         {
-            
+            MailBoxes.ForEach(x => x.Destroy());
         }
 
 

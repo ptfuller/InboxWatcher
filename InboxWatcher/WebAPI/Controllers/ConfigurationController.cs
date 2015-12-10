@@ -68,7 +68,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 ctx.SaveChanges();
             }
 
-            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(conf); });
+            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(result); });
 
             return new ClientConfigurationDto(result);
         }
@@ -81,7 +81,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
             using (var ctx = new MailModelContainer())
             {
-                selection = ctx.ImapMailBoxConfigurations.Find(conf);
+                selection = ctx.ImapMailBoxConfigurations.Find(conf.Id);
                 ctx.Entry(selection).CurrentValues.SetValues(conf);
                 ctx.SaveChanges();
             }
