@@ -208,10 +208,10 @@ $(document).ready(function (){
 		var count = 0;
 		$.each(data, function(key, val){
 			if (count === 0){
-				items.push('<li class="active"><a id="mailbox' + val + '" href="#">' + val + '</a></li>');
+				items.push('<li class="active" id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
 				$("#dbHeader").text(val + ' Current Messages');
 			} else{
-				items.push('<li><a id="mailbox' + val + '" href="#">' + val + '</a></li>');
+			    items.push('<li id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
 			}
 			MailBoxes.push(val);
 
@@ -219,9 +219,12 @@ $(document).ready(function (){
 		});
 		$("#mailBoxList").append(items);
 
-		$.each(MailBoxes, function(key, val){
-		$('#mailbox' + val).click(function() {
+	    GetAllStatuses(MailBoxes);
 
+		$.each(MailBoxes, function (key, val) {
+		$('#mailbox' + val).click(function() {
+		    $(".active").removeClass('active');
+		    $('#box' + val).addClass('active');
 				var summaries = new MessageSummaryCollection();
 				summaries.url = 'mailboxes/' + val;
 				var view = new SummariesView({ collection: summaries });
@@ -295,6 +298,7 @@ $(document).ready(function (){
                 $("#exceptions").html(exceptions.Exceptions.length);
                 $(".page-header").html(val + ' Dashboard - <small>client started ' + exceptions.StartTime + '</small>');
 
+                //switch to red
                 if (exceptions.Exceptions.length > 0) {
                     $("#exceptionBorder").removeClass('circle-border');
                     $("#exceptionBorder").addClass('circle-border-red');
@@ -302,6 +306,27 @@ $(document).ready(function (){
                         window.location.href = '/mailboxes/' + val + '/status';
                     });
                 }
+
+                //back to green
+                if (exceptions.Exceptions.length === 0) {
+                    $("#exceptionCircle").unbind();
+                    $("#exceptionBorder").removeClass('circle-border-red');
+                    $("#exceptionBorder").addClass('circle-border');
+                }
+            });
+        }
+
+        function GetAllStatuses(mb) {
+            $.each(mb, function(key, val) {
+                $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
+                    if (exceptions.Green) {
+                        $("#mailbox" + val).html(val + '<div class="led-green"></div>');
+                    }
+
+                    if (!exceptions.Green) {
+                        $("#mailbox" + val).html(val + '<div class="led-red"></div>');
+                    }
+                });
             });
         }
     </script>

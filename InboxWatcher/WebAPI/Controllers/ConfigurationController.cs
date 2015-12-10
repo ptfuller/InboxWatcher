@@ -68,7 +68,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 ctx.SaveChanges();
             }
 
-            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
+            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(conf); });
 
             return new ClientConfigurationDto(result);
         }
@@ -81,11 +81,12 @@ namespace InboxWatcher.WebAPI.Controllers
 
             using (var ctx = new MailModelContainer())
             {
-                selection = ctx.ImapMailBoxConfigurations.Find(conf.Id);
+                selection = ctx.ImapMailBoxConfigurations.Find(conf);
                 ctx.Entry(selection).CurrentValues.SetValues(conf);
                 ctx.SaveChanges();
             }
 
+            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(conf); });
             return selection;
         }
 
@@ -96,12 +97,18 @@ namespace InboxWatcher.WebAPI.Controllers
             using (var ctx = new MailModelContainer())
             {
                 var selection = ctx.ImapMailBoxConfigurations.First(x => x.Id == id);
+
+                foreach (var mailBox in InboxWatcher.MailBoxes.Where(x => x.MailBoxName.Equals(selection.MailBoxName)))
+                {
+                    mailBox.Destroy();
+                }
+
+                InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
+
                 ctx.ImapMailBoxConfigurations.Attach(selection);
                 ctx.ImapMailBoxConfigurations.Remove(selection);
                 ctx.SaveChanges();
             }
-
-            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }

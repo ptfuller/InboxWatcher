@@ -13,6 +13,7 @@ using MailKit;
 using MimeKit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
@@ -26,8 +27,8 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 var emails = ctx.Emails
                     .Where(x => x.ImapMailBoxConfigurationId == ctx.ImapMailBoxConfigurations.FirstOrDefault(y => y.MailBoxName.Equals(mailBoxName)).Id)
-                    .Include(l => l.EmailLogs)
-                    .Take(500);
+                    .Include(l => l.EmailLogs);
+                    //.Take(500);
 
                 if (fromtoday)
                     emails =
@@ -45,6 +46,41 @@ namespace InboxWatcher.WebAPI.Controllers
                 }
 
                 return emailDtos.OrderByDescending(x => x.Id);
+            }
+        }
+
+        [Route("mailboxes/{mailBoxName}/search")]
+        [HttpGet]
+        public PagedResult Search(string mailBoxName, string search = "", string order = "asc", int limit = 0, int offset = 0)
+        {
+            search = search.ToLower();
+
+            var results = new PagedResult();
+
+            using (var ctx = new MailModelContainer())
+            {
+                var mailbox = ctx.ImapMailBoxConfigurations.Include(x => x.Emails.Select(e => e.EmailLogs)).FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+
+                if (mailbox == null) return results;
+
+                IEnumerable<Email> rows = mailbox.Emails;
+
+                if (!string.IsNullOrEmpty(search))
+                {
+                    rows = rows.Where(x => x.Sender.ToLower().Contains(search) || 
+                        x.Subject.ToLower().Contains(search) || 
+                        x.BodyText.ToLower().Contains(search) || 
+                        x.TimeReceived.ToString("d").Contains(search));
+                }
+
+                if (!order.Equals("asc")) rows = rows.OrderByDescending(x => x.Id);
+
+                rows = limit != 0 ? rows.Skip(offset).Take(limit) : rows;
+
+                results.rows = rows.Select(email => new EmailDto(email)).ToList();
+                results.total = mailbox.Emails.Count;
+
+                return results;
             }
         }
 
@@ -68,7 +104,7 @@ namespace InboxWatcher.WebAPI.Controllers
         public IEnumerable<Summary> Get(string mailBoxName)
         {
             var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
-            return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList();
+            return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList().OrderByDescending(x => x.Received);
         }
 
         [Route("mailboxes/{mailBoxName}/{uniqueId}")]
@@ -98,9 +134,9 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public MailBoxStatusDto GetStatus(string mailBoxName)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
 
-            return selectedMailBox.Status();
+            return selectedMailBox?.Status();
         }
 
         //Get this email and send it.  Also move it to another folder.  Log that we've done this in the DB.

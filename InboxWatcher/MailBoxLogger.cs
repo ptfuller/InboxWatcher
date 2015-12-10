@@ -14,6 +14,9 @@ namespace InboxWatcher
 
         public static void LogEmailReceived(IMessageSummary summary, IClientConfiguration config)
         {
+
+            if (string.IsNullOrEmpty(summary.Envelope.MessageId)) return;
+
             using (var Context = new MailModelContainer())
             {
                 //if it's already in the DB we're not going to log it received
@@ -26,9 +29,9 @@ namespace InboxWatcher
                     EnvelopeID = summary.Envelope.MessageId,
                     InQueue = true,
                     MarkedAsRead = false,
-                    Minutes = (int) (DateTime.Now.ToLocalTime() - summary.Date.LocalDateTime).TotalMinutes,
+                    Minutes = (int) (DateTime.Now.ToUniversalTime() - summary.Date.ToUniversalTime()).TotalMinutes,
                     Sender = summary.Envelope.From.ToString(),
-                    Subject = summary.Envelope.Subject,
+                    Subject = string.IsNullOrEmpty(summary.Envelope.Subject) ? "" :summary.Envelope.Subject,
                     TimeReceived = summary.Date.LocalDateTime,
                     ImapMailBoxConfigurationId = config.Id
                 };
@@ -77,7 +80,7 @@ namespace InboxWatcher
 
                 foreach (var em in selectedEmails)
                 {
-                    em.Minutes = (int) (DateTime.Now.ToLocalTime() - em.TimeReceived.ToLocalTime()).TotalMinutes;
+                    em.Minutes = (int) (DateTime.Now.ToUniversalTime() - em.TimeReceived.ToUniversalTime()).TotalMinutes;
                     em.InQueue = false;
                 }
 

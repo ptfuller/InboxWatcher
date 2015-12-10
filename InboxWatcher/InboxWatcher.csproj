@@ -173,6 +173,7 @@
     <Compile Include="DTO\EmailDto.cs" />
     <Compile Include="DTO\EmailLogDto.cs" />
     <Compile Include="DTO\MailBoxStatusDto.cs" />
+    <Compile Include="DTO\PagedResult.cs" />
     <Compile Include="Email.cs">
       <DependentUpon>MailModel.tt</DependentUpon>
     </Compile>

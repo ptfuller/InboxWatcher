@@ -10,6 +10,7 @@ using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
 using MailKit;
 using MimeKit;
+using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.ImapClient
 {
@@ -18,6 +19,7 @@ namespace InboxWatcher.ImapClient
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
         private readonly IClientConfiguration _config;
+        private int _retryTime = 5000;
 
         protected List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
@@ -55,14 +57,17 @@ namespace InboxWatcher.ImapClient
 
         public virtual void Setup()
         {
-            //if setup fails stop here
+            //if setup fails let's try again soon
             if (!SetupClients())
             {
                 Task.Factory.StartNew(() =>
                 {
-                    Thread.Sleep(5000);
+                    Thread.Sleep(_retryTime);
+                    _retryTime *= 2;
                     Setup();
                 });
+
+                return;
             }
 
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
@@ -83,17 +88,51 @@ namespace InboxWatcher.ImapClient
 
         public MailBoxStatusDto Status()
         {
-            var status = new MailBoxStatusDto()
+            try
             {
-                Exceptions = Exceptions,
-                IdlerConnected = _imapIdler.IsConnected(),
-                StartTime = IdlerStartTime.ToLocalTime().ToString("f"),
-                IdlerIdle = _imapIdler.IsIdle(),
-                WorkerConnected = _imapWorker.IsConnected(),
-                WorkerIdle = _imapWorker.IsIdle()
-            };
+                var status = new MailBoxStatusDto()
+                {
+                    Exceptions = Exceptions,
+                    IdlerConnected = _imapIdler.IsConnected(),
+                    StartTime = IdlerStartTime.ToLocalTime().ToString("f"),
+                    IdlerIdle = _imapIdler.IsIdle(),
+                    WorkerConnected = _imapWorker.IsConnected(),
+                    WorkerIdle = _imapWorker.IsIdle(),
+                    Green = _imapIdler.IsConnected() && _imapIdler.IsIdle() && _imapWorker.IsConnected()
+                };
 
-            return status;
+                return status;
+            }
+            catch (Exception ex)
+            {
+                Exceptions.Add(ex);
+
+                var status = new MailBoxStatusDto()
+                {
+                    Exceptions = Exceptions,
+                    IdlerConnected = false,
+                    StartTime = "Not Started",
+                    Green = false,
+                    IdlerIdle = false,
+                    WorkerIdle = false,
+                    WorkerConnected = false
+                };
+
+                return status;
+            }
+        }
+
+        public void Destroy()
+        {
+            try
+            {
+                _imapIdler.Destroy();
+                _imapWorker.Destroy();
+            }
+            catch (Exception ex)
+            {
+                
+            }
         }
 
         private bool SetupClients()
@@ -107,18 +146,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (AggregateException ex)
             {
-                foreach (var exception in ex.InnerExceptions)
-                {
-                    Exceptions.Add(exception);
-
-                    Task.Factory.StartNew(() =>
-                    {
-                        Thread.Sleep(5000);
-                        SetupClients();
-                    });
-
-                    throw exception;
-                }
+                Exceptions.AddRange(ex.InnerExceptions);
+                return false;
             }
 
             return true;
@@ -134,9 +163,13 @@ namespace InboxWatcher.ImapClient
             var messages = _imapWorker.GetMessageSummaries();
 
             //there was an error during the fetch
-            if (messages == null)
+            if (messages == null) return;
+
+            var invalidMessages = messages.Where(x => string.IsNullOrEmpty(x.Envelope.MessageId));
+
+            foreach (var invalidMessage in invalidMessages)
             {
-                return;
+                messages.Remove(invalidMessage);
             }
 
             if (messages.Count == 0)

@@ -73,11 +73,38 @@ namespace InboxWatcher.ImapClient
             var getToken = new CancellationTokenSource();
 
             var message = ImapClient.Inbox.GetMessage(uid, getToken.Token);
-
+            
             StartIdling();
 
             return message;
         }
 
+        public bool DeleteMessage(UniqueId uid)
+        {
+            StopIdle();
+
+            try
+            {
+                if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
+                {
+                    ImapClient.Inbox.Expunge(new[] {uid});
+                }
+                else
+                {
+                    var delToken = new CancellationTokenSource();
+                    ImapClient.Inbox.AddFlags(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
+                    ImapClient.Inbox.Expunge(delToken.Token);
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                StartIdling();
+                return false;
+            }
+
+            StartIdling();
+            return true;
+        }
     }
 }

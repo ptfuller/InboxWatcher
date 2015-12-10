@@ -115,6 +115,11 @@ namespace InboxWatcher.ImapClient
             }
         }
 
+        public void Destroy()
+        {
+            ImapClient.Dispose();
+        }
+
         protected void HandleException(Exception ex)
         {
             ExceptionHappened?.Invoke(ex, EventArgs.Empty);

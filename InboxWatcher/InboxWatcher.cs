@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 using System.Web.Http;
 using AutoMapper;
 using InboxWatcher.DTO;
@@ -43,8 +44,8 @@ namespace InboxWatcher
             ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
 
             StartWebApi();
-            
-            ConfigureMailBoxes();
+
+            Task.Factory.StartNew(ConfigureMailBoxes);
         }
 
         private void ConfigureAutoMapper()
@@ -97,6 +98,19 @@ namespace InboxWatcher
             }
 
             return notifications;
+        }
+
+        public static void ConfigureMailBox(IClientConfiguration conf)
+        {
+            var director = new ImapClientDirector(conf);
+            var mailbox = new ImapMailBox(director, conf);
+
+            foreach (var action in SetupNotifications(conf.Id))
+            {
+                mailbox.AddNotification(action);
+            }
+
+            MailBoxes.Add(mailbox);
         }
 
         public static void ConfigureMailBoxes()
