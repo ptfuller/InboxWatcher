@@ -253,6 +253,7 @@
     <Compile Include="WebAPI\Controllers\DashboardController.cs" />
     <Compile Include="WebAPI\Controllers\HelloController.cs" />
     <Compile Include="WebAPI\Controllers\ContentController.cs" />
+    <Compile Include="WebAPI\Controllers\HelpController.cs" />
     <Compile Include="WebAPI\Controllers\MailController.cs" />
     <Compile Include="WebAPI\Controllers\NotificationController.cs" />
     <Compile Include="WebAPI\WebApiStartup.cs" />
@@ -314,6 +315,9 @@
     </Content>
     <Content Include="Resources\epoxy.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\help.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\underscore.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -48,10 +48,19 @@ namespace InboxWatcher.ImapClient
 
             if (!AreEventsSubscribed)
             {
-                ImapClient.Inbox.MessagesArrived += InboxOnMessagesArrived;
-                ImapClient.Inbox.MessageExpunged += Inbox_MessageExpunged;
-                ImapClient.Inbox.MessageFlagsChanged += InboxOnMessageFlagsChanged;
-                AreEventsSubscribed = true;
+                try
+                {
+                    ImapClient.Inbox.MessagesArrived += InboxOnMessagesArrived;
+                    ImapClient.Inbox.MessageExpunged += Inbox_MessageExpunged;
+                    ImapClient.Inbox.MessageFlagsChanged += InboxOnMessageFlagsChanged;
+                    AreEventsSubscribed = true;
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    HandleException(ex);
+                    Thread.Sleep(5000);
+                    Setup();
+                }
             }
 
             IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
@@ -101,10 +110,9 @@ namespace InboxWatcher.ImapClient
 
         protected virtual void StopIdle()
         {
-            DoneToken.Cancel();
-
             try
             {
+                DoneToken.Cancel();
                 IdleTask.Wait(5000);
             }
             catch (AggregateException ag)

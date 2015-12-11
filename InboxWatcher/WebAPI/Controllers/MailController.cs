@@ -103,7 +103,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
         [Route("mailboxes/{mailBoxName}")]
         [HttpGet]
-        public IEnumerable<Summary> Get(string mailBoxName)
+        public IEnumerable<ISummary> Get(string mailBoxName)
         {
             var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
             return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList().OrderByDescending(x => x.Received);
@@ -123,8 +123,11 @@ namespace InboxWatcher.WebAPI.Controllers
         {
             var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
 
-            if (selectedMailBox.SendMail(uniqueId, emailDestination, moveToDestinationFolder))
+            var selectedMessage = selectedMailBox.GetMessage(uniqueId);
+
+            if (selectedMailBox.SendMail(selectedMessage, uniqueId, emailDestination, moveToDestinationFolder))
             {
+                MailBoxLogger.LogEmailSent(mailBoxName, selectedMessage, emailDestination, moveToDestinationFolder);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 

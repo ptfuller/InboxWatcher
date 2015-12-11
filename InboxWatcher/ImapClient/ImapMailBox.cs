@@ -52,7 +52,7 @@ namespace InboxWatcher.ImapClient
             ImapClientDirector = icd;
             _config = config;
             MailBoxName = _config.MailBoxName;
-            Setup();
+            Task.Factory.StartNew(Setup);
         }
 
         public virtual void Setup()
@@ -105,8 +105,6 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                Exceptions.Add(ex);
-
                 var status = new MailBoxStatusDto()
                 {
                     Exceptions = Exceptions,
@@ -117,6 +115,11 @@ namespace InboxWatcher.ImapClient
                     WorkerIdle = false,
                     WorkerConnected = false
                 };
+
+                if (ex is NullReferenceException)
+                return status;
+
+                Exceptions.Add(ex);
 
                 return status;
             }
@@ -165,8 +168,8 @@ namespace InboxWatcher.ImapClient
             //there was an error during the fetch
             if (messages == null) return;
 
-            var invalidMessages = messages.Where(x => string.IsNullOrEmpty(x.Envelope.MessageId));
-
+            var invalidMessages = messages.Where(x => string.IsNullOrEmpty(x.Envelope.MessageId)).ToList();
+            
             foreach (var invalidMessage in invalidMessages)
             {
                 messages.Remove(invalidMessage);
@@ -221,12 +224,11 @@ namespace InboxWatcher.ImapClient
 
 
         //todo this probably doesn't belong here - maybe another class has this responsibility?
-        public bool SendMail(uint uniqueId, string emailDestination, bool moveToDest)
+        public bool SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
         {
             try
             {
                 var client = ImapClientDirector.GetSmtpClientAsync();
-                var message = GetMessage(uniqueId);
 
                 var buildMessage = new MimeMessage();
                 buildMessage.From.Add(new MailboxAddress(ImapClientDirector.SendAs, ImapClientDirector.UserName));
@@ -285,8 +287,8 @@ namespace InboxWatcher.ImapClient
                 {
                     client = ImapClientDirector.GetSmtpClient();
                 }
-
-                _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
+                
+                if (moveToDest) _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
 
                 client.Send(buildMessage);
             }

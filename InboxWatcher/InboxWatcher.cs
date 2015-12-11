@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading.Tasks;
-using System.Web.Http;
 using AutoMapper;
 using InboxWatcher.DTO;
 using InboxWatcher.ImapClient;
@@ -20,18 +14,35 @@ using InboxWatcher.Notifications;
 using InboxWatcher.WebAPI;
 using MailKit;
 using Microsoft.Owin.Hosting;
-using Owin;
 
 namespace InboxWatcher
 {
     public partial class InboxWatcher : ServiceBase
     {
-        public static List<ImapMailBox> MailBoxes { get; set; }
-        public static string ResourcePath { get; private set; }
-
         public InboxWatcher()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        ///     All running ImapMailBoxes are held in this list
+        /// </summary>
+        public static List<ImapMailBox> MailBoxes { get; set; }
+
+        /// <summary>
+        ///     The path to the html, js, and css resources for the UI
+        /// </summary>
+        public static string ResourcePath { get; internal set; }
+
+        private static IEnumerable<IClientConfiguration> Configs
+        {
+            get
+            {
+                using (var ctx = new MailModelContainer())
+                {
+                    return ctx.ImapMailBoxConfigurations.ToList();
+                }
+            }
         }
 
         protected override void OnStart(string[] args)
@@ -53,8 +64,8 @@ namespace InboxWatcher
             Mapper.Initialize(cfg =>
             {
                 cfg.CreateMap<Email, EmailDto>()
-                .ForMember(x => x.EmailLogs, opt => opt.Ignore())
-                .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
+                    .ForMember(x => x.EmailLogs, opt => opt.Ignore())
+                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
             });
         }
 
@@ -66,16 +77,8 @@ namespace InboxWatcher
 
         private void StartWebApi()
         {
-            string baseAddress = "http://localhost:9000/";
+            var baseAddress = "http://localhost:9000/";
             WebApp.Start<WebApiStartup>(baseAddress);
-        }
-
-        private static IEnumerable<IClientConfiguration> GetConfigs()
-        {
-            using (var ctx = new MailModelContainer())
-            {
-                return ctx.ImapMailBoxConfigurations.ToList();
-            }
         }
 
         private static IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
@@ -100,7 +103,8 @@ namespace InboxWatcher
             return notifications;
         }
 
-        public static void ConfigureMailBox(IClientConfiguration conf)
+
+        internal static void ConfigureMailBox(IClientConfiguration conf)
         {
             var director = new ImapClientDirector(conf);
             var mailbox = new ImapMailBox(director, conf);
@@ -113,12 +117,12 @@ namespace InboxWatcher
             MailBoxes.Add(mailbox);
         }
 
-        public static void ConfigureMailBoxes()
+        internal static void ConfigureMailBoxes()
         {
             MailBoxes = new List<ImapMailBox>();
 
             //get configuration objects from database
-            var configs = GetConfigs();
+            var configs = Configs;
 
             //setup each ImapMailBox and add it to the list of mailboxes
             foreach (var clientConfiguration in configs)
@@ -133,7 +137,7 @@ namespace InboxWatcher
 
                 MailBoxes.Add(mailbox);
             }
-            
+
             //todo remove this - it's for debugging
             foreach (var imapMailBox in MailBoxes)
             {

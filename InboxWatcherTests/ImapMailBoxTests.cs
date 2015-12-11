@@ -18,25 +18,15 @@ namespace InboxWatcherTests
     {
         private Mock<IImapClient> _client;
         private Mock<IMailFolder> _inbox;
-
         private Mock<ImapClientDirector> ImapClientDirector { get; set; }
 
         [TestInitialize]
         public void ImapMailBoxTestInitialization()
         {
-            var config = new ImapClientConfiguration()
-            {
-                HostName = "outlook.office365.com",
-                Password = Settings.Default.TestPassword,
-                Port = 993,
-                UserName = Settings.Default.TestUserName,
-                UseSecure = true
-            };
+            ImapClientDirector = new Mock<ImapClientDirector>();
 
-            ImapClientDirector = new Mock<ImapClientDirector>(config);
 
             _client = new Mock<IImapClient>();
-
             //return true for IsIdle if we've asked the client to idle
             _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
                 .Callback(() => _client.SetupGet(x => x.IsIdle).Returns(true));
@@ -58,6 +48,12 @@ namespace InboxWatcherTests
         {
             //setup the inbox, idler, and poller client
             var mailbox = new ImapMailBox(ImapClientDirector.Object, new ImapClientConfiguration());
+            var idler = new ImapIdler(ImapClientDirector.Object);
+            var worker = new ImapWorker(ImapClientDirector.Object);
+
+            var pvt = new PrivateObject(mailbox);
+            pvt.SetFieldOrProperty("_imapIdler", idler);
+            pvt.SetFieldOrProperty("_imapWorker", worker);
 
             //raise message received
             _inbox.Raise(x => x.MessagesArrived += null, new MessagesArrivedEventArgs(0));

@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Linq;
 using InboxWatcher.Interface;
 using MailKit;
+using MimeKit;
+using MimeKit.Text;
 
 namespace InboxWatcher
 {
@@ -126,6 +128,32 @@ namespace InboxWatcher
                 result.MarkedAsRead = true;
                 Context.SaveChanges();
                 LogEmailChanged(message, config, "Unknown", "Marked Read");
+            }
+        }
+
+        public static void LogEmailSent(string mailBoxName, MimeMessage message, string emailDestination, bool moved)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selectedEmail =
+                    ctx.Emails.FirstOrDefault(x => x.EnvelopeID.Equals(message.MessageId) &&
+                            x.ImapMailBoxConfiguration.MailBoxName.Equals(mailBoxName));
+
+                if (selectedEmail == null) return;
+
+                var newLogs = new List<EmailLog>();
+
+                selectedEmail.BodyText = HtmlToText.ConvertHtml(message.BodyParts.OfType<TextPart>().FirstOrDefault()?.Text);
+
+                var log = new EmailLog()
+                {
+                    Action = moved ? $"Sent to {emailDestination} and moved to {mailBoxName}/{emailDestination}" : $"Sent to {emailDestination}",
+                    Email = selectedEmail, TakenBy = emailDestination, TimeActionTaken = DateTime.Now
+                };
+
+                newLogs.Add(log);
+                ctx.EmailLogs.AddRange(newLogs);
+                ctx.SaveChanges();
             }
         }
     }
