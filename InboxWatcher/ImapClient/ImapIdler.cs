@@ -20,8 +20,8 @@ namespace InboxWatcher.ImapClient
 
         protected bool AreEventsSubscribed;
 
-        public event EventHandler MessageArrived;
-        public event EventHandler MessageExpunged;
+        public event EventHandler<MessagesArrivedEventArgs> MessageArrived;
+        public event EventHandler<MessageEventArgs> MessageExpunged;
         public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
         public event EventHandler ExceptionHappened;
 

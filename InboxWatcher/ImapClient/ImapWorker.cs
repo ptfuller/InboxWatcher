@@ -17,36 +17,6 @@ namespace InboxWatcher.ImapClient
         {
         }
 
-        public IList<IMessageSummary> GetMessageSummaries()
-        {
-            StopIdle();
-
-            _fetchCancellationToken = new CancellationTokenSource();
-
-            var results = new List<IMessageSummary>();
-
-            try
-            {
-                lock (ImapClient.SyncRoot)
-                {
-                    results.AddRange(ImapClient.Inbox.Fetch(0, -1,
-                        MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId,
-                        _fetchCancellationToken.Token));
-                }
-            }
-            catch (Exception ex)
-            {
-                StopIdle();
-                HandleException(ex);
-                Setup();
-                return results;
-            }
-
-            StartIdling();
-
-            return results;
-        }
-
         public IMessageSummary GetMessageSummary(UniqueId uid)
         {
             StopIdle();
@@ -55,7 +25,7 @@ namespace InboxWatcher.ImapClient
 
             lock (ImapClient.SyncRoot)
             {
-                result = ImapClient.Inbox.Fetch(new List<UniqueId> {uid}, MessageSummaryItems.Envelope);
+                result = ImapClient.Inbox.Fetch(new List<UniqueId> {uid}, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
             }
 
             StartIdling();
@@ -63,7 +33,7 @@ namespace InboxWatcher.ImapClient
             return result.First();
         }
 
-        public IMessageSummary GetMessageSumamry(int index)
+        public IMessageSummary GetMessageSummary(int index)
         {
             StopIdle();
 
@@ -71,7 +41,7 @@ namespace InboxWatcher.ImapClient
 
             lock (ImapClient.SyncRoot)
             {
-                result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope);
+                result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
             }
 
             StartIdling();
@@ -170,6 +140,84 @@ namespace InboxWatcher.ImapClient
             }
 
             StartIdling();
+        }
+
+        /// <summary>
+        /// Get the 500 newest message summaries
+        /// </summary>
+        /// <returns>message summaries for the newest 500 messages in the inbox</returns>
+        public IEnumerable<IMessageSummary> FreshenMailBox()
+        {
+            StopIdle();
+
+            var count = ImapClient.Inbox.Count - 1;
+            var min = 0;
+
+            if (count > 500)
+            {
+                min = count - 500;
+            }
+
+            var result = new List<IMessageSummary>();
+
+            try
+            {
+                lock (ImapClient.SyncRoot)
+                {
+                    result.AddRange(ImapClient.Inbox.Fetch(min, count, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
+                }
+            }
+            catch (Exception ex)
+            {
+                StartIdling();
+                HandleException(ex);
+                Setup();
+                return result;
+            }
+
+            StartIdling();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Call this with the count from the MessagesArrivedEventArgs of the folder's MessagesArrived event handler
+        /// </summary>
+        /// <param name="numNewMessages">The number of new messages received</param>
+        /// <returns>MessageSummaries of newly received messages</returns>
+        public IEnumerable<IMessageSummary> GetNewMessages(int numNewMessages)
+        {
+            StopIdle();
+
+            var result = new List<IMessageSummary>();
+
+            var min = ImapClient.Inbox.Count - numNewMessages;
+
+            //array index
+            var max = ImapClient.Inbox.Count - 1;
+
+            if (min < 0) min = 0;
+
+            try
+            {
+                lock (ImapClient.SyncRoot)
+                {
+                    result.AddRange(ImapClient.Inbox.Fetch(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
+                }
+            }
+            catch (Exception ex)
+            {
+                var getMessageException = new Exception($"GetNewMessages Exception: numNewMessages: {numNewMessages}, total: {ImapClient.Inbox.Count} min: {min} max:{max}", ex);
+
+                HandleException(getMessageException);
+                Setup();
+                StartIdling();
+                return result;
+            }
+
+            StartIdling();
+
+            return result;
         }
     }
 }

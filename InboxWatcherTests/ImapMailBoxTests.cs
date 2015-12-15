@@ -32,7 +32,7 @@ namespace InboxWatcherTests
                 .Callback(() => _client.SetupGet(x => x.IsIdle).Returns(true));
 
             _client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new ImapClientAdapter()));
+                .Returns(Task.FromResult(new ImapClientWrapper()));
 
             //setup the client's inbox
             _inbox = new Mock<IMailFolder>();

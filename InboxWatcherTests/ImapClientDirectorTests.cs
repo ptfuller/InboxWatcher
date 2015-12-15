@@ -33,7 +33,7 @@ namespace InboxWatcherTests
         public void GetClientTest()
         {
             var clientType = ImapClientDirector.GetClient().GetType();
-            Assert.AreEqual(typeof(ImapClientAdapter), clientType);
+            Assert.AreEqual(typeof(ImapClientWrapper), clientType);
         }
 
         [TestMethod]

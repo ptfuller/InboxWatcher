@@ -3,6 +3,7 @@
     public enum NotificationType
     {
         Received,
-        Removed
+        Removed,
+        Seen
     }
 }

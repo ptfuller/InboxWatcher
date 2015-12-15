@@ -14,11 +14,11 @@ using MailKit.Security;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapClientAdapter : IImapClient
+    public class ImapClientWrapper : IImapClient
     {
         private readonly MailKit.Net.Imap.ImapClient _imapClient;
 
-        public ImapClientAdapter()
+        public ImapClientWrapper()
         {
             _imapClient = new MailKit.Net.Imap.ImapClient();
         }

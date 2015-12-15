@@ -62,7 +62,7 @@ namespace InboxWatcher.ImapClient
 
         public IImapClient Build()
         {
-            var client = new ImapClientAdapter();
+            var client = new ImapClientWrapper();
 
             client.ConnectTask = client.ConnectAsync(_host, _port, _useSecure);
 

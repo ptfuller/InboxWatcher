@@ -127,7 +127,6 @@ namespace InboxWatcher.WebAPI.Controllers
 
             if (selectedMailBox.SendMail(selectedMessage, uniqueId, emailDestination, moveToDestinationFolder))
             {
-                MailBoxLogger.LogEmailSent(mailBoxName, selectedMessage, emailDestination, moveToDestinationFolder);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 

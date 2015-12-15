@@ -4,6 +4,7 @@ using System.Data.Entity;
 using System.Data.Entity.Validation;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using InboxWatcher.Interface;
 using MailKit;
 using MimeKit;
@@ -11,18 +12,24 @@ using MimeKit.Text;
 
 namespace InboxWatcher
 {
-    public static class MailBoxLogger
+    public class MailBoxLogger
     {
+        private IClientConfiguration _config;
 
-        public static void LogEmailReceived(IMessageSummary summary, IClientConfiguration config)
+        public MailBoxLogger(IClientConfiguration config)
+        {
+            _config = config;
+        }
+
+        public bool LogEmailReceived(IMessageSummary summary)
         {
 
-            if (string.IsNullOrEmpty(summary.Envelope.MessageId)) return;
+            if (string.IsNullOrEmpty(summary.Envelope.MessageId)) return false;
 
             using (var Context = new MailModelContainer())
             {
                 //if it's already in the DB we're not going to log it received
-                if (Context.Emails.Any(x => x.EnvelopeID.Equals(summary.Envelope.MessageId))) return;
+                if (Context.Emails.Any(x => x.EnvelopeID.Equals(summary.Envelope.MessageId))) return false;
 
                 //generate new Email and EmailLogs
                 var email = new Email()
@@ -35,7 +42,7 @@ namespace InboxWatcher
                     Sender = summary.Envelope.From.ToString(),
                     Subject = string.IsNullOrEmpty(summary.Envelope.Subject) ? "" :summary.Envelope.Subject,
                     TimeReceived = summary.Date.LocalDateTime,
-                    ImapMailBoxConfigurationId = config.Id
+                    ImapMailBoxConfigurationId = _config.Id
                 };
 
                 var el = new EmailLog();
@@ -68,36 +75,44 @@ namespace InboxWatcher
                     throw ex;
                 }
             }
+
+            return true;
         }
 
-        public static void LogEmailRemoved(IMessageSummary email, IClientConfiguration config)
+        public void LogEmailRemoved(IMessageSummary email)
         {
             using (var Context = new MailModelContainer())
             {
+                var selectedEmail =
+                    Context.Emails.Include(e => e.EmailLogs).FirstOrDefault(
+                        x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
 
-                LogEmailChanged(email, config, "", "Removed");
-                var selectedEmails =
-                    Context.Emails.Where(
-                        x => config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
+                if (selectedEmail == null) return;
 
-                foreach (var em in selectedEmails)
+                if (selectedEmail.EmailLogs.Any(x => x.Action.Contains("Sent") && x.Action.Contains("moved")))
                 {
-                    em.Minutes = (int) (DateTime.Now.ToUniversalTime() - em.TimeReceived.ToUniversalTime()).TotalMinutes;
-                    em.InQueue = false;
+                    return;
                 }
+                
+
+                LogEmailChanged(email, "", "Removed");
+
+                selectedEmail.Minutes = (int) (DateTime.Now.ToUniversalTime() - selectedEmail.TimeReceived.ToUniversalTime()).TotalMinutes;
+                selectedEmail.InQueue = false;
+                
 
                 Context.SaveChanges();
             }
         }
 
-        public static void LogEmailChanged(IMessageSummary email, IClientConfiguration config, string actionTakenBy, string action)
+        public void LogEmailChanged(IMessageSummary email, string actionTakenBy, string action)
         {
             using (var Context = new MailModelContainer())
             {
 
                 var selectedEmails =
                     Context.Emails.Where(
-                        x => config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
+                        x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
 
                 var newLogs = new List<EmailLog>();
 
@@ -118,26 +133,28 @@ namespace InboxWatcher
             }
         }
 
-        public static void LogEmailSeen(IClientConfiguration config, IMessageSummary message)
+        public void LogEmailSeen(IMessageSummary message)
         {
             using (var Context = new MailModelContainer())
             {
 
-                var selectedEmail = Context.Emails.Where(x => x.ImapMailBoxConfigurationId == config.Id);
+                var selectedEmail = Context.Emails.Where(x => x.ImapMailBoxConfigurationId == _config.Id);
                 var result = selectedEmail.First(x => x.EnvelopeID.Equals(message.Envelope.MessageId));
                 result.MarkedAsRead = true;
                 Context.SaveChanges();
-                LogEmailChanged(message, config, "Unknown", "Marked Read");
+                LogEmailChanged(message, "Unknown", "Marked Read");
             }
         }
 
-        public static void LogEmailSent(string mailBoxName, MimeMessage message, string emailDestination, bool moved)
+        public void LogEmailSent(MimeMessage message, string emailDestination, bool moved)
         {
             using (var ctx = new MailModelContainer())
             {
                 var selectedEmail =
                     ctx.Emails.FirstOrDefault(x => x.EnvelopeID.Equals(message.MessageId) &&
-                            x.ImapMailBoxConfiguration.MailBoxName.Equals(mailBoxName));
+                            x.ImapMailBoxConfiguration.Id == _config.Id);
+
+                var mailBoxName = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.Id == _config.Id);
 
                 if (selectedEmail == null) return;
 
@@ -147,7 +164,7 @@ namespace InboxWatcher
 
                 var log = new EmailLog()
                 {
-                    Action = moved ? $"Sent to {emailDestination} and moved to {mailBoxName}/{emailDestination}" : $"Sent to {emailDestination}",
+                    Action = moved ? $"Sent to {emailDestination} and moved to {mailBoxName?.MailBoxName}/{emailDestination}" : $"Sent to {emailDestination}",
                     Email = selectedEmail, TakenBy = emailDestination, TimeActionTaken = DateTime.Now
                 };
 
