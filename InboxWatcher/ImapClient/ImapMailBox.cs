@@ -203,7 +203,16 @@ namespace InboxWatcher.ImapClient
             MessageRemoved?.Invoke(message, EventArgs.Empty);
             _mbLogger.LogEmailRemoved(message);
             
-            FreshenMailBox();
+            ReorderEmailList(EmailList.IndexOf(message));
+        }
+        
+        private void ReorderEmailList(int index){
+            
+            for (int i = index; i < EmailList.Count; i++){
+                EmailList[i]--;
+            }
+            
+            EmailList.RemoveAt(index);
         }
 
         private void ImapIdlerOnMessageSeen(object sender, MessageFlagsChangedEventArgs eventArgs)
