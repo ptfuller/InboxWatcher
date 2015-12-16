@@ -195,7 +195,7 @@ namespace InboxWatcher.ImapClient
 
         private void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
         {
-            var message = EmailList.FirstOrDefault(x => x.Index == messageEventArgs.Index);
+            var message = EmailList?[messageEventArgs.Index];
 
             if (message == null) return;
 
@@ -203,17 +203,9 @@ namespace InboxWatcher.ImapClient
             MessageRemoved?.Invoke(message, EventArgs.Empty);
             _mbLogger.LogEmailRemoved(message);
             
-            ReorderEmailList(EmailList.IndexOf(message));
+            EmailList.RemoveAt(messageEventArgs.Index);
         }
         
-        private void ReorderEmailList(int index){
-            
-            for (int i = index; i < EmailList.Count; i++){
-                EmailList[i].Index--;
-            }
-            
-            EmailList.RemoveAt(index);
-        }
 
         private void ImapIdlerOnMessageSeen(object sender, MessageFlagsChangedEventArgs eventArgs)
         {

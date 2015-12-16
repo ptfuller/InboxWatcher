@@ -1,13 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InboxWatcher", "InboxWatcher\InboxWatcher.csproj", "{0F35F458-2135-4C2C-84E7-060F9543F961}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InboxWatcherTests", "InboxWatcherTests\InboxWatcherTests.csproj", "{4847B9D3-B2D3-403F-A9FE-E7344A66D70F}"
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup Project", "Setup Project\Setup Project.vdproj", "{64673C2C-2172-4F34-8B62-24159408D781}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EE5CA454-A311-4320-83BC-A41EF4E2BF2D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
