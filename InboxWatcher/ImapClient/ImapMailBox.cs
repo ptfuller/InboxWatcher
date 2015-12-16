@@ -209,7 +209,7 @@ namespace InboxWatcher.ImapClient
         private void ReorderEmailList(int index){
             
             for (int i = index; i < EmailList.Count; i++){
-                EmailList[i]--;
+                EmailList[i].Index--;
             }
             
             EmailList.RemoveAt(index);
