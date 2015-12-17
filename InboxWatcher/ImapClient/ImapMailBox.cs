@@ -18,6 +18,7 @@ namespace InboxWatcher.ImapClient
     {
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
+        private EmailSender _emailSender;
 
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
@@ -126,7 +127,9 @@ namespace InboxWatcher.ImapClient
                     IdlerIdle = _imapIdler.IsIdle(),
                     WorkerConnected = _imapWorker.IsConnected(),
                     WorkerIdle = _imapWorker.IsIdle(),
-                    Green = _imapIdler.IsConnected() && _imapIdler.IsIdle() && _imapWorker.IsConnected()
+                    SmtpConnected = _emailSender.IsConnected(),
+                    SmtpAuthenticated = _emailSender.IsAuthenticated(),
+                    Green = _imapIdler.IsConnected() && _imapIdler.IsIdle() && _imapWorker.IsConnected() && _emailSender.IsAuthenticated()
                 };
 
                 return status;
@@ -174,6 +177,8 @@ namespace InboxWatcher.ImapClient
                 WorkerStartTime = DateTime.Now;
                 _imapIdler = new ImapIdler(ImapClientDirector);
                 IdlerStartTime = DateTime.Now;
+
+                _emailSender = new EmailSender(ImapClientDirector);
 
                 _imapIdler.Setup();
                 _imapWorker.Setup();
@@ -270,82 +275,11 @@ namespace InboxWatcher.ImapClient
         //todo this probably doesn't belong here - maybe another class has this responsibility?
         public bool SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
         {
-            try
-            {
-                var client = ImapClientDirector.GetSmtpClientAsync();
+            _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
 
-                var buildMessage = new MimeMessage();
-                buildMessage.From.Add(new MailboxAddress(ImapClientDirector.SendAs, ImapClientDirector.UserName));
-                buildMessage.To.Add(new MailboxAddress(emailDestination, emailDestination));
+            if (!_emailSender.SendMail(message, uniqueId, emailDestination, moveToDest)) return false;
 
-                buildMessage.ReplyTo.AddRange(message.From.Mailboxes);
-                buildMessage.ReplyTo.AddRange(message.Cc.Mailboxes);
-                buildMessage.From.AddRange(message.From.Mailboxes);
-                buildMessage.From.AddRange(message.Cc.Mailboxes);
-                buildMessage.Subject = message.Subject;
-
-                var builder = new BodyBuilder();
-
-                foreach (
-                    var bodyPart in message.BodyParts.Where(bodyPart => !bodyPart.ContentType.MediaType.Equals("text")))
-                {
-                    builder.LinkedResources.Add(bodyPart);
-                }
-
-                string addresses = message.From.Mailboxes.Aggregate("",
-                        (current, address) => current + (address.Address + " "));
-
-                string ccAddresses = message.Cc.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
-
-                string toAddresses = message.To.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
-
-                if (message.TextBody != null)
-                {
-                    builder.TextBody = "***Message From " + _config.MailBoxName + "*** \nSent from: " + addresses +
-                                       "\nSent to: " + toAddresses +
-                                       "\nCC'd on email: " + ccAddresses + "\nMessage Date: " + message.Date.ToLocalTime().ToString("F")
-                                       + "\n---\n\n" + message.TextBody;
-                }
-
-                if (message.HtmlBody != null)
-                {
-                    builder.HtmlBody = "<p>***Message From " + _config.MailBoxName + "***<br/><p>Sent from: " + addresses +
-                                       "<br/><p>Sent to: " + toAddresses +
-                                       "<br/><p>CC'd on email: " + ccAddresses + "<br/><p>Message Date:" + message.Date.ToLocalTime().ToString("F") +
-                                       "<br/>---<br/><br/>" + message.HtmlBody;
-                }
-
-                buildMessage.Body = builder.ToMessageBody();
-
-                if (!client.ConnectTask.IsCompleted)
-                {
-                    client.ConnectTask.Wait(5000);
-                }
-
-                if (!client.AuthTask.IsCompleted)
-                {
-                    client.AuthTask.Wait(5000);
-                }
-
-                if (!client.IsConnected || !client.IsAuthenticated)
-                {
-                    client = ImapClientDirector.GetSmtpClient();
-                }
-
-                _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
-
-                if (moveToDest)
-                {
-                    _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
-                }
-
-                client.Send(buildMessage);
-            }
-            catch (Exception ex)
-            {
-                //send an email with error message
-                return false;
-            }
+            if (moveToDest) _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
 
             return true;
         }

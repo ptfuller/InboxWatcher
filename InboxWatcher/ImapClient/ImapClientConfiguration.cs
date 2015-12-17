@@ -13,5 +13,9 @@ namespace InboxWatcher.ImapClient
         public bool UseSecure { get; set; }
         public string MailBoxName { get; set; }
         public int Id { get; set; }
+        public string SmtpUserName { get; set; }
+        public string SmtpPassword { get; set; }
+        public string SmtpHostName { get; set; }
+        public int SmtpPort { get; set; }
     }
 }

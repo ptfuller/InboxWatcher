@@ -7,14 +7,12 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using InboxWatcher.Interface;
-
 namespace InboxWatcher
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class Email : IEmail
+    public partial class Email
     {
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Email()

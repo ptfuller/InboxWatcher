@@ -171,6 +171,9 @@ namespace InboxWatcher
                     Email = selectedEmail, TakenBy = emailDestination, TimeActionTaken = DateTime.Now
                 };
 
+                selectedEmail.Minutes = (int)(DateTime.Now.ToUniversalTime() - selectedEmail.TimeReceived.ToUniversalTime()).TotalMinutes;
+                selectedEmail.InQueue = false;
+
                 newLogs.Add(log);
                 ctx.EmailLogs.AddRange(newLogs);
                 ctx.SaveChanges();

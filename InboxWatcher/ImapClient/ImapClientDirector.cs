@@ -8,6 +8,7 @@ namespace InboxWatcher.ImapClient
 
         public string SendAs { get; set; }
         public string UserName { get; set; }
+        public string MailBoxName { get; set; }
 
         public ImapClientDirector(IClientConfiguration configuration)
         {
@@ -17,12 +18,18 @@ namespace InboxWatcher.ImapClient
                 .WithPort(configuration.Port)
                 .WithUseSecure(configuration.UseSecure)
                 .WithUserName(configuration.UserName)
-                .WithSmtpSendName(configuration.UserName);
+                .WithSmtpSendName(configuration.SmtpUserName)
+                .WithSmtpHostName(configuration.SmtpHostName)
+                .WithSmtpUserName(configuration.SmtpUserName)
+                .WithSmtpPassword(configuration.SmtpPassword)
+                .WithSmtpPort(configuration.SmtpPort);
 
 
             //todo add this value to the configuration object
             UserName = configuration.UserName;
             SendAs = UserName;
+
+            MailBoxName = configuration.MailBoxName;
         }
 
         public virtual IImapClient GetClient()

@@ -28,6 +28,10 @@ namespace InboxWatcher
         public bool UseSecure { get; set; }
         public int Port { get; set; }
         public string MailBoxName { get; set; }
+        public string SmtpUserName { get; set; }
+        public string SmtpPassword { get; set; }
+        public string SmtpHostName { get; set; }
+        public int SmtpPort { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<NotificationConfiguration> NotificationConfigurations { get; set; }

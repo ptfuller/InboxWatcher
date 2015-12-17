@@ -15,6 +15,9 @@ namespace InboxWatcher.ImapClient
         private string _sendName;
         private bool _useSecure = true;
         private bool _smtpUseSSL = false;
+        private string _smtpHostName;
+        private string _smtpUserName;
+        private string _smtpPassword;
 
         public ImapClientBuilder()
         {
@@ -86,9 +89,9 @@ namespace InboxWatcher.ImapClient
         public virtual SendClient GetSmtpClient()
         {
             var client = new SendClient();
-            client.Connect(_host, _smtpPort, _smtpUseSSL);
+            client.Connect(_smtpHostName, _smtpPort, _smtpUseSSL);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
-            client.Authenticate(_userName, _password);
+            client.Authenticate(_smtpUserName, _smtpPassword);
             return client;
         }
 
@@ -149,6 +152,30 @@ namespace InboxWatcher.ImapClient
             client.ConnectAsync(_host, _smtpPort, _smtpUseSSL);
 
             return client;
+        }
+
+        public ImapClientBuilder WithSmtpHostName(string smtpHostName)
+        {
+            _smtpHostName = smtpHostName;
+            return this;
+        }
+
+        public ImapClientBuilder WithSmtpUserName(string smtpUserName)
+        {
+            _smtpUserName = smtpUserName;
+            return this;
+        }
+
+        public ImapClientBuilder WithSmtpPassword(string smtpPassword)
+        {
+            _smtpPassword = smtpPassword;
+            return this;
+        }
+
+        public ImapClientBuilder WithSmtpPort(int smtpPort)
+        {
+            _smtpPort = smtpPort;
+            return this;
         }
     }
 }

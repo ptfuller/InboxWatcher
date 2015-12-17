@@ -185,6 +185,7 @@
     </Compile>
     <Compile Include="Enum\NotificationType.cs" />
     <Compile Include="HtmlToText.cs" />
+    <Compile Include="ImapClient\EmailSender.cs" />
     <Compile Include="Interface\IEmailLog.cs" />
     <Compile Include="Interface\IEmail.cs" />
     <Compile Include="ImapClient\ImapClientWrapper.cs" />

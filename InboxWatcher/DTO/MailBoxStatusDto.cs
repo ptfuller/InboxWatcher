@@ -12,5 +12,7 @@ namespace InboxWatcher.DTO
         public bool IdlerIdle { get; set; }
         public bool WorkerIdle { get; set; }
         public bool Green { get; set; }
+        public bool SmtpConnected { get; set; }
+        public bool SmtpAuthenticated { get; set; }
     }
 }

@@ -6,3 +6,4 @@ todo:
 - [ ] Factory for Notifications
 - [ ] Additional notification types
 - [ ] Tests
+- [ ] Better handling of Smtp / sending emails

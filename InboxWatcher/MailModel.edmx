@@ -73,6 +73,10 @@
     <Property Name="UseSecure" Type="bit" Nullable="false" />
     <Property Name="Port" Type="int" Nullable="false" />
     <Property Name="MailBoxName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SmtpUserName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SmtpPassword" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SmtpHostName" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="SmtpPort" Type="int" Nullable="false" />
   </EntityType>
   <EntityType Name="NotificationConfigurations">
     <Key>
@@ -222,6 +226,10 @@
           <Property Name="MailBoxName" Type="String" Nullable="false" />
           <NavigationProperty Name="NotificationConfigurations" Relationship="MailModel.NotificationConfigurationImapMailBoxConfiguration" FromRole="ImapMailBoxConfiguration" ToRole="NotificationConfiguration" />
           <NavigationProperty Name="Emails" Relationship="MailModel.ImapMailBoxConfigurationEmail" FromRole="ImapMailBoxConfiguration" ToRole="Email" />
+          <Property Name="SmtpUserName" Type="String" Nullable="false" />
+          <Property Name="SmtpPassword" Type="String" Nullable="false" />
+          <Property Name="SmtpHostName" Type="String" Nullable="false" />
+          <Property Name="SmtpPort" Type="Int32" Nullable="false" />
         </EntityType>
         <EntityType Name="NotificationConfiguration">
           <Key>
@@ -318,6 +326,10 @@
           <ScalarProperty Name="UseSecure" ColumnName="UseSecure" />
           <ScalarProperty Name="Port" ColumnName="Port" />
           <ScalarProperty Name="MailBoxName" ColumnName="MailBoxName" />
+          <ScalarProperty Name="SmtpUserName" ColumnName="SmtpUserName" />
+          <ScalarProperty Name="SmtpPassword" ColumnName="SmtpPassword" />
+          <ScalarProperty Name="SmtpHostName" ColumnName="SmtpHostName" />
+          <ScalarProperty Name="SmtpPort" ColumnName="SmtpPort" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

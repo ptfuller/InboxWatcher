@@ -110,11 +110,11 @@
                             </div>
                             <div class="form-group">
                                 <div class="col-md-6">
-                                    <label for="hostName">Host Name: </label>
+                                    <label for="hostName">Imap Host Name: </label>
                                     <input type="text" name="hostname" id="hostName" class="form-control" data-bind="value:HostName" />
                                 </div>
                                 <div class="col-md-3">
-                                    <label for="port">Port: </label>
+                                    <label for="port">Imap Port: </label>
                                     <input type="number" name="port" id="port" class="form-control" data-bind="value:Port" />
                                 </div>
                                 <div class="col-md-3">
@@ -127,12 +127,32 @@
                             </div>
                             <div class="form-group">
                                 <div class="col-md-6">
-                                    <label for="userName">User Name: </label>
-                                    <input type="text" name="username" id="userName" class="form-control" data-bind="value:UserName" />
+                                    <label for="userName">Imap User Name: </label>
+                                    <input type="text" name="username" id="userName" class="form-control" data-bind="value:UserName"/>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="password">Password: </label>
-                                    <input type="text" name="password" id="password" class="form-control" data-bind="value:Password" />
+                                    <label for="password">Imap Password: </label>
+                                    <input type="text" name="password" id="password" class="form-control" data-bind="value:Password"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-6">
+                                    <label for="hostName">Smtp Host Name: </label>
+                                    <input type="text" name="smtpHostname" id="smtpHostName" class="form-control" data-bind="value:SmtpHostName" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="port">Smtp Port: </label>
+                                    <input type="number" name="smtpPort" id="smtpPort" class="form-control" data-bind="value:SmtpPort" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-6">
+                                    <label for="smtpUserName">SMTP User Name: </label>
+                                    <input type="text" name="SmtpUsername" id="smtpUserName" class="form-control" data-bind="value:SmtpUserName"/>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="password">Smtp Password: </label>
+                                    <input type="text" name="SmtpPassword" id="smtpPassword" class="form-control" data-bind="value:SmtpPassword" />
                                 </div>
                             </div>
                             <div class="form-group">
@@ -190,7 +210,11 @@
             HostName: null,
             Port: null,
             UseSecure: null,
-            MailBoxName: null
+            MailBoxName: null,
+            SmtpUserName: null,
+            SmtpPassword: null,
+            SmtpHostName: null,
+            SmtpPort: null
         }
 
     });

@@ -13,6 +13,10 @@ namespace InboxWatcher.DTO
         public bool UseSecure { get; set; }
         public string MailBoxName { get; set; }
         public int Id { get; set; }
+        public string SmtpUserName { get; set; }
+        public string SmtpPassword { get; set; }
+        public string SmtpHostName { get; set; }
+        public int SmtpPort { get; set; }
 
         public ImapMailBoxConfiguration GetMailBoxConfiguration()
         {
@@ -24,8 +28,12 @@ namespace InboxWatcher.DTO
                 Password = Password,
                 Port = Port,
                 UseSecure = UseSecure,
-                UserName = UserName
-            };
+                UserName = UserName,
+                SmtpUserName = SmtpUserName,
+                SmtpPassword = SmtpPassword,
+                SmtpHostName = SmtpHostName,
+                SmtpPort = SmtpPort
+        };
 
             return config;
         }
@@ -44,6 +52,10 @@ namespace InboxWatcher.DTO
             UseSecure = conf.UseSecure;
             MailBoxName = conf.MailBoxName;
             Id = conf.Id;
+            SmtpUserName = conf.SmtpUserName;
+            SmtpPassword = conf.SmtpPassword;
+            SmtpHostName = conf.SmtpHostName;
+            SmtpPort = conf.SmtpPort;
         }
     }
 }

@@ -7,14 +7,12 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using InboxWatcher.Interface;
-
 namespace InboxWatcher
 {
     using System;
     using System.Collections.Generic;
     
-    public partial class EmailLog : IEmailLog
+    public partial class EmailLog
     {
         public int Id { get; set; }
         public string TakenBy { get; set; }

@@ -2,13 +2,13 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 12/03/2015 13:55:59
+-- Date Created: 12/17/2015 13:43:21
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
 SET QUOTED_IDENTIFIER OFF;
 GO
-USE [InboxWatcher];
+USE [C:\USERS\PFULLER\DOCUMENTS\VISUAL STUDIO 2015\PROJECTS\INBOXWATCHER\INBOXWATCHER\INBOXWATCHER.MDF];
 GO
 IF SCHEMA_ID(N'dbo') IS NULL EXECUTE(N'CREATE SCHEMA [dbo]');
 GO
@@ -96,7 +96,11 @@ CREATE TABLE [dbo].[ImapMailBoxConfigurations] (
     [HostName] nvarchar(max)  NOT NULL,
     [UseSecure] bit  NOT NULL,
     [Port] int  NOT NULL,
-    [MailBoxName] nvarchar(max)  NOT NULL
+    [MailBoxName] nvarchar(max)  NOT NULL,
+    [SmtpUserName] nvarchar(max)  NOT NULL,
+    [SmtpPassword] nvarchar(max)  NOT NULL,
+    [SmtpHostName] nvarchar(max)  NOT NULL,
+    [SmtpPort] int  NOT NULL
 );
 GO
 

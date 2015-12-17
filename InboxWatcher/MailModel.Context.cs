@@ -18,7 +18,6 @@ namespace InboxWatcher
         public MailModelContainer()
             : base("name=MailModelContainer")
         {
-            this.Configuration.ProxyCreationEnabled = false;
         }
     
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
