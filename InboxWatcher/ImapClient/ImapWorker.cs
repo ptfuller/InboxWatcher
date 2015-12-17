@@ -17,6 +17,16 @@ namespace InboxWatcher.ImapClient
         {
         }
 
+        public override void StartIdling()
+        {
+            DoneToken = new CancellationTokenSource();
+            CancelToken = new CancellationTokenSource();
+
+            IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
+
+            IdleLoop();
+        }
+
         public IMessageSummary GetMessageSummary(UniqueId uid)
         {
             StopIdle();
@@ -90,7 +100,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 HandleException(ex);
-                StartIdling();
+                Setup();
                 return false;
             }
 
@@ -169,7 +179,6 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                StartIdling();
                 HandleException(ex);
                 Setup();
                 return result;

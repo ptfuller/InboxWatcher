@@ -23,6 +23,7 @@ namespace InboxWatcher.ImapClient
         private readonly IClientConfiguration _config;
 
         private int _retryTime = 5000;
+        private Task _recoveryTask;
 
         private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
@@ -56,15 +57,19 @@ namespace InboxWatcher.ImapClient
             _config = config;
             MailBoxName = _config.MailBoxName;
             _mbLogger = new MailBoxLogger(_config);
+
             Task.Factory.StartNew(Setup);
         }
 
+
         public virtual void Setup()
         {
+            if (_recoveryTask != null && !_recoveryTask.IsCompleted && !_recoveryTask.IsFaulted) return;
+
             //if setup fails let's try again soon
             if (!SetupClients())
             {
-                Task.Factory.StartNew(() =>
+                _recoveryTask = Task.Factory.StartNew(() =>
                 {
                     Thread.Sleep(_retryTime);
                     _retryTime *= 2;
@@ -73,25 +78,41 @@ namespace InboxWatcher.ImapClient
 
                 return;
             }
+            
+            //exceptions that happen in the idler or worker get logged in a list in the mailbox
+            _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
+            _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
+
+            _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
+            _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
             _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
             _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
-
-            //exceptions that happen in the idler or worker get logged in a list in the mailbox
-            _imapIdler.ExceptionHappened += (sender, args) => Exceptions.Add((Exception) sender);
-            _imapWorker.ExceptionHappened += (sender, args) => Exceptions.Add((Exception) sender);
-
-            //imap idler starts idling after the GetMailFolders call below
-            _imapWorker.StartIdling();
 
             //make worker get initial list of messages and then start idling
             FreshenMailBox();
 
             //get folders
             EmailFolders = _imapIdler.GetMailFolders();
+
+            Exceptions.Clear();
         }
 
+        private void ImapClientExceptionHappened(object sender, EventArgs eventArgs)
+        {
+            if (!Status().Green)
+            {
+                var ex = new Exception("Resetting clients", (Exception) sender);
+                Exceptions.Add(ex);
+                Setup();
+                return;
+            }
+
+            Exceptions.Add((Exception)sender);
+
+            FreshenMailBox();
+        }
 
         public MailBoxStatusDto Status()
         {
@@ -153,10 +174,14 @@ namespace InboxWatcher.ImapClient
                 WorkerStartTime = DateTime.Now;
                 _imapIdler = new ImapIdler(ImapClientDirector);
                 IdlerStartTime = DateTime.Now;
+
+                _imapIdler.Setup();
+                _imapWorker.Setup();
             }
             catch (AggregateException ex)
             {
-                Exceptions.AddRange(ex.InnerExceptions);
+                var exception = new Exception("Client setup failed.  Verify client settings and check inner exceptions for more information.", ex);
+                Exceptions.Add(exception);
                 return false;
             }
 
@@ -205,6 +230,8 @@ namespace InboxWatcher.ImapClient
             
             foreach (var message in messages)
             {
+                if (EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
+
                 EmailList.Add(message);
                 NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received));
                 NewMessageReceived?.Invoke(message, EventArgs.Empty);
@@ -214,9 +241,9 @@ namespace InboxWatcher.ImapClient
 
         private void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
         {
-            var message = EmailList?[messageEventArgs.Index];
+            if (EmailList[messageEventArgs.Index] == null) return;
 
-            if (message == null) return;
+            var message = EmailList[messageEventArgs.Index];
 
             NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Removed));
             MessageRemoved?.Invoke(message, EventArgs.Empty);
@@ -305,12 +332,12 @@ namespace InboxWatcher.ImapClient
                     client = ImapClientDirector.GetSmtpClient();
                 }
 
+                _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
+
                 if (moveToDest)
                 {
                     _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
                 }
-
-                _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
 
                 client.Send(buildMessage);
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
@@ -20,18 +21,53 @@ namespace InboxWatcher.ImapClient
 
         protected bool AreEventsSubscribed;
 
-        public event EventHandler<MessagesArrivedEventArgs> MessageArrived;
-        public event EventHandler<MessageEventArgs> MessageExpunged;
-        public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
+        private EventHandler<MessagesArrivedEventArgs> messageArrived;
+        public event EventHandler<MessagesArrivedEventArgs> MessageArrived
+        {
+            add
+            {
+                if (messageArrived == null || !messageArrived.GetInvocationList().Contains(value))
+                {
+                    messageArrived += value;
+                }
+            }
+            remove { messageArrived -= value; }
+        }
+
+        private event EventHandler<MessageEventArgs> messageExpunged;
+        public event EventHandler<MessageEventArgs> MessageExpunged
+        {
+            add
+            {
+                if (messageExpunged == null || !messageExpunged.GetInvocationList().Contains(value))
+                {
+                    messageExpunged += value;
+                }
+            }
+            remove { messageExpunged -= value; }
+        }
+
+        private event EventHandler<MessageFlagsChangedEventArgs> messageSeen;
+        public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen
+        {
+            add
+            {
+                if (messageSeen == null || !messageSeen.GetInvocationList().Contains(value))
+                {
+                    messageSeen += value;
+                }
+            }
+            remove { messageSeen -= value; }
+        }
+
         public event EventHandler ExceptionHappened;
 
         public ImapIdler(ImapClientDirector director)
         {
             Director = director;
-            Setup();
         }
 
-        protected virtual void Setup()
+        public virtual void Setup()
         {
             AreEventsSubscribed = false;
 
@@ -39,6 +75,8 @@ namespace InboxWatcher.ImapClient
 
             ImapClient = Director.GetReadyClient();
             ImapClient.Disconnected += (sender, args) => { Setup(); };
+
+            StartIdling();
         }
 
         public virtual void StartIdling()
@@ -72,18 +110,18 @@ namespace InboxWatcher.ImapClient
         {
             if (messageFlagsChangedEventArgs.Flags.HasFlag(MessageFlags.Seen))
             {
-                MessageSeen?.Invoke(sender, messageFlagsChangedEventArgs);
+                messageSeen?.Invoke(sender, messageFlagsChangedEventArgs);
             }
         }
 
         protected virtual void Inbox_MessageExpunged(object sender, MessageEventArgs e)
         {
-            MessageExpunged?.Invoke(sender, e);
+            messageExpunged?.Invoke(sender, e);
         }
 
         protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)
         {
-            MessageArrived?.Invoke(sender, messagesArrivedEventArgs);
+            messageArrived?.Invoke(sender, messagesArrivedEventArgs);
         }
 
         protected virtual void IdleLoop()
@@ -117,7 +155,6 @@ namespace InboxWatcher.ImapClient
             }
             catch (AggregateException ag)
             {
-                Debug.WriteLine(ag.Message);
                 HandleException(ag);
                 Setup();
             }

@@ -16,8 +16,6 @@ namespace InboxWatcher.ImapClient
         private bool _useSecure = true;
         private bool _smtpUseSSL = false;
 
-        private int WaitTime { get; set; } = 5000;
-
         public ImapClientBuilder()
         {
             
@@ -101,36 +99,30 @@ namespace InboxWatcher.ImapClient
 
         public IImapClient GetReady(IImapClient client)
         {
-            try {
-                if (!client.ConnectTask.IsCompleted)
-                {
-                    if (!client.ConnectTask.Wait(5000)) return BuildReady();
-                }
-
-                if (!client.AuthTask.IsCompleted)
-                {
-                    if (!client.AuthTask.Wait(5000)) return BuildReady();
-                }
-
-                if (!client.InboxOpenTask.IsCompleted)
-                {
-                    if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
-                }
-
-                if (client.IsConnected && client.IsAuthenticated)
-                {
-                    if (!client.Inbox.IsOpen)
-                    {
-                        client.Inbox.Open(FolderAccess.ReadWrite);
-                    }
-                    return client;
-                }
-            } catch (Exception ex)
+            if (!client.ConnectTask.IsCompleted)
             {
-                Thread.Sleep(WaitTime);
-                WaitTime *= 2;
-                return BuildReady();
+                if (!client.ConnectTask.Wait(5000)) return BuildReady();
             }
+
+            if (!client.AuthTask.IsCompleted)
+            {
+                if (!client.AuthTask.Wait(5000)) return BuildReady();
+            }
+
+            if (!client.InboxOpenTask.IsCompleted)
+            {
+                if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
+            }
+
+            if (client.IsConnected && client.IsAuthenticated)
+            {
+                if (!client.Inbox.IsOpen)
+                {
+                    client.Inbox.Open(FolderAccess.ReadWrite);
+                }
+                return client;
+            }
+
             return BuildReady();
         }
 

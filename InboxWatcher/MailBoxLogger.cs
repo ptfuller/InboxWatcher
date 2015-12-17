@@ -89,7 +89,7 @@ namespace InboxWatcher
 
                 if (selectedEmail == null) return;
 
-                if (selectedEmail.EmailLogs.Any(x => x.Action.Contains("Sent") && x.Action.Contains("moved")))
+                if (selectedEmail.EmailLogs.Any(x => x.Action.Contains("Sent") && x.Action.Contains("moved") || x.Action.Contains("Removed")))
                 {
                     return;
                 }
