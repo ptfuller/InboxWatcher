@@ -86,6 +86,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 ctx.SaveChanges();
             }
 
+            InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
             Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(conf); });
             return selection;
         }

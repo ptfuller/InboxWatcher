@@ -140,6 +140,9 @@ namespace InboxWatcher
 
                 var selectedEmail = Context.Emails.Where(x => x.ImapMailBoxConfigurationId == _config.Id);
                 var result = selectedEmail.First(x => x.EnvelopeID.Equals(message.Envelope.MessageId));
+
+                if (result.MarkedAsRead) return;
+
                 result.MarkedAsRead = true;
                 Context.SaveChanges();
                 LogEmailChanged(message, "Unknown", "Marked Read");

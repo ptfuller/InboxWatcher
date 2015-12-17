@@ -170,6 +170,8 @@ namespace InboxWatcher.ImapClient
 
         private void FreshenMailBox()
         {
+            var templist = EmailList;
+
             EmailList.Clear();
             EmailList.AddRange(_imapWorker.FreshenMailBox());
 
@@ -178,6 +180,23 @@ namespace InboxWatcher.ImapClient
                 NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received));
                 NewMessageReceived?.Invoke(email, EventArgs.Empty);
             }
+
+            foreach (var summary in templist.Where(summary => !EmailList.Any(x => x.Envelope.MessageId.Equals(summary.Envelope.MessageId))))
+            {
+                _mbLogger.LogEmailRemoved(summary);
+            }
+
+
+            //take care of any emails that may have been left as marked in queue from previous shutdown/disconnect
+            using (var ctx = new MailModelContainer())
+            {
+                foreach (var email in ctx.Emails.Where(email => email.InQueue && email.Id == _config.Id))
+                {
+                    email.InQueue = false;
+                }
+                ctx.SaveChanges();
+            }
+            
         }
 
         private void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)

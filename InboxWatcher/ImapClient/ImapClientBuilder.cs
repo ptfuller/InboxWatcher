@@ -1,5 +1,7 @@
 ﻿using InboxWatcher.Interface;
 using MailKit;
+using System;
+using System.Threading;
 
 namespace InboxWatcher.ImapClient
 {
@@ -13,6 +15,8 @@ namespace InboxWatcher.ImapClient
         private string _sendName;
         private bool _useSecure = true;
         private bool _smtpUseSSL = false;
+
+        private int WaitTime { get; set; } = 5000;
 
         public ImapClientBuilder()
         {
@@ -97,31 +101,36 @@ namespace InboxWatcher.ImapClient
 
         public IImapClient GetReady(IImapClient client)
         {
-            
-            if (!client.ConnectTask.IsCompleted)
-            {
-                if (!client.ConnectTask.Wait(5000)) return BuildReady();
-            }
-
-            if (!client.AuthTask.IsCompleted)
-            {
-                if (!client.AuthTask.Wait(5000)) return BuildReady();
-            }
-
-            if (!client.InboxOpenTask.IsCompleted)
-            {
-                if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
-            }
-
-            if (client.IsConnected && client.IsAuthenticated)
-            {
-                if (!client.Inbox.IsOpen)
+            try {
+                if (!client.ConnectTask.IsCompleted)
                 {
-                    client.Inbox.Open(FolderAccess.ReadWrite);
+                    if (!client.ConnectTask.Wait(5000)) return BuildReady();
                 }
-                return client;
+
+                if (!client.AuthTask.IsCompleted)
+                {
+                    if (!client.AuthTask.Wait(5000)) return BuildReady();
+                }
+
+                if (!client.InboxOpenTask.IsCompleted)
+                {
+                    if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
+                }
+
+                if (client.IsConnected && client.IsAuthenticated)
+                {
+                    if (!client.Inbox.IsOpen)
+                    {
+                        client.Inbox.Open(FolderAccess.ReadWrite);
+                    }
+                    return client;
+                }
+            } catch (Exception ex)
+            {
+                Thread.Sleep(WaitTime);
+                WaitTime *= 2;
+                return BuildReady();
             }
-                
             return BuildReady();
         }
 
