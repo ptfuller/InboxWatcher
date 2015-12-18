@@ -131,6 +131,7 @@
     <Compile Include="DTO\EmailLogDtoTests.cs" />
     <Compile Include="ImapClientBuilderTests.cs" />
     <Compile Include="ImapClientDirectorTests.cs" />
+    <Compile Include="Notifications\FindNotificationConfigurationTypes.cs" />
     <Compile Include="Notifications\MessageSummaryToListKeyValuePairTests.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

@@ -80,5 +80,17 @@ namespace InboxWatcher.WebAPI.Controllers
 
             return response;
         }
+
+        [Route("js/jquery.signalR-2.2.0.js")]
+        public HttpResponseMessage GetSignalR()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery.signalR-2.2.0.js");
+            response.Content = new StringContent(File.ReadAllText(content));
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
+
+            return response;
+        }
     }
 }

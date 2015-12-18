@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Timer = System.Timers.Timer;
@@ -18,13 +20,13 @@ namespace InboxWatcher.ImapClient
             _smtpClient = director.GetSmtpClient();
             
             _timer = new Timer();
-            _timer.Interval = 1000*60*5; //5 minutes
+            _timer.Interval = 1000*60*3; //3 minutes
             _timer.Elapsed += (s, e) => KeepAlive();
             _timer.AutoReset = true;
             _timer.Start();
         }
 
-        private void KeepAlive()
+        private async void KeepAlive()
         {
             if (!_smtpClient.IsConnected || !_smtpClient.IsAuthenticated)
             {
@@ -32,7 +34,15 @@ namespace InboxWatcher.ImapClient
                 KeepAlive();
             }
 
-            _smtpClient.NoOpAsync();
+            try
+            {
+                await _smtpClient.NoOpAsync();
+            }
+            catch (Exception ex)
+            {
+                _smtpClient = _director.GetSmtpClient();
+                return;
+            }
         }
 
         public bool IsConnected()
@@ -45,12 +55,11 @@ namespace InboxWatcher.ImapClient
             return _smtpClient.IsAuthenticated;
         }
 
-        public bool SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
+        public async Task<bool> SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
         {
             try
             {
-                lock (_smtpClient.SyncRoot)
-                {
+               
                     var client = _smtpClient;
 
                     var buildMessage = new MimeMessage();
@@ -102,8 +111,8 @@ namespace InboxWatcher.ImapClient
 
 
 
-                    client.Send(buildMessage);
-                }
+                    await client.SendAsync(buildMessage);
+                
             }
             catch (Exception ex)
             {   

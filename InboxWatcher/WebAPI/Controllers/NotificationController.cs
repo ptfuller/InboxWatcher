@@ -147,7 +147,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
             //create an instance of the notification type
             var notificationAction = Activator.CreateInstance(t) as AbstractNotification;
-
+            
             //Add all of the properties to the notification object
             foreach (var prop in data.Where(prop => !string.IsNullOrEmpty(prop.Key) && prop.Value != null))
             {

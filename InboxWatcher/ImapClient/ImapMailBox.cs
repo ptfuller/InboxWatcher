@@ -277,7 +277,7 @@ namespace InboxWatcher.ImapClient
         {
             _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
 
-            if (!_emailSender.SendMail(message, uniqueId, emailDestination, moveToDest)) return false;
+            if (!_emailSender.SendMail(message, uniqueId, emailDestination, moveToDest).Result) return false;
 
             if (moveToDest) _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
 

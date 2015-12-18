@@ -2,6 +2,9 @@
 using System.Web.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System;
+using Microsoft.AspNet.SignalR;
+using Microsoft.Owin.Hosting;
 using Owin;
 
 namespace InboxWatcher.WebAPI
@@ -32,11 +35,21 @@ namespace InboxWatcher.WebAPI
                 routeTemplate: "{*url}",
                 defaults: new {controller = "Dashboard", action = "Dashboard"});
 
-            appBuilder.UseWebApi(config);
+            appBuilder.Map("/signalr", map =>
+            {
+                var hubConfiguration = new HubConfiguration
+                {
+
+                };
+
+                map.RunSignalR(hubConfiguration);
+            });
 
             config.Formatters.Remove(config.Formatters.XmlFormatter);
 
             config.EnsureInitialized();
+
+            appBuilder.UseWebApi(config);
         }
     }
 }

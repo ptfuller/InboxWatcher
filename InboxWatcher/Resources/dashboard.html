@@ -12,6 +12,7 @@
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/js/epoxy.js"></script>
+    <script src="js/jquery.signalR-2.2.0.js"></script>
 
     <link rel="stylesheet" href="/css/dashboard.css"/>
     <link rel="stylesheet" href="/css/bootstrap.css"/>
@@ -118,75 +119,75 @@
         </div>
     </div>
 
-    <script>
-var MailBoxes = [];
-var mbId = 0;
+<script>
+    var MailBoxes = [];
+    var mbId = 0;
 
-var MessageSummaryModel = Backbone.Model.extend({
-    idAttribute: 'UniqueId',
-    defaults: {
-		Subject: null,
-		Received: null,
-		Sender: null,
-		EnvelopeId: null,
-		UniqueId: null,
-		CcLine: null
-    }
-});
+    var MessageSummaryModel = Backbone.Model.extend({
+        idAttribute: 'UniqueId',
+        defaults: {
+            Subject: null,
+            Received: null,
+            Sender: null,
+            EnvelopeId: null,
+            UniqueId: null,
+            CcLine: null
+        }
+    });
 
-var MailModel = Backbone.Model.extend({
-    idAttribute: 'Id',
-    defaults: {
-        Id: null,
-        InQueue: null,
-        Minutes: null,
-        Sender: null,
-        TimeReceived: null,
-        Subject: null,
-        MarkedAsRead: null,
-        BodyText: null,
-        EnvelopeID: null,
-        ImapMailBoxConfigurationId: null
-    }
-});
+    var MailModel = Backbone.Model.extend({
+        idAttribute: 'Id',
+        defaults: {
+            Id: null,
+            InQueue: null,
+            Minutes: null,
+            Sender: null,
+            TimeReceived: null,
+            Subject: null,
+            MarkedAsRead: null,
+            BodyText: null,
+            EnvelopeID: null,
+            ImapMailBoxConfigurationId: null
+        }
+    });
 
-var NotificationModel = Backbone.Model.extend({
-    idAttribute: 'Id',
-    defaults: {
-        Id: null,
-        ConfigurationXml: null,
-        ImapMailBoxConfigurationId: null,
-        NotificationType: null
-    }
-});
+    var NotificationModel = Backbone.Model.extend({
+        idAttribute: 'Id',
+        defaults: {
+            Id: null,
+            ConfigurationXml: null,
+            ImapMailBoxConfigurationId: null,
+            NotificationType: null
+        }
+    });
 
-var NotificationCollection = Backbone.Collection.extend({
-    model: NotificationModel
-});
+    var NotificationCollection = Backbone.Collection.extend({
+        model: NotificationModel
+    });
 
-var MailCollection = Backbone.Collection.extend({
-    model: MailModel
-});
+    var MailCollection = Backbone.Collection.extend({
+        model: MailModel
+    });
 
-var MessageSummaryCollection = Backbone.Collection.extend({
-				model: MessageSummaryModel
-});
+    var MessageSummaryCollection = Backbone.Collection.extend({
+        model: MessageSummaryModel
+    });
 
-var emails;
-var allemails;
+    var emails;
+    var allemails;
 
-var notifications;
-var selectedNotifications;
+    var notifications;
+    var selectedNotifications;
 
-var SummariesView = Backbone.View.extend({
-	el: '#mailTable',
-	initialize: function() {
+    var SummariesView = Backbone.View.extend({
+        el: '#mailTable',
+        initialize: function() {
             this.listenTo(this.collection, 'sync change', this.render);
             this.collection.fetch();
             this.render();
         },
-	render: function() {
-		var html = '';
+        render: function() {
+            var html = '';
             this.collection.each(function(m) {
                 html += '<tr data-id="' + m.get('Id') + '">';
                 html += '<td data-toggle="tooltip" data-placement="top" title="' + Object.keys(m.get('Sender')).join(", ") + '">' + Object.keys(m.get('Sender')).join(", ") + '</td>';
@@ -198,137 +199,154 @@ var SummariesView = Backbone.View.extend({
             });
             this.$el.html(html);
             return this;
-	}
-});
-
-$(document).ready(function (){
-
-	$.getJSON('/mailboxes', function(data){
-		var items = [];
-		var count = 0;
-		$.each(data, function(key, val){
-			if (count === 0){
-				items.push('<li class="active" id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
-				$("#dbHeader").text(val + ' Current Messages');
-			} else{
-			    items.push('<li id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
-			}
-			MailBoxes.push(val);
-
-			count++;
-		});
-		$("#mailBoxList").append(items);
-
-	    GetAllStatuses(MailBoxes);
-
-		$.each(MailBoxes, function (key, val) {
-		$('#mailbox' + val).click(function() {
-		    $(".active").removeClass('active');
-		    $('#box' + val).addClass('active');
-				var summaries = new MessageSummaryCollection();
-				summaries.url = 'mailboxes/' + val;
-				var view = new SummariesView({ collection: summaries });
-
-				emails = new MailCollection();
-				emails.url = 'mailboxes/' + val + '/emails/true';
-				emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
-
-				allemails = new MailCollection();
-				allemails.url = 'mailboxes/' + val + '/emails';
-				allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
-
-		        notifications = new NotificationCollection();
-				notifications.url = 'notifications/mailboxes/' + val;
-				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
-
-				GetFolders(val);
-		    GetStatus(val);
-
-				$(function () {
-				    $('[data-toggle="tooltip"]').tooltip({
-				        container: 'body'
-				    });
-				});
-		});
-
-		});
-		
-		var summaries = new MessageSummaryCollection();
-				summaries.url = 'mailboxes/' + MailBoxes[0];
-				var view = new SummariesView({ collection: summaries });
-				emails = new MailCollection();
-				emails.url = 'mailboxes/' + MailBoxes[0] + '/emails/true';
-				emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
-
-				allemails = new MailCollection();
-				allemails.url = 'mailboxes/' + MailBoxes[0] + '/emails';
-				allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
-
-				notifications = new NotificationCollection();
-				notifications.url = 'notifications/mailboxes/' + MailBoxes[0];
-				notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
-
-	    GetFolders(MailBoxes[0]);
-	    GetStatus(MailBoxes[0]);
-
-				$(function () {
-				    $('[data-toggle="tooltip"]').tooltip({
-				        container: 'body'
-				    });
-				});
-
-	});
-});
-
-        function GetFolders(val) {
-            $.getJSON('/mailboxes/' + val + '/folders', function (folders) {
-                var f = [];
-                f.push('<button class="btn btn-default" data-toggle="collapse" data-target="#flist">Folders</button>');
-                f.push('<ul class="list-unstyled collapse" id="flist">');
-                $.each(folders, function (key, val) {
-                    f.push('<li><p>' + val + '</p></li>');
-                });
-                f.push('</ul>');
-                $("#folders").html(f.join(""));
-            });
         }
+    });
 
-        function GetStatus(val) {
-            $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
-                $("#exceptions").html(exceptions.Exceptions.length);
-                $(".page-header").html(val + ' Dashboard - <small>client started ' + exceptions.StartTime + '</small>');
+    $(document).ready(function() {
 
-                //switch to red
-                if (exceptions.Exceptions.length > 0) {
-                    $("#exceptionBorder").removeClass('circle-border');
-                    $("#exceptionBorder").addClass('circle-border-red');
-                    $("#exceptionCircle").click(function() {
-                        window.location.href = '/mailboxes/' + val + '/status';
+        $.getJSON('/mailboxes', function(data) {
+            var items = [];
+            var count = 0;
+            $.each(data, function(key, val) {
+                if (count === 0) {
+                    items.push('<li class="active" id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
+                    $("#dbHeader").text(val + ' Current Messages');
+                } else {
+                    items.push('<li id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
+                }
+                MailBoxes.push(val);
+
+                count++;
+            });
+            $("#mailBoxList").append(items);
+
+            GetAllStatuses(MailBoxes);
+
+            $.each(MailBoxes, function(key, val) {
+                $('#mailbox' + val).click(function() {
+                    $(".active").removeClass('active');
+                    $('#box' + val).addClass('active');
+                    var summaries = new MessageSummaryCollection();
+                    summaries.url = 'mailboxes/' + val;
+                    var view = new SummariesView({ collection: summaries });
+
+                    emails = new MailCollection();
+                    emails.url = 'mailboxes/' + val + '/emails/true';
+                    emails.fetch({ success: function() { $("#totalEmailsToday").html(emails.length); } });
+
+                    allemails = new MailCollection();
+                    allemails.url = 'mailboxes/' + val + '/emails';
+                    allemails.fetch({ success: function() { $("#totalEmails").html(allemails.length); } });
+
+                    notifications = new NotificationCollection();
+                    notifications.url = 'notifications/mailboxes/' + val;
+                    notifications.fetch({ success: function() { $("#attachedNotifications").html(notifications.length) } });
+
+                    GetFolders(val);
+                    GetStatus(val);
+
+                    $(function() {
+                        $('[data-toggle="tooltip"]').tooltip({
+                            container: 'body'
+                        });
                     });
-                }
+                });
 
-                //back to green
-                if (exceptions.Exceptions.length === 0) {
-                    $("#exceptionCircle").unbind();
-                    $("#exceptionBorder").removeClass('circle-border-red');
-                    $("#exceptionBorder").addClass('circle-border');
-                }
             });
-        }
 
-        function GetAllStatuses(mb) {
-            $.each(mb, function(key, val) {
-                $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
-                    if (exceptions.Green) {
-                        $("#mailbox" + val).html(val + '<div class="led-green"></div>');
-                    }
+            var summaries = new MessageSummaryCollection();
+            summaries.url = 'mailboxes/' + MailBoxes[0];
+            var view = new SummariesView({ collection: summaries });
+            emails = new MailCollection();
+            emails.url = 'mailboxes/' + MailBoxes[0] + '/emails/true';
+            emails.fetch({ success: function() { $("#totalEmailsToday").html(emails.length); } });
 
-                    if (!exceptions.Green) {
-                        $("#mailbox" + val).html(val + '<div class="led-red"></div>');
-                    }
+            allemails = new MailCollection();
+            allemails.url = 'mailboxes/' + MailBoxes[0] + '/emails';
+            allemails.fetch({ success: function() { $("#totalEmails").html(allemails.length); } });
+
+            notifications = new NotificationCollection();
+            notifications.url = 'notifications/mailboxes/' + MailBoxes[0];
+            notifications.fetch({ success: function() { $("#attachedNotifications").html(notifications.length) } });
+
+            GetFolders(MailBoxes[0]);
+            GetStatus(MailBoxes[0]);
+
+            $(function() {
+                $('[data-toggle="tooltip"]').tooltip({
+                    container: 'body'
                 });
             });
+
+        });
+    });
+
+    function GetFolders(val) {
+        $.getJSON('/mailboxes/' + val + '/folders', function(folders) {
+            var f = [];
+            f.push('<button class="btn btn-default" data-toggle="collapse" data-target="#flist">Folders</button>');
+            f.push('<ul class="list-unstyled collapse" id="flist">');
+            $.each(folders, function(key, val) {
+                f.push('<li><p>' + val + '</p></li>');
+            });
+            f.push('</ul>');
+            $("#folders").html(f.join(""));
+        });
+    }
+
+    function GetStatus(val) {
+        $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
+            $("#exceptions").html(exceptions.Exceptions.length);
+            $(".page-header").html(val + ' Dashboard - <small>client started ' + exceptions.StartTime + '</small>');
+
+            //switch to red
+            if (exceptions.Exceptions.length > 0) {
+                $("#exceptionBorder").removeClass('circle-border');
+                $("#exceptionBorder").addClass('circle-border-red');
+                $("#exceptionCircle").click(function() {
+                    window.location.href = '/mailboxes/' + val + '/status';
+                });
+            }
+
+            //back to green
+            if (exceptions.Exceptions.length === 0) {
+                $("#exceptionCircle").unbind();
+                $("#exceptionBorder").removeClass('circle-border-red');
+                $("#exceptionBorder").addClass('circle-border');
+            }
+        });
+    }
+
+    function GetAllStatuses(mb) {
+        $.each(mb, function(key, val) {
+            $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
+                if (exceptions.Green) {
+                    $("#mailbox" + val).html(val + '<div class="led-green"></div>');
+                }
+
+                if (!exceptions.Green) {
+                    $("#mailbox" + val).html(val + '<div class="led-red"></div>');
+                }
+            });
+        });
+    }
+</script>
+    <script src="http://localhost:9000/signalr/hubs"></script>
+<script>
+    $(function() {
+        //Set the hubs URL for the connection
+        $.connection.hub.url = "http://localhost:9000/signalr";
+        var hello = $.connection.signalRController;
+
+        hello.client.hello = function(message) {
+            alert(message);
         }
-    </script>
+
+        $.connection.hub.start().done(function() {
+            hello.server.send("signalR connected!");
+            hello.server.hello();
+        });
+    });
+</script>
 </body>
 </html>

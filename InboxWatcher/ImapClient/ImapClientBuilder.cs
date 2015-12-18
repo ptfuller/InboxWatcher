@@ -2,6 +2,7 @@
 using MailKit;
 using System;
 using System.Threading;
+using MailKit.Security;
 
 namespace InboxWatcher.ImapClient
 {
@@ -14,7 +15,7 @@ namespace InboxWatcher.ImapClient
         private string _userName;
         private string _sendName;
         private bool _useSecure = true;
-        private bool _smtpUseSSL = false;
+        private bool _smtpUseSSL = true;
         private string _smtpHostName;
         private string _smtpUserName;
         private string _smtpPassword;
@@ -89,7 +90,8 @@ namespace InboxWatcher.ImapClient
         public virtual SendClient GetSmtpClient()
         {
             var client = new SendClient();
-            client.Connect(_smtpHostName, _smtpPort, _smtpUseSSL);
+            
+            client.Connect(_smtpHostName, _smtpPort);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
             client.Authenticate(_smtpUserName, _smtpPassword);
             return client;
