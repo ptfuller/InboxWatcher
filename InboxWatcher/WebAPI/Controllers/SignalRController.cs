@@ -1,18 +1,14 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Microsoft.AspNet.SignalR;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
     public class SignalRController : Hub
     {
-        public void Hello()
+       public void Refresh()
         {
-            Clients.All.hello("Hello from SignalR!");
-        }
-
-        public void Send(string message)
-        {
-            Debug.WriteLine(message);
+            Clients.All.FreshenMailBox();
         }
     }
 }

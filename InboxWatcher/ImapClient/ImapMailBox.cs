@@ -8,7 +8,9 @@ using InboxWatcher.DTO;
 using InboxWatcher.Enum;
 using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
+using InboxWatcher.WebAPI.Controllers;
 using MailKit;
+using Microsoft.AspNet.SignalR;
 using MimeKit;
 using WebGrease.Css.Extensions;
 
@@ -232,7 +234,7 @@ namespace InboxWatcher.ImapClient
         private void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
             var messages = _imapWorker.GetNewMessages(eventArgs.Count);
-            
+
             foreach (var message in messages)
             {
                 if (EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
@@ -242,6 +244,9 @@ namespace InboxWatcher.ImapClient
                 NewMessageReceived?.Invoke(message, EventArgs.Empty);
                 _mbLogger.LogEmailReceived(message);
             }
+
+            var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
+            ctx.Clients.All.FreshenMailBox();
         }
 
         private void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
@@ -255,6 +260,9 @@ namespace InboxWatcher.ImapClient
             _mbLogger.LogEmailRemoved(message);
             
             EmailList.RemoveAt(messageEventArgs.Index);
+
+            var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
+            ctx.Clients.All.FreshenMailBox();
         }
         
 

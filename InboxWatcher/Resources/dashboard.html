@@ -123,6 +123,8 @@
     var MailBoxes = [];
     var mbId = 0;
 
+    var SelectedMailBox = "";
+
     var MessageSummaryModel = Backbone.Model.extend({
         idAttribute: 'UniqueId',
         defaults: {
@@ -226,22 +228,8 @@
                 $('#mailbox' + val).click(function() {
                     $(".active").removeClass('active');
                     $('#box' + val).addClass('active');
-                    var summaries = new MessageSummaryCollection();
-                    summaries.url = 'mailboxes/' + val;
-                    var view = new SummariesView({ collection: summaries });
 
-                    emails = new MailCollection();
-                    emails.url = 'mailboxes/' + val + '/emails/true';
-                    emails.fetch({ success: function() { $("#totalEmailsToday").html(emails.length); } });
-
-                    allemails = new MailCollection();
-                    allemails.url = 'mailboxes/' + val + '/emails';
-                    allemails.fetch({ success: function() { $("#totalEmails").html(allemails.length); } });
-
-                    notifications = new NotificationCollection();
-                    notifications.url = 'notifications/mailboxes/' + val;
-                    notifications.fetch({ success: function() { $("#attachedNotifications").html(notifications.length) } });
-
+                    GetSummaries(val);
                     GetFolders(val);
                     GetStatus(val);
 
@@ -254,23 +242,10 @@
 
             });
 
-            var summaries = new MessageSummaryCollection();
-            summaries.url = 'mailboxes/' + MailBoxes[0];
-            var view = new SummariesView({ collection: summaries });
-            emails = new MailCollection();
-            emails.url = 'mailboxes/' + MailBoxes[0] + '/emails/true';
-            emails.fetch({ success: function() { $("#totalEmailsToday").html(emails.length); } });
-
-            allemails = new MailCollection();
-            allemails.url = 'mailboxes/' + MailBoxes[0] + '/emails';
-            allemails.fetch({ success: function() { $("#totalEmails").html(allemails.length); } });
-
-            notifications = new NotificationCollection();
-            notifications.url = 'notifications/mailboxes/' + MailBoxes[0];
-            notifications.fetch({ success: function() { $("#attachedNotifications").html(notifications.length) } });
-
+            GetSummaries(MailBoxes[0]);
             GetFolders(MailBoxes[0]);
             GetStatus(MailBoxes[0]);
+            SelectedMailBox = MailBoxes[0];
 
             $(function() {
                 $('[data-toggle="tooltip"]').tooltip({
@@ -292,6 +267,24 @@
             f.push('</ul>');
             $("#folders").html(f.join(""));
         });
+    }
+
+    function GetSummaries(mb) {
+        var summaries = new MessageSummaryCollection();
+        summaries.url = 'mailboxes/' + mb;
+        var view = new SummariesView({ collection: summaries });
+
+        emails = new MailCollection();
+        emails.url = 'mailboxes/' + mb + '/emails/true';
+        emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
+
+        allemails = new MailCollection();
+        allemails.url = 'mailboxes/' + mb + '/emails';
+        allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
+
+        notifications = new NotificationCollection();
+        notifications.url = 'notifications/mailboxes/' + mb;
+        notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
     }
 
     function GetStatus(val) {
@@ -336,16 +329,14 @@
     $(function() {
         //Set the hubs URL for the connection
         $.connection.hub.url = "http://localhost:9000/signalr";
-        var hello = $.connection.signalRController;
+        var con = $.connection.signalRController;
 
-        hello.client.hello = function(message) {
-            alert(message);
+        con.client.freshenMailBox = function () {
+            GetSummaries(SelectedMailBox);
+            console.log('fetched summaries');
         }
 
-        $.connection.hub.start().done(function() {
-            hello.server.send("signalR connected!");
-            hello.server.hello();
-        });
+        $.connection.hub.start();
     });
 </script>
 </body>
