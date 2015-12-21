@@ -23,7 +23,7 @@ namespace InboxWatcher.ImapClient
 
         private EventHandler<MessagesArrivedEventArgs> messageArrived;
         public event EventHandler<MessagesArrivedEventArgs> MessageArrived
-        {
+        {//make sure only 1 subscription to these event handlers
             add
             {
                 if (messageArrived == null || !messageArrived.GetInvocationList().Contains(value))

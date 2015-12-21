@@ -6,9 +6,9 @@ namespace InboxWatcher.WebAPI.Controllers
 {
     public class SignalRController : Hub
     {
-       public void Refresh()
+       public void Refresh(string mbName)
         {
-            Clients.All.FreshenMailBox();
+            Clients.All.FreshenMailBox(mbName);
         }
     }
 }

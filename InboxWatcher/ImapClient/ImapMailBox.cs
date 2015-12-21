@@ -205,7 +205,7 @@ namespace InboxWatcher.ImapClient
             var templist = EmailList;
 
             EmailList.Clear();
-            EmailList.AddRange(_imapWorker.FreshenMailBox());
+            EmailList.AddRange(_imapWorker.FreshenMailBox().Result);
 
             foreach (var email in EmailList.Where(email => _mbLogger.LogEmailReceived(email)))
             {
@@ -233,7 +233,7 @@ namespace InboxWatcher.ImapClient
 
         private void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            var messages = _imapWorker.GetNewMessages(eventArgs.Count);
+            var messages = _imapWorker.GetNewMessages(eventArgs.Count).Result;
 
             foreach (var message in messages)
             {
@@ -246,12 +246,12 @@ namespace InboxWatcher.ImapClient
             }
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
-            ctx.Clients.All.FreshenMailBox();
+            ctx.Clients.All.FreshenMailBox(MailBoxName);
         }
 
         private void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
         {
-            if (EmailList[messageEventArgs.Index] == null) return;
+            if (messageEventArgs.Index > EmailList.Count || EmailList[messageEventArgs.Index] == null) return;
 
             var message = EmailList[messageEventArgs.Index];
 
@@ -262,13 +262,13 @@ namespace InboxWatcher.ImapClient
             EmailList.RemoveAt(messageEventArgs.Index);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
-            ctx.Clients.All.FreshenMailBox();
+            ctx.Clients.All.FreshenMailBox(MailBoxName);
         }
         
 
         private void ImapIdlerOnMessageSeen(object sender, MessageFlagsChangedEventArgs eventArgs)
         {
-            var message = _imapWorker.GetMessageSummary(eventArgs.Index);
+            var message = _imapWorker.GetMessageSummary(eventArgs.Index).Result;
             _mbLogger.LogEmailSeen(message);
             NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Seen));
         }
@@ -276,7 +276,7 @@ namespace InboxWatcher.ImapClient
         public MimeMessage GetMessage(uint uniqueId)
         {
             var uid = new UniqueId(uniqueId);
-            return _imapWorker.GetMessage(uid);
+            return _imapWorker.GetMessage(uid).Result;
         }
 
 

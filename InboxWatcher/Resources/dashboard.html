@@ -232,6 +232,8 @@
                     GetSummaries(val);
                     GetFolders(val);
                     GetStatus(val);
+                    SelectedMailBox = val;
+                    $("#dbHeader").text(SelectedMailBox + ' Current Messages');
 
                     $(function() {
                         $('[data-toggle="tooltip"]').tooltip({
@@ -331,8 +333,8 @@
         $.connection.hub.url = "http://localhost:9000/signalr";
         var con = $.connection.signalRController;
 
-        con.client.freshenMailBox = function () {
-            GetSummaries(SelectedMailBox);
+        con.client.freshenMailBox = function (mbName) {
+            if (mbName === SelectedMailBox) GetSummaries(mbName);
             console.log('fetched summaries');
         }
 

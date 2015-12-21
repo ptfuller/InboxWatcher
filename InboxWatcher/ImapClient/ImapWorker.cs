@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using MailKit;
 using MailKit.Net.Imap;
 using MimeKit;
@@ -27,75 +28,57 @@ namespace InboxWatcher.ImapClient
             IdleLoop();
         }
 
-        public IMessageSummary GetMessageSummary(UniqueId uid)
+        public async Task<IMessageSummary> GetMessageSummary(UniqueId uid)
         {
             StopIdle();
 
-            IList<IMessageSummary> result;
+            var result = await ImapClient.Inbox.FetchAsync(new List<UniqueId> {uid}, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
+            
+            StartIdling();
 
-            lock (ImapClient.SyncRoot)
-            {
-                result = ImapClient.Inbox.Fetch(new List<UniqueId> {uid}, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
-            }
+            return result.First();
+        }
+
+        public async Task<IMessageSummary> GetMessageSummary(int index)
+        {
+            StopIdle();
+
+            var result = await ImapClient.Inbox.FetchAsync(index, index, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
 
             StartIdling();
 
             return result.First();
         }
 
-        public IMessageSummary GetMessageSummary(int index)
-        {
-            StopIdle();
-
-            IList<IMessageSummary> result;
-
-            lock (ImapClient.SyncRoot)
-            {
-                result = ImapClient.Inbox.Fetch(index, index, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
-            }
-
-            StartIdling();
-
-            return result.First();
-        }
-
-        public MimeMessage GetMessage(UniqueId uid)
+        public async Task<MimeMessage> GetMessage(UniqueId uid)
         {
             StopIdle();
 
             var getToken = new CancellationTokenSource();
 
-            MimeMessage message;
-
-            lock (ImapClient.SyncRoot)
-            {
-                message = ImapClient.Inbox.GetMessage(uid, getToken.Token);
-            }
+            var message = await ImapClient.Inbox.GetMessageAsync(uid, getToken.Token);
 
             StartIdling();
 
             return message;
         }
 
-        public bool DeleteMessage(UniqueId uid)
+        public async Task<bool> DeleteMessage(UniqueId uid)
         {
             StopIdle();
 
             try
             {
-                lock (ImapClient.SyncRoot)
-                {
                     if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
                     {
-                        ImapClient.Inbox.Expunge(new[] {uid});
+                        await ImapClient.Inbox.ExpungeAsync(new[] {uid});
                     }
                     else
                     {
                         var delToken = new CancellationTokenSource();
-                        ImapClient.Inbox.AddFlags(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
-                        ImapClient.Inbox.Expunge(delToken.Token);
+                        await ImapClient.Inbox.AddFlagsAsync(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
+                        await ImapClient.Inbox.ExpungeAsync(delToken.Token);
                     }
-                }
             }
             catch (Exception ex)
             {
@@ -108,38 +91,36 @@ namespace InboxWatcher.ImapClient
             return true;
         }
 
-        public void MoveMessage(uint uniqueId, string emailDestination, string mbname)
+        public async void MoveMessage(uint uniqueId, string emailDestination, string mbname)
         {
             StopIdle();
 
-            lock (ImapClient.SyncRoot)
-            {
-
-                var root = ImapClient.GetFolder(ImapClient.PersonalNamespaces[0]);
+            var root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, CancellationToken.None);
 
                 IMailFolder mbfolder;
                 IMailFolder destFolder;
 
                 try
                 {
-                    mbfolder = root.GetSubfolder(mbname);
+                    mbfolder = await root.GetSubfolderAsync(mbname);
                 }
                 catch (FolderNotFoundException ice)
                 {
-                    mbfolder = root.Create(mbname, false);
+                    mbfolder = await root.CreateAsync(mbname, false);
                 }
 
                 try
                 {
-                    destFolder = mbfolder.GetSubfolder(emailDestination);
+                    destFolder = await mbfolder.GetSubfolderAsync(emailDestination);
                 }
                 catch (FolderNotFoundException ice)
                 {
-                    destFolder = mbfolder.Create(emailDestination, true);
+                    destFolder = await mbfolder.CreateAsync(emailDestination, true);
                 }
+
                 try
                 {
-                    ImapClient.Inbox.MoveTo(new UniqueId(uniqueId), destFolder);
+                    await ImapClient.Inbox.MoveToAsync(new UniqueId(uniqueId), destFolder);
                 }
                 catch (Exception ex)
                 {
@@ -147,7 +128,6 @@ namespace InboxWatcher.ImapClient
                     StartIdling();
                     return;
                 }
-            }
 
             StartIdling();
         }
@@ -156,7 +136,7 @@ namespace InboxWatcher.ImapClient
         /// Get the 500 newest message summaries
         /// </summary>
         /// <returns>message summaries for the newest 500 messages in the inbox</returns>
-        public IEnumerable<IMessageSummary> FreshenMailBox()
+        public async Task<IEnumerable<IMessageSummary>> FreshenMailBox()
         {
             StopIdle();
 
@@ -172,10 +152,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                lock (ImapClient.SyncRoot)
-                {
-                    result.AddRange(ImapClient.Inbox.Fetch(min, count, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
-                }
+                result.AddRange(await ImapClient.Inbox.FetchAsync(min, count, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
             }
             catch (Exception ex)
             {
@@ -194,7 +171,7 @@ namespace InboxWatcher.ImapClient
         /// </summary>
         /// <param name="numNewMessages">The number of new messages received</param>
         /// <returns>MessageSummaries of newly received messages</returns>
-        public IEnumerable<IMessageSummary> GetNewMessages(int numNewMessages)
+        public async Task<IEnumerable<IMessageSummary>> GetNewMessages(int numNewMessages)
         {
             StopIdle();
 
@@ -209,10 +186,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                lock (ImapClient.SyncRoot)
-                {
-                    result.AddRange(ImapClient.Inbox.Fetch(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
-                }
+                result.AddRange(await ImapClient.Inbox.FetchAsync(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
             }
             catch (Exception ex)
             {
