@@ -7,6 +7,13 @@ todo:
 - [X] SignalR
 - [X] Better handling of Smtp / sending emails
 - [ ] Better README.md
+- [ ] Add email filtering
+- [ ] Improved status display on dashboard (show when starting up and when started via signalR)
+- [ ] Charts on dashboard
+- [ ] Search for old emails in mailbox
+- [ ] Index all existing emails?
+- [ ] Serialize emails to db as they come in for speed improvement / backup?
+- [ ] Ability to choose DB type / hookup to existing db (don't force user to localdb)
 - [ ] Factory for Notifications
-- [ ] Additional notification types
+- [ ] Additional notification types (sms, signalr, wcf, more?)
 - [ ] Catch up on tests
