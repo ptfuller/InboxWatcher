@@ -10,6 +10,7 @@ using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
 using InboxWatcher.WebAPI.Controllers;
 using MailKit;
+using MailKit.Search;
 using Microsoft.AspNet.SignalR;
 using MimeKit;
 using WebGrease.Css.Extensions;
@@ -237,7 +238,7 @@ namespace InboxWatcher.ImapClient
 
             foreach (var message in messages)
             {
-                if (EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
+                if (message?.Envelope == null || EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
 
                 EmailList.Add(message);
                 NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received));
@@ -276,7 +277,28 @@ namespace InboxWatcher.ImapClient
         public MimeMessage GetMessage(uint uniqueId)
         {
             var uid = new UniqueId(uniqueId);
-            return _imapWorker.GetMessage(uid).Result;
+
+            MimeMessage result = new MimeMessage();
+
+            try
+            {
+                result = _imapWorker.GetMessage(uid).Result;
+            }
+            catch (AggregateException ex)
+            {
+                if (ex.InnerExceptions.Any(x => x is MessageNotFoundException))
+                {
+                    var messageId = EmailList.FirstOrDefault(x => x.UniqueId.Id == uniqueId)?.Envelope.MessageId;
+
+                    if (string.IsNullOrEmpty(messageId)) throw ex;
+
+                    var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
+
+                    result = _imapWorker.GetMessage(query).Result;
+                }
+            }
+
+            return result;
         }
 
 

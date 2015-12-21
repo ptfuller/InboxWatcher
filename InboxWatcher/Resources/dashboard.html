@@ -196,7 +196,7 @@
                 html += '<td data-toggle="tooltip" data-placement="top" title="' + m.get('Subject') + '">' + m.get('Subject') + '</td>';
                 html += '<td>' + m.get('Received') + '</td>';
                 html += '<td data-toggle="tooltip" data-placement="top" title="' + Object.keys(m.get('CcLine')).join(", ") + '">' + Object.keys(m.get('CcLine')).join(", ") + '</td>';
-                html += '<td>' + m.get('UniqueId') + '</td>';
+                html += '<td>' + '<a href="/mailboxes/' + SelectedMailBox + '/' + m.get('UniqueId') + '">' + m.get('UniqueId') + '</a></td>';
                 html += '</tr>';
             });
             this.$el.html(html);

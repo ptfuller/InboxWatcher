@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Search;
 using MimeKit;
 
 namespace InboxWatcher.ImapClient
@@ -61,6 +62,17 @@ namespace InboxWatcher.ImapClient
             StartIdling();
 
             return message;
+        }
+
+        public async Task<MimeMessage> GetMessage(HeaderSearchQuery query)
+        {
+            StopIdle();
+            
+            var uids = await ImapClient.Inbox.SearchAsync(query);
+
+            var results = await ImapClient.Inbox.FetchAsync(uids, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
+
+            return await ImapClient.Inbox.GetMessageAsync(results.First().Index);
         }
 
         public async Task<bool> DeleteMessage(UniqueId uid)
