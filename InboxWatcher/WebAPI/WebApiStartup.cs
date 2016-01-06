@@ -46,7 +46,7 @@ namespace InboxWatcher.WebAPI
             });
 
             config.Formatters.Remove(config.Formatters.XmlFormatter);
-
+            //config.Formatters.JsonFormatter.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             config.EnsureInitialized();
 
             appBuilder.UseWebApi(config);

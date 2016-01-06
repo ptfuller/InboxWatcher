@@ -35,7 +35,14 @@ namespace InboxWatcher.Notifications
                 using (var client = new HttpClient())
                 {
                    var summ = new Summary(summary);
-                   var result = client.PostAsJsonAsync(Url, summ).Result;
+                    try
+                    {
+                        var result = client.PostAsJsonAsync(Url, summ).Result;
+                    }
+                    catch (Exception)
+                    {
+                        
+                    }
                 }
             }
 

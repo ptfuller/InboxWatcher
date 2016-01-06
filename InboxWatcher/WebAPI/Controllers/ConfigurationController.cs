@@ -35,6 +35,7 @@ namespace InboxWatcher.WebAPI.Controllers
         {
             using (var ctx = new MailModelContainer())
             {
+                ctx.Configuration.ProxyCreationEnabled = false;
                 var selection = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.Id == id);
                 if (selection != null) return selection;
 

@@ -292,6 +292,7 @@
     <None Include="MailModel.edmx.diagram">
       <DependentUpon>MailModel.edmx</DependentUpon>
     </None>
+    <None Include="Resources\jquery-2.1.4.min.js" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="InboxWatcher.mdf">
@@ -312,41 +313,20 @@
       <LastGenOutput>MailModel.cs</LastGenOutput>
       <DependentUpon>MailModel.edmx</DependentUpon>
     </Content>
-    <Content Include="Resources\backbone.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\bootstrap.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\configuration.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\dashboard.css">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\dashboard.html">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\epoxy.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\help.html">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Resources\underscore.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Scripts\jquery-1.6.4-vsdoc.js" />
-    <Content Include="Scripts\jquery-1.6.4.js" />
-    <Content Include="Scripts\jquery-1.6.4.min.js" />
-    <Content Include="Resources\jquery.signalR-2.2.0.js">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Scripts\jquery.signalR-2.2.0.min.js" />
+    <Content Include="Resources\backbone.js" />
+    <Content Include="Resources\bootstrap.css" />
+    <Content Include="Resources\configuration.html" />
+    <Content Include="Resources\dashboard.css" />
+    <Content Include="Resources\dashboard.html" />
+    <Content Include="Resources\epoxy.js" />
+    <Content Include="Resources\help.html" />
+    <Content Include="Resources\jquery-1.6.4-vsdoc.js" />
+    <Content Include="Resources\jquery-1.6.4.js" />
+    <Content Include="Resources\jquery-1.6.4.min.js" />
+    <Content Include="Resources\jquery.signalR-2.2.0.js" />
+    <Content Include="Resources\jquery.signalR-2.2.0.min.js" />
+    <Content Include="Resources\underscore.js" />
     <None Include="packages.config" />
-    <None Include="Resources\jquery-2.1.4.min.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -363,6 +343,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
