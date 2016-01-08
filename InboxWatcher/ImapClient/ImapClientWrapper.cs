@@ -226,7 +226,21 @@ namespace InboxWatcher.ImapClient
 
         public Task IdleAsync(CancellationToken doneToken, CancellationToken cancellationToken = new CancellationToken())
         {
-            return _imapClient.IdleAsync(doneToken, cancellationToken);
+            Task task;
+
+            try
+            {
+                task = _imapClient.IdleAsync(doneToken, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (!_imapClient.Inbox.IsOpen)
+                _imapClient.Inbox.Open(FolderAccess.ReadWrite);
+
+                task = _imapClient.IdleAsync(doneToken, cancellationToken);
+            }
+
+            return task;
         }
 
         public IMailFolder GetFolder(SpecialFolder folder)

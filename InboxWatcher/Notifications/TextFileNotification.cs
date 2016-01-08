@@ -14,7 +14,7 @@ namespace InboxWatcher.Notifications
         [XmlAttribute]
         public string FilePath { get; set; } = "";
 
-        public override bool Notify(IMessageSummary summary, NotificationType notificationType)
+        public override bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
         {
             var sb = new StringBuilder();
             sb.AppendLine("***** " + DateTime.Now + " : Action Happened *****");

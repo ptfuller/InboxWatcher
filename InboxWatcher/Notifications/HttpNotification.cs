@@ -26,7 +26,7 @@ namespace InboxWatcher.Notifications
 
         protected List<KeyValuePair<string, string>> Kvp;
 
-        public override bool Notify(IMessageSummary summary, NotificationType notificationType)
+        public override bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
         {
             string response;
 
@@ -34,7 +34,7 @@ namespace InboxWatcher.Notifications
             {
                 using (var client = new HttpClient())
                 {
-                   var summ = new Summary(summary);
+                    var summ = new NotificationSummary(summary, notificationType) {MailBoxName = mailBoxName};
                     try
                     {
                         var result = client.PostAsJsonAsync(Url, summ).Result;

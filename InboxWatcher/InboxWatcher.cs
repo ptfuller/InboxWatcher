@@ -11,6 +11,7 @@ using InboxWatcher.DTO;
 using InboxWatcher.ImapClient;
 using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
+using InboxWatcher.Properties;
 using InboxWatcher.WebAPI;
 using MailKit;
 using Microsoft.Owin.Hosting;
@@ -77,7 +78,7 @@ namespace InboxWatcher
 
         private void StartWebApi()
         {
-            var baseAddress = "http://localhost:9000/";
+            var baseAddress = Settings.Default.HostName;
             WebApp.Start<WebApiStartup>(baseAddress);
         }
 

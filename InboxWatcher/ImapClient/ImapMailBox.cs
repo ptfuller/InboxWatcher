@@ -22,6 +22,7 @@ namespace InboxWatcher.ImapClient
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
+        private EmailFilterer _emailFilterer;
 
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
@@ -68,14 +69,14 @@ namespace InboxWatcher.ImapClient
 
         public virtual void Setup()
         {
-            if (_recoveryTask != null && !_recoveryTask.IsCompleted && !_recoveryTask.IsFaulted) return;
+            //if (_recoveryTask != null && !_recoveryTask.IsCompleted && !_recoveryTask.IsFaulted) return;
 
             //if setup fails let's try again soon
             if (!SetupClients())
             {
                 _recoveryTask = Task.Factory.StartNew(() =>
                 {
-                    Thread.Sleep(_retryTime);
+                    Task.Delay(_retryTime);
                     _retryTime *= 2;
                     Setup();
                 });
@@ -83,13 +84,7 @@ namespace InboxWatcher.ImapClient
                 return;
             }
             
-            //exceptions that happen in the idler or worker get logged in a list in the mailbox
-            _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
-            _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
-
-            _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
-            _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
-
+            //setup event handlers
             _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
             _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
             _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
@@ -99,6 +94,12 @@ namespace InboxWatcher.ImapClient
 
             //get folders
             EmailFolders = _imapIdler.GetMailFolders();
+
+            //setup email filterer
+            _emailFilterer = new EmailFilterer(this);
+
+            //filter all new messages
+            Task.Factory.StartNew(() => _emailFilterer.FilterAllMessages(EmailList));
 
             Exceptions.Clear();
         }
@@ -183,6 +184,13 @@ namespace InboxWatcher.ImapClient
 
                 _emailSender = new EmailSender(ImapClientDirector);
 
+                //exceptions that happen in the idler or worker get logged in a list in the mailbox
+                _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
+                _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
+
+                _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
+                _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
+
                 _imapIdler.Setup();
                 _imapWorker.Setup();
             }
@@ -210,7 +218,7 @@ namespace InboxWatcher.ImapClient
 
             foreach (var email in EmailList.Where(email => _mbLogger.LogEmailReceived(email)))
             {
-                NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received));
+                NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received, MailBoxName));
                 NewMessageReceived?.Invoke(email, EventArgs.Empty);
             }
 
@@ -241,7 +249,7 @@ namespace InboxWatcher.ImapClient
                 if (message?.Envelope == null || EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
 
                 EmailList.Add(message);
-                NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received));
+                NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received, MailBoxName));
                 NewMessageReceived?.Invoke(message, EventArgs.Empty);
                 _mbLogger.LogEmailReceived(message);
             }
@@ -256,7 +264,7 @@ namespace InboxWatcher.ImapClient
 
             var message = EmailList[messageEventArgs.Index];
 
-            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Removed));
+            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Removed, MailBoxName));
             MessageRemoved?.Invoke(message, EventArgs.Empty);
             _mbLogger.LogEmailRemoved(message);
             
@@ -271,7 +279,7 @@ namespace InboxWatcher.ImapClient
         {
             var message = _imapWorker.GetMessageSummary(eventArgs.Index).Result;
             _mbLogger.LogEmailSeen(message);
-            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Seen));
+            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Seen, MailBoxName));
         }
 
         public MimeMessage GetMessage(uint uniqueId)
@@ -290,7 +298,7 @@ namespace InboxWatcher.ImapClient
                 {
                     var messageId = EmailList.FirstOrDefault(x => x.UniqueId.Id == uniqueId)?.Envelope.MessageId;
 
-                    if (string.IsNullOrEmpty(messageId)) throw ex;
+                    if (string.IsNullOrEmpty(messageId)) return result;
 
                     var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
 
@@ -314,5 +322,16 @@ namespace InboxWatcher.ImapClient
             return true;
         }
 
+        public void MoveMessage(IMessageSummary summary, string moveToFolder, string actionTakenBy)
+        {
+            _mbLogger.LogEmailChanged(summary, actionTakenBy, "Moved");
+            _imapWorker.MoveMessage(summary.UniqueId.Id, moveToFolder, MailBoxName);
+        }
+
+        public void MoveMessage(uint uid, string messageid, string moveToFolder, string actionTakenBy)
+        {
+            _mbLogger.LogEmailChanged(messageid, actionTakenBy, "Moved to " + moveToFolder);
+            _imapWorker.MoveMessage(uid, moveToFolder, MailBoxName);
+        }
     }
 }

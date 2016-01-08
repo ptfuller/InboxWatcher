@@ -16,7 +16,7 @@ namespace InboxWatcher.Notifications
         [XmlAttribute]
         public virtual string Type { get; set; }
 
-        public abstract bool Notify(IMessageSummary summary, NotificationType notificationType);
+        public abstract bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName);
 
         public virtual string Serialize()
         {
@@ -50,7 +50,7 @@ namespace InboxWatcher.Notifications
             env.Date = DateTime.Now;
             testSummary.Envelope = env;
 
-            Notify(testSummary, NotificationType.Received);
+            Notify(testSummary, NotificationType.Received, "testNotification");
         }
     }
 }

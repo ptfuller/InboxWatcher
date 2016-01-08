@@ -197,6 +197,7 @@
     </Compile>
     <Compile Include="Enum\NotificationType.cs" />
     <Compile Include="HtmlToText.cs" />
+    <Compile Include="ImapClient\EmailFilterer.cs" />
     <Compile Include="ImapClient\EmailSender.cs" />
     <Compile Include="Interface\IEmailLog.cs" />
     <Compile Include="Interface\IEmail.cs" />
@@ -241,6 +242,7 @@
     <Compile Include="Notifications\HttpNotification.cs" />
     <Compile Include="Notifications\MessageSummaryToListKeyValuePair.cs" />
     <Compile Include="ImapClient\Summary.cs" />
+    <Compile Include="Notifications\NotificationSummary.cs" />
     <Compile Include="Notifications\TextFileNotification.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
@@ -261,6 +263,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WebAPI\Controllers\ConfigurationController.cs" />
     <Compile Include="WebAPI\Controllers\DashboardController.cs" />
@@ -291,6 +299,10 @@
     </EntityDeploy>
     <None Include="MailModel.edmx.diagram">
       <DependentUpon>MailModel.edmx</DependentUpon>
+    </None>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="Resources\jquery-2.1.4.min.js" />
   </ItemGroup>

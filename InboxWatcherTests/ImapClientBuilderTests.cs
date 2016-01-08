@@ -18,7 +18,7 @@ namespace InboxWatcherTests
             var builder = new ImapClientBuilder();
             var client = builder.WithHost("outlook.office365.com")
                 .WithUserName(Settings.Default.TestUserName)
-                .WithPassword(Settings.Default.TestPassword).Build();
+                .WithPassword(Settings.Default.TestPassword).Build().Result;
 
             if (!client.ConnectTask.IsCompleted) client.ConnectTask.Wait();
             if (!client.AuthTask.IsCompleted) client.AuthTask.Wait();

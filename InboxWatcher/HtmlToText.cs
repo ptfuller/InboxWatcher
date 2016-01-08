@@ -18,6 +18,8 @@ namespace InboxWatcher
 
         public static string ConvertHtml(string html)
         {
+            if (string.IsNullOrEmpty(html)) return null;
+
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(html);
 

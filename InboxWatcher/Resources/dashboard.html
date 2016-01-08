@@ -204,7 +204,15 @@
         }
     });
 
-    $(document).ready(function() {
+    $(document).ready(function () {
+
+        $("#totalEmailsToday").click(function() {
+            window.open('/mailboxes/' + SelectedMailBox + '/emails/true', '_blank');
+        });
+
+        $("#totalEmails").click(function() {
+            window.open('/mailboxes/' + SelectedMailBox + '/emails', '_blank');
+        });
 
         $.getJSON('/mailboxes', function(data) {
             var items = [];
@@ -225,7 +233,7 @@
             GetAllStatuses(MailBoxes);
 
             $.each(MailBoxes, function(key, val) {
-                $('#mailbox' + val).click(function() {
+                $("[id='mailbox" + val + "']").click(function () {
                     $(".active").removeClass('active');
                     $('#box' + val).addClass('active');
 
@@ -313,24 +321,25 @@
     }
 
     function GetAllStatuses(mb) {
-        $.each(mb, function(key, val) {
+        $.each(mb, function (key, val) {
+            
             $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
                 if (exceptions.Green) {
-                    $("#mailbox" + val).html(val + '<div class="led-green"></div>');
+                    $("[id='mailbox" + val + "']").html(val + '<div class="led-green"></div>');
                 }
 
                 if (!exceptions.Green) {
-                    $("#mailbox" + val).html(val + '<div class="led-red"></div>');
+                    $("[id='mailbox" + val + "']").html(val + '<div class="led-red"></div>');
                 }
             });
         });
     }
 </script>
-    <script src="http://localhost:9000/signalr/hubs"></script>
+    <script src="/signalr/hubs"></script>
 <script>
     $(function() {
         //Set the hubs URL for the connection
-        $.connection.hub.url = "http://localhost:9000/signalr";
+        $.connection.hub.url = "/signalr";
         var con = $.connection.signalRController;
 
         con.client.freshenMailBox = function (mbName) {

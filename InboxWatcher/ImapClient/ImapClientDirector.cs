@@ -34,7 +34,7 @@ namespace InboxWatcher.ImapClient
 
         public virtual IImapClient GetClient()
         {
-            return Builder.Build();
+            return Builder.Build().Result;
         }
 
         public virtual IImapClient GetReadyClient()

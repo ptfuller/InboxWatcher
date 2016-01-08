@@ -89,7 +89,7 @@ namespace InboxWatcher
 
                 if (selectedEmail == null) return;
 
-                if (selectedEmail.EmailLogs.Any(x => x.Action.Contains("Sent") && x.Action.Contains("moved") || x.Action.Contains("Removed")))
+                if (selectedEmail.EmailLogs.Any(x => x.Action.Contains("Sent") && x.Action.ToLower().Contains("moved") || x.Action.Contains("Removed")))
                 {
                     return;
                 }
@@ -111,7 +111,7 @@ namespace InboxWatcher
             {
 
                 var selectedEmails =
-                    Context.Emails.Where(
+                    Context.Emails.Include(x => x.EmailLogs).Where(
                         x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
 
                 var newLogs = new List<EmailLog>();
@@ -133,15 +133,37 @@ namespace InboxWatcher
             }
         }
 
+        public void LogEmailChanged(string messageId, string actionTakenBy, string action)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selectedEmail =
+                    ctx.Emails.Include(x => x.EmailLogs).FirstOrDefault(
+                        x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(messageId));
+
+                if (selectedEmail == null) return;
+
+                selectedEmail.EmailLogs.Add(new EmailLog()
+                {
+                    Action = action,
+                    Email = selectedEmail,
+                    TimeActionTaken = DateTime.Now.ToLocalTime(),
+                    TakenBy = actionTakenBy
+                });
+
+                ctx.SaveChanges();
+            }
+        }
+
         public void LogEmailSeen(IMessageSummary message)
         {
             using (var Context = new MailModelContainer())
             {
 
                 var selectedEmail = Context.Emails.Where(x => x.ImapMailBoxConfigurationId == _config.Id);
-                var result = selectedEmail.First(x => x.EnvelopeID.Equals(message.Envelope.MessageId));
+                var result = selectedEmail.FirstOrDefault(x => x.EnvelopeID.Equals(message.Envelope.MessageId));
 
-                if (result.MarkedAsRead) return;
+                if (result == null || result.MarkedAsRead) return;
 
                 result.MarkedAsRead = true;
                 Context.SaveChanges();

@@ -2,6 +2,7 @@
 using MailKit;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using MailKit.Security;
 
 namespace InboxWatcher.ImapClient
@@ -27,7 +28,7 @@ namespace InboxWatcher.ImapClient
 
         public static IImapClient ToIImapClient(ImapClientBuilder instance)
         {
-            return instance.Build();
+            return instance.Build().Result;
         }
 
         public ImapClientBuilder WithHost(string host)
@@ -66,7 +67,7 @@ namespace InboxWatcher.ImapClient
             return this;
         }
 
-        public IImapClient Build()
+        public async Task<IImapClient> Build()
         {
             var client = new ImapClientWrapper();
 
@@ -74,15 +75,36 @@ namespace InboxWatcher.ImapClient
 
             client.AuthenticationMechanisms.Remove("XOAUTH2");
 
-            client.Connected +=
-                (sender, args) =>
-                    client.AuthTask =
-                        client.AuthenticateAsync(_userName, _password);
+            try
+            {
+                await client.ConnectTask;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
 
-            client.Authenticated +=
-                (sender, args) =>
-                    client.InboxOpenTask =
-                        client.Inbox.OpenAsync(FolderAccess.ReadWrite);
+            client.AuthTask = client.AuthenticateAsync(_userName, _password);
+
+            try
+            {
+                await client.AuthTask;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            client.InboxOpenTask = client.Inbox.OpenAsync(FolderAccess.ReadWrite);
+
+            try
+            {
+                await client.InboxOpenTask;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
 
             return client;
         }
@@ -99,7 +121,7 @@ namespace InboxWatcher.ImapClient
 
         public IImapClient BuildReady()
         {
-            return GetReady(Build());
+            return GetReady(Build().Result);
         }
 
         public IImapClient GetReady(IImapClient client)

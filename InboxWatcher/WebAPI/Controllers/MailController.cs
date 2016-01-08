@@ -142,6 +142,41 @@ namespace InboxWatcher.WebAPI.Controllers
 
             return selectedMailBox?.Status();
         }
+        
 
+        [Route("mailboxes/{mailBoxName}/{uniqueId}/movemailboxes/{destination}/sendto/{address}/actionby/{username}")]
+        [HttpPut]
+        public HttpResponseMessage MoveMessageToAlternateMailbox(string mailBoxName, uint UniqueId, string destination, string address, string username)
+        {
+            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+
+            if (selectedMailBox == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError);}
+
+            var selectedMessage = selectedMailBox.GetMessage(UniqueId);
+
+            selectedMailBox.SendMail(selectedMessage, UniqueId, address, false);
+
+            selectedMailBox.MoveMessage(UniqueId, selectedMessage.MessageId, destination, username);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        
+        [Route("mailboxes/{mailBoxName}/{uniqueId}/movetofolder/{destination}/actionby/{username}")]
+        [HttpPut]
+        public HttpResponseMessage MoveMessageToFolder(string mailBoxName, uint UniqueId, string destination, string username)
+        {
+            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+
+            if (selectedMailBox == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError); }
+
+            var messageSummary = selectedMailBox.EmailList.FirstOrDefault(x => x.UniqueId.Id == UniqueId);
+
+            if (messageSummary == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError); }
+
+            selectedMailBox.MoveMessage(messageSummary, destination, username);
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
     }
 }

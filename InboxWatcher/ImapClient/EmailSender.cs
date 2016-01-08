@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using MailKit;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Timer = System.Timers.Timer;
@@ -115,8 +116,14 @@ namespace InboxWatcher.ImapClient
                 
             }
             catch (Exception ex)
-            {   
-                //todo add exception handling similar to idler and worker here - recover client and retry
+            {
+                if (ex is ServiceNotConnectedException || ex.InnerException is ServiceNotConnectedException)
+                {
+                    KeepAlive();
+                    SendMail(message, uniqueId, emailDestination, moveToDest);
+                }
+
+                
                 //send an email with error message
                 return false;
             }

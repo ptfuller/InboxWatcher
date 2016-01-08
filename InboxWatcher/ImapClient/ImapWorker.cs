@@ -24,6 +24,8 @@ namespace InboxWatcher.ImapClient
             DoneToken = new CancellationTokenSource();
             CancelToken = new CancellationTokenSource();
 
+            if (!ImapClient.Inbox.IsOpen) ImapClient.Inbox.Open(FolderAccess.ReadWrite);
+
             IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
 
             IdleLoop();
@@ -72,7 +74,11 @@ namespace InboxWatcher.ImapClient
 
             var results = await ImapClient.Inbox.FetchAsync(uids, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
 
-            return await ImapClient.Inbox.GetMessageAsync(results.First().Index);
+            var message = await ImapClient.Inbox.GetMessageAsync(results.First().Index);
+
+            StartIdling();
+
+            return message;
         }
 
         public async Task<bool> DeleteMessage(UniqueId uid)
