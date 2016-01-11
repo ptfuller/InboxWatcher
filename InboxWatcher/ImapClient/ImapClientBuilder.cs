@@ -4,11 +4,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit.Security;
+using NLog;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapClientBuilder
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         private string _host;
         private string _password;
         private int _port = 993;
@@ -81,6 +84,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);   
                 throw ex;
             }
 
@@ -92,9 +96,10 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
                 throw ex;
             }
-
+            
             client.InboxOpenTask = client.Inbox.OpenAsync(FolderAccess.ReadWrite);
 
             try
@@ -103,6 +108,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
                 throw ex;
             }
 

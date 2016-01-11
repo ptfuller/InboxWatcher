@@ -5,14 +5,15 @@
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
       <Diagram DiagramId="c550c9a72737479780c0fc050ce49720" Name="Diagram1" >
-        <EntityTypeShape EntityType="MailModel.Email" Width="1.5" PointX="0.5" PointY="0.5" />
-        <EntityTypeShape EntityType="MailModel.EmailLog" Width="1.5" PointX="2.75" PointY="0.5" />
+        <EntityTypeShape EntityType="MailModel.Email" Width="1.5" PointX="2.75" PointY="0.5" />
+        <EntityTypeShape EntityType="MailModel.EmailLog" Width="1.5" PointX="4.875" PointY="0.5" />
         <AssociationConnector Association="MailModel.EmailLogEntry" />
-        <EntityTypeShape EntityType="MailModel.EmailFilter" Width="1.5" PointX="5" PointY="0.5" />
-        <EntityTypeShape EntityType="MailModel.ImapMailBoxConfiguration" Width="1.5" PointX="2.75" PointY="3.5" />
-        <EntityTypeShape EntityType="MailModel.NotificationConfiguration" Width="1.5" PointX="5.25" PointY="3.5" />
+        <EntityTypeShape EntityType="MailModel.EmailFilter" Width="1.5" PointX="2.75" PointY="4" />
+        <EntityTypeShape EntityType="MailModel.ImapMailBoxConfiguration" Width="1.5" PointX="0.5" PointY="0.5" />
+        <EntityTypeShape EntityType="MailModel.NotificationConfiguration" Width="1.5" PointX="0.5" PointY="4.5" />
         <AssociationConnector Association="MailModel.NotificationConfigurationImapMailBoxConfiguration" />
         <AssociationConnector Association="MailModel.ImapMailBoxConfigurationEmail" />
+        <AssociationConnector Association="MailModel.ImapMailBoxConfigurationEmailFilter" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

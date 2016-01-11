@@ -11,12 +11,14 @@ using InboxWatcher.Interface;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Security;
+using NLog;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapClientWrapper : IImapClient
     {
         private readonly MailKit.Net.Imap.ImapClient _imapClient;
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
         public ImapClientWrapper()
         {
@@ -226,21 +228,7 @@ namespace InboxWatcher.ImapClient
 
         public Task IdleAsync(CancellationToken doneToken, CancellationToken cancellationToken = new CancellationToken())
         {
-            Task task;
-
-            try
-            {
-                task = _imapClient.IdleAsync(doneToken, cancellationToken);
-            }
-            catch (InvalidOperationException ex)
-            {
-                if (!_imapClient.Inbox.IsOpen)
-                _imapClient.Inbox.Open(FolderAccess.ReadWrite);
-
-                task = _imapClient.IdleAsync(doneToken, cancellationToken);
-            }
-
-            return task;
+            return _imapClient.IdleAsync(doneToken, cancellationToken);
         }
 
         public IMailFolder GetFolder(SpecialFolder folder)

@@ -6,12 +6,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
 using MailKit;
+using NLog;
 using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapIdler
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         protected IImapClient ImapClient;
         protected CancellationTokenSource CancelToken;
         protected CancellationTokenSource DoneToken;
@@ -68,7 +71,7 @@ namespace InboxWatcher.ImapClient
         {
             Director = director;
 
-            TaskCheckTimer = new Timer(20000);
+            TaskCheckTimer = new Timer(30000);
             TaskCheckTimer.Elapsed += (s, e) => CheckTask();
             TaskCheckTimer.AutoReset = false;
             TaskCheckTimer.Enabled = true;
@@ -88,10 +91,10 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
+
                 var exception = new Exception(GetType().Name + " Problem getting imap client - trying again in 10 seconds ", ex);
                 HandleException(exception);
-                Thread.Sleep(10000);
-                Setup();
             }
 
             StartIdling();
@@ -113,14 +116,27 @@ namespace InboxWatcher.ImapClient
                 }
                 catch (ObjectDisposedException ex)
                 {
+                    logger.Error(ex);
+
                     HandleException(ex);
-                    Thread.Sleep(5000);
-                    Setup();
                 }
             }
 
-            IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
-            
+            IdleTask = Task.Factory.StartNew(() =>
+            {
+                 var idler = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
+
+                try
+                {
+                    idler.Wait();
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex);
+                }
+
+            });
+
             IdleLoop();
         }
 
@@ -159,9 +175,10 @@ namespace InboxWatcher.ImapClient
                     }
                     catch (InvalidOperationException ex)
                     {
+                        logger.Error(ex);
+
                         var exception = new Exception(GetType().FullName + " Error at Idle Loop", ex);
                         HandleException(exception);
-                        Setup();
                     }
                 }
 
@@ -190,8 +207,9 @@ namespace InboxWatcher.ImapClient
             }
             catch (AggregateException ag)
             {
+                logger.Error(ag);
+
                 HandleException(ag);
-                Setup();
             }
         }
 
@@ -246,6 +264,8 @@ namespace InboxWatcher.ImapClient
 
         protected void CheckTask()
         {
+            if (ImapClient == null) Setup();
+
             Debug.WriteLine("Checking Idle Task for " + GetType().Name);
 
             if (!ImapClient.IsIdle)
@@ -268,7 +288,7 @@ namespace InboxWatcher.ImapClient
             if (IdleTask.IsFaulted)
             {
                 Debug.WriteLine("Idle task is faulted!  Resetting client.");
-                Setup();
+                HandleException(IdleTask.Exception);
             }
 
             TaskCheckTimer.Start();

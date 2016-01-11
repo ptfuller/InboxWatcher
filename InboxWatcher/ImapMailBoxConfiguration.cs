@@ -7,8 +7,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using System.Data.Entity.Core.Objects;
-
 namespace InboxWatcher
 {
     using System;
@@ -21,6 +19,7 @@ namespace InboxWatcher
         {
             this.NotificationConfigurations = new HashSet<NotificationConfiguration>();
             this.Emails = new HashSet<Email>();
+            this.EmailFilters = new HashSet<EmailFilter>();
         }
     
         public int Id { get; set; }
@@ -39,5 +38,7 @@ namespace InboxWatcher
         public virtual ICollection<NotificationConfiguration> NotificationConfigurations { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<Email> Emails { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<EmailFilter> EmailFilters { get; set; }
     }
 }

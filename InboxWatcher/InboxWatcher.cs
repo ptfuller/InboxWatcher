@@ -15,6 +15,7 @@ using InboxWatcher.Properties;
 using InboxWatcher.WebAPI;
 using MailKit;
 using Microsoft.Owin.Hosting;
+using NLog;
 
 namespace InboxWatcher
 {
@@ -24,6 +25,8 @@ namespace InboxWatcher
         {
             InitializeComponent();
         }
+
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
         ///     All running ImapMailBoxes are held in this list
@@ -58,6 +61,8 @@ namespace InboxWatcher
             StartWebApi();
 
             Task.Factory.StartNew(ConfigureMailBoxes);
+
+            logger.Info("Inbox Watcher Started");
         }
 
         private void ConfigureAutoMapper()
@@ -66,6 +71,9 @@ namespace InboxWatcher
             {
                 cfg.CreateMap<Email, EmailDto>()
                     .ForMember(x => x.EmailLogs, opt => opt.Ignore())
+                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
+
+                cfg.CreateMap<EmailFilterDto, EmailFilter>()
                     .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
             });
         }

@@ -204,9 +204,9 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 ctx.NotificationConfigurations.Add(not);
                 ctx.SaveChanges();
+                var config = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.Id == not.ImapMailBoxConfigurationId);
+                Task.Factory.StartNew(() => InboxWatcher.ConfigureMailBox(config));
             }
-
-            Task.Factory.StartNew(InboxWatcher.ConfigureMailBoxes);
 
             return not;
         }

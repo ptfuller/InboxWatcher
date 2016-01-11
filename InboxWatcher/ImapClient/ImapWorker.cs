@@ -8,12 +8,14 @@ using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MimeKit;
+using NLog;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapWorker : ImapIdler
     {
         private CancellationTokenSource _fetchCancellationToken;
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
         public ImapWorker(ImapClientDirector director) : base(director)
         {
@@ -26,7 +28,19 @@ namespace InboxWatcher.ImapClient
 
             if (!ImapClient.Inbox.IsOpen) ImapClient.Inbox.Open(FolderAccess.ReadWrite);
 
-            IdleTask = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
+            IdleTask = Task.Factory.StartNew(() =>
+            {
+                try
+                {
+                    var idler = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
+                    idler.Wait();
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex);
+                }
+
+            });
 
             IdleLoop();
         }
@@ -100,6 +114,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
+
                 HandleException(ex);
                 Setup();
                 return false;
@@ -142,6 +158,8 @@ namespace InboxWatcher.ImapClient
                 }
                 catch (Exception ex)
                 {
+                    logger.Error(ex);
+
                     HandleException(ex);
                     StartIdling();
                     return;
@@ -157,23 +175,24 @@ namespace InboxWatcher.ImapClient
         public async Task<IEnumerable<IMessageSummary>> FreshenMailBox()
         {
             StopIdle();
-
-            var count = ImapClient.Inbox.Count - 1;
-            var min = 0;
-
-            if (count > 500)
-            {
-                min = count - 500;
-            }
-
             var result = new List<IMessageSummary>();
 
             try
             {
+                var count = ImapClient.Inbox.Count - 1;
+                var min = 0;
+
+                if (count > 500)
+                {
+                    min = count - 500;
+                }
+
                 result.AddRange(await ImapClient.Inbox.FetchAsync(min, count, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
+
                 HandleException(ex);
                 Setup();
                 return result;
@@ -208,6 +227,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
+
                 var getMessageException = new Exception($"GetNewMessages Exception: numNewMessages: {numNewMessages}, total: {ImapClient.Inbox.Count} min: {min} max:{max}", ex);
 
                 HandleException(getMessageException);

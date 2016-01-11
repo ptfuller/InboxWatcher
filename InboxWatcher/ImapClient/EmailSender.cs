@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using MailKit;
 using MailKit.Net.Smtp;
 using MimeKit;
+using NLog;
 using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
     public class EmailSender
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private SmtpClient _smtpClient;
         private ImapClientDirector _director;
         private Timer _timer;
@@ -21,7 +23,7 @@ namespace InboxWatcher.ImapClient
             _smtpClient = director.GetSmtpClient();
             
             _timer = new Timer();
-            _timer.Interval = 1000*60*3; //3 minutes
+            _timer.Interval = 1000*60*2; //2 minutes
             _timer.Elapsed += (s, e) => KeepAlive();
             _timer.AutoReset = true;
             _timer.Start();
@@ -41,8 +43,12 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                if (!ex.Message.ToLower().Contains("connection timed out"))
+                {
+                    logger.Error(ex);
+                }
+                
                 _smtpClient = _director.GetSmtpClient();
-                return;
             }
         }
 
@@ -117,6 +123,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                logger.Error(ex);
+
                 if (ex is ServiceNotConnectedException || ex.InnerException is ServiceNotConnectedException)
                 {
                     KeepAlive();

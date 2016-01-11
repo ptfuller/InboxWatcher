@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit;
+using NLog;
 using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.ImapClient
 {
     public class EmailFilterer
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly ImapMailBox _attachedMailBox;
         private bool _currentlyFiltering;
         private readonly List<EmailFilter> _emailFilters = new List<EmailFilter>();
@@ -78,6 +80,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 _currentlyFiltering = false;
+                logger.Error(ex);
             }
 
             _currentlyFiltering = false;

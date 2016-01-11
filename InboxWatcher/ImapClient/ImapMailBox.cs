@@ -13,12 +13,15 @@ using MailKit;
 using MailKit.Search;
 using Microsoft.AspNet.SignalR;
 using MimeKit;
+using NLog;
 using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapMailBox
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
@@ -169,7 +172,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                
+                logger.Error(ex);
             }
         }
 
@@ -231,9 +234,12 @@ namespace InboxWatcher.ImapClient
             //take care of any emails that may have been left as marked in queue from previous shutdown/disconnect
             using (var ctx = new MailModelContainer())
             {
-                foreach (var email in ctx.Emails.Where(email => email.InQueue && email.Id == _config.Id))
+                foreach (var email in ctx.Emails.Where(email => email.InQueue && email.ImapMailBoxConfigurationId == _config.Id))
                 {
-                    email.InQueue = false;
+                    if (!templist.Any(x => x.Envelope.MessageId.Equals(email.EnvelopeID)))
+                    {
+                        email.InQueue = false;
+                    }
                 }
                 ctx.SaveChanges();
             }
@@ -294,6 +300,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (AggregateException ex)
             {
+                logger.Error(ex);
+
                 if (ex.InnerExceptions.Any(x => x is MessageNotFoundException))
                 {
                     var messageId = EmailList.FirstOrDefault(x => x.UniqueId.Id == uniqueId)?.Envelope.MessageId;

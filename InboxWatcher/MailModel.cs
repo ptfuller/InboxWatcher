@@ -7,12 +7,3 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using System.Data.Entity;
-
-public class MailModel : DbContext
-{
-    public MailModel()
-    {
-        Configuration.ProxyCreationEnabled = false;
-    }
-}

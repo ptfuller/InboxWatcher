@@ -24,6 +24,10 @@
       <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
       <End Role="Email" EntitySet="Emails" />
     </AssociationSet>
+    <AssociationSet Name="ImapMailBoxConfigurationEmailFilter" Association="MailModel.Store.ImapMailBoxConfigurationEmailFilter">
+      <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
+      <End Role="EmailFilter" EntitySet="EmailFilters" />
+    </AssociationSet>
   </EntityContainer>
   <EntityType Name="Emails">
     <Key>
@@ -61,6 +65,7 @@
     <Property Name="ForwardToAddress" Type="nvarchar(max)" Nullable="false" />
     <Property Name="ForwardThis" Type="bit" Nullable="false" />
     <Property Name="MoveToFolder" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ImapMailBoxConfigurationId" Type="int" Nullable="false" />
   </EntityType>
   <EntityType Name="ImapMailBoxConfigurations">
     <Key>
@@ -129,6 +134,18 @@
       </Dependent>
     </ReferentialConstraint>
   </Association>
+  <Association Name="ImapMailBoxConfigurationEmailFilter">
+    <End Role="ImapMailBoxConfiguration" Type="MailModel.Store.ImapMailBoxConfigurations" Multiplicity="1" />
+    <End Role="EmailFilter" Type="MailModel.Store.EmailFilters" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="ImapMailBoxConfiguration">
+        <PropertyRef Name="Id" />
+      </Principal>
+      <Dependent Role="EmailFilter">
+        <PropertyRef Name="ImapMailBoxConfigurationId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
 </Schema></edmx:StorageModels>
     <!-- CSDL content -->
     <edmx:ConceptualModels>
@@ -155,6 +172,10 @@
           <AssociationSet Name="ImapMailBoxConfigurationEmail" Association="MailModel.ImapMailBoxConfigurationEmail">
             <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
             <End Role="Email" EntitySet="Emails" />
+          </AssociationSet>
+          <AssociationSet Name="ImapMailBoxConfigurationEmailFilter" Association="MailModel.ImapMailBoxConfigurationEmailFilter">
+            <End Role="ImapMailBoxConfiguration" EntitySet="ImapMailBoxConfigurations" />
+            <End Role="EmailFilter" EntitySet="EmailFilters" />
           </AssociationSet>
         </EntityContainer>
         <EntityType Name="Email">
@@ -212,6 +233,8 @@
           <Property Name="ForwardToAddress" Type="String" Nullable="false" />
           <Property Name="ForwardThis" Type="Boolean" Nullable="false" />
           <Property Name="MoveToFolder" Type="String" Nullable="false" />
+          <NavigationProperty Name="ImapMailBoxConfiguration" Relationship="MailModel.ImapMailBoxConfigurationEmailFilter" FromRole="EmailFilter" ToRole="ImapMailBoxConfiguration" />
+          <Property Name="ImapMailBoxConfigurationId" Type="Int32" Nullable="false" />
         </EntityType>
         <EntityType Name="ImapMailBoxConfiguration">
           <Key>
@@ -230,6 +253,7 @@
           <Property Name="SmtpPassword" Type="String" Nullable="false" />
           <Property Name="SmtpHostName" Type="String" Nullable="false" />
           <Property Name="SmtpPort" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="EmailFilters" Relationship="MailModel.ImapMailBoxConfigurationEmailFilter" FromRole="ImapMailBoxConfiguration" ToRole="EmailFilter" />
         </EntityType>
         <EntityType Name="NotificationConfiguration">
           <Key>
@@ -266,6 +290,18 @@
               <PropertyRef Name="Id" />
             </Principal>
             <Dependent Role="Email">
+              <PropertyRef Name="ImapMailBoxConfigurationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="ImapMailBoxConfigurationEmailFilter">
+          <End Type="MailModel.ImapMailBoxConfiguration" Role="ImapMailBoxConfiguration" Multiplicity="1" />
+          <End Type="MailModel.EmailFilter" Role="EmailFilter" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ImapMailBoxConfiguration">
+              <PropertyRef Name="Id" />
+            </Principal>
+            <Dependent Role="EmailFilter">
               <PropertyRef Name="ImapMailBoxConfigurationId" />
             </Dependent>
           </ReferentialConstraint>
@@ -313,6 +349,7 @@
           <ScalarProperty Name="ForwardToAddress" ColumnName="ForwardToAddress" />
           <ScalarProperty Name="ForwardThis" ColumnName="ForwardThis" />
           <ScalarProperty Name="MoveToFolder" ColumnName="MoveToFolder" />
+          <ScalarProperty Name="ImapMailBoxConfigurationId" ColumnName="ImapMailBoxConfigurationId" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

@@ -2,13 +2,13 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 12/17/2015 13:43:21
+-- Date Created: 01/11/2016 08:34:10
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
 SET QUOTED_IDENTIFIER OFF;
 GO
-USE [C:\USERS\PFULLER\DOCUMENTS\VISUAL STUDIO 2015\PROJECTS\INBOXWATCHER\INBOXWATCHER\INBOXWATCHER.MDF];
+USE [InboxWatcher];
 GO
 IF SCHEMA_ID(N'dbo') IS NULL EXECUTE(N'CREATE SCHEMA [dbo]');
 GO
@@ -84,7 +84,8 @@ CREATE TABLE [dbo].[EmailFilters] (
     [SentFromContains] nvarchar(max)  NOT NULL,
     [ForwardToAddress] nvarchar(max)  NOT NULL,
     [ForwardThis] bit  NOT NULL,
-    [MoveToFolder] nvarchar(max)  NOT NULL
+    [MoveToFolder] nvarchar(max)  NOT NULL,
+    [ImapMailBoxConfigurationId] int  NOT NULL
 );
 GO
 
@@ -193,6 +194,21 @@ GO
 -- Creating non-clustered index for FOREIGN KEY 'FK_ImapMailBoxConfigurationEmail'
 CREATE INDEX [IX_FK_ImapMailBoxConfigurationEmail]
 ON [dbo].[Emails]
+    ([ImapMailBoxConfigurationId]);
+GO
+
+-- Creating foreign key on [ImapMailBoxConfigurationId] in table 'EmailFilters'
+ALTER TABLE [dbo].[EmailFilters]
+ADD CONSTRAINT [FK_ImapMailBoxConfigurationEmailFilter]
+    FOREIGN KEY ([ImapMailBoxConfigurationId])
+    REFERENCES [dbo].[ImapMailBoxConfigurations]
+        ([Id])
+    ON DELETE NO ACTION ON UPDATE NO ACTION;
+GO
+
+-- Creating non-clustered index for FOREIGN KEY 'FK_ImapMailBoxConfigurationEmailFilter'
+CREATE INDEX [IX_FK_ImapMailBoxConfigurationEmailFilter]
+ON [dbo].[EmailFilters]
     ([ImapMailBoxConfigurationId]);
 GO
 
