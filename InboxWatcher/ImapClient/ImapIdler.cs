@@ -22,8 +22,6 @@ namespace InboxWatcher.ImapClient
         protected Timer TaskCheckTimer;
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
-        private int _numTimesIdleBusy;
-
         protected bool AreEventsSubscribed;
 
         private EventHandler<MessagesArrivedEventArgs> messageArrived;
@@ -65,21 +63,15 @@ namespace InboxWatcher.ImapClient
             remove { messageSeen -= value; }
         }
 
-        public event EventHandler ExceptionHappened;
+        public event EventHandler<InboxWatcherArgs> ExceptionHappened;
 
         public ImapIdler(ImapClientDirector director)
         {
             Director = director;
-
-            TaskCheckTimer = new Timer(30000);
-            TaskCheckTimer.Elapsed += (s, e) => CheckTask();
-            TaskCheckTimer.AutoReset = false;
-            TaskCheckTimer.Enabled = true;
         }
 
         public virtual void Setup()
         {
-            _numTimesIdleBusy = 0;
             AreEventsSubscribed = false;
 
             ImapClient?.Dispose();
@@ -87,14 +79,18 @@ namespace InboxWatcher.ImapClient
             try
             {
                 ImapClient = Director.GetReadyClient();
-                ImapClient.Disconnected += (sender, args) => { Setup(); };
+                ImapClient.Disconnected += (sender, args) =>
+                {
+                    Debug.WriteLine("ImapClient disconnected");
+                };
             }
             catch (Exception ex)
             {
                 logger.Error(ex);
 
-                var exception = new Exception(GetType().Name + " Problem getting imap client - trying again in 10 seconds ", ex);
+                var exception = new Exception(GetType().Name + " Problem getting imap client", ex);
                 HandleException(exception);
+                throw exception;
             }
 
             StartIdling();
@@ -105,6 +101,7 @@ namespace InboxWatcher.ImapClient
             DoneToken = new CancellationTokenSource();
             CancelToken = new CancellationTokenSource();
 
+            //this is here because we don't want these events assigned to classes inheriting from ImapIdler
             if (!AreEventsSubscribed)
             {
                 try
@@ -116,23 +113,24 @@ namespace InboxWatcher.ImapClient
                 }
                 catch (ObjectDisposedException ex)
                 {
-                    logger.Error(ex);
+                    var exception = new Exception(GetType().Name + " Exception Thrown during event subscription", ex);
+                    logger.Error(exception);
+                    HandleException(exception);
 
-                    HandleException(ex);
+                    throw exception;
                 }
             }
 
             IdleTask = Task.Factory.StartNew(() =>
             {
-                 var idler = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
-
                 try
                 {
-                    idler.Wait();
+                    ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token).Wait();
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex);
+                    var exception = new Exception(GetType().Name + " Exception thrown during idle", ex);
+                    HandleException(exception, true);
                 }
 
             });
@@ -205,11 +203,12 @@ namespace InboxWatcher.ImapClient
                 DoneToken.Cancel();
                 IdleTask.Wait(5000);
             }
-            catch (AggregateException ag)
+            catch (Exception ex)
             {
-                logger.Error(ag);
-
-                HandleException(ag);
+                var exception = new Exception(GetType().Name + " Exception thrown during StopIdle()", ex);
+                logger.Error(exception);
+                HandleException(exception);
+                throw exception;
             }
         }
 
@@ -218,9 +217,11 @@ namespace InboxWatcher.ImapClient
             ImapClient.Dispose();
         }
 
-        protected void HandleException(Exception ex)
+        protected void HandleException(Exception ex, bool needReset = false)
         {
-            ExceptionHappened?.Invoke(ex, EventArgs.Empty);
+            var args = new InboxWatcherArgs();
+            args.NeedReset = needReset;
+            ExceptionHappened?.Invoke(ex, args);
         }
 
         public IEnumerable<IMailFolder> GetMailFolders()
@@ -260,38 +261,6 @@ namespace InboxWatcher.ImapClient
             }
 
             return results;
-        }
-
-        protected void CheckTask()
-        {
-            if (ImapClient == null) Setup();
-
-            Debug.WriteLine("Checking Idle Task for " + GetType().Name);
-
-            if (!ImapClient.IsIdle)
-            {
-                Debug.WriteLine("Imap client is busy");
-                return;
-            }
-
-            if (!ImapClient.IsIdle && GetType() == typeof (ImapIdler))
-            {
-                if (_numTimesIdleBusy >= 5)
-                {
-                    Debug.WriteLine("Client is stuck idle!  Resetting client");
-                    Setup();
-                    _numTimesIdleBusy = 0;
-                }
-                _numTimesIdleBusy++;
-            }
-
-            if (IdleTask.IsFaulted)
-            {
-                Debug.WriteLine("Idle task is faulted!  Resetting client.");
-                HandleException(IdleTask.Exception);
-            }
-
-            TaskCheckTimer.Start();
         }
     }
 }

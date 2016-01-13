@@ -190,7 +190,7 @@ namespace InboxWatcher
                 var log = new EmailLog()
                 {
                     Action = moved ? $"Sent to {emailDestination} and moved to {mailBoxName?.MailBoxName}/{emailDestination}" : $"Sent to {emailDestination}",
-                    Email = selectedEmail, TakenBy = emailDestination, TimeActionTaken = DateTime.Now
+                    Email = selectedEmail, TakenBy = emailDestination, TimeActionTaken = DateTime.Now.ToLocalTime()
                 };
 
                 selectedEmail.Minutes = (int)(DateTime.Now.ToUniversalTime() - selectedEmail.TimeReceived.ToUniversalTime()).TotalMinutes;

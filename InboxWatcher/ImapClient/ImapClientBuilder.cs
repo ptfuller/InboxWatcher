@@ -1,6 +1,7 @@
 ﻿using InboxWatcher.Interface;
 using MailKit;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit.Security;
@@ -72,6 +73,7 @@ namespace InboxWatcher.ImapClient
 
         public async Task<IImapClient> Build()
         {
+            
             var client = new ImapClientWrapper();
 
             client.ConnectTask = client.ConnectAsync(_host, _port, _useSecure);

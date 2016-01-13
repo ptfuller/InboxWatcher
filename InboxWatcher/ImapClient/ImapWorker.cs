@@ -32,12 +32,12 @@ namespace InboxWatcher.ImapClient
             {
                 try
                 {
-                    var idler = ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
-                    idler.Wait();
+                    ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token).Wait();
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex);
+                    var exception = new Exception(GetType().Name + " Exception thrown during idle", ex);
+                    HandleException(exception, true);
                 }
 
             });
@@ -115,9 +115,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 logger.Error(ex);
-
                 HandleException(ex);
-                Setup();
                 return false;
             }
 
@@ -158,11 +156,9 @@ namespace InboxWatcher.ImapClient
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex);
-
-                    HandleException(ex);
-                    StartIdling();
-                    return;
+                    var exception = new Exception("Exception Thrown during MoveMessage", ex);
+                    logger.Error(exception);
+                    throw exception;
                 }
 
             StartIdling();
@@ -191,11 +187,10 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
-
-                HandleException(ex);
-                Setup();
-                return result;
+                var exception = new Exception("Exception thrown during FreshenMailBox", ex);
+                logger.Error(exception);
+                HandleException(exception);
+                throw exception;
             }
 
             StartIdling();
@@ -228,13 +223,9 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 logger.Error(ex);
-
                 var getMessageException = new Exception($"GetNewMessages Exception: numNewMessages: {numNewMessages}, total: {ImapClient.Inbox.Count} min: {min} max:{max}", ex);
-
                 HandleException(getMessageException);
-                Setup();
-                StartIdling();
-                return result;
+                throw getMessageException;
             }
 
             StartIdling();

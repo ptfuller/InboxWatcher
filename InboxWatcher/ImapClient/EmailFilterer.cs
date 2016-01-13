@@ -54,7 +54,7 @@ namespace InboxWatcher.ImapClient
                     if (!string.IsNullOrEmpty(filter.SubjectContains))
                     {
                         if (!string.IsNullOrEmpty(msgSummary.Envelope.Subject) &&
-                            !msgSummary.Envelope.Subject.ToLower().Contains(filter.SubjectContains)) continue;
+                            !msgSummary.Envelope.Subject.ToLower().Contains(filter.SubjectContains.ToLower())) continue;
                     }
 
                     //check sender's address
@@ -75,6 +75,7 @@ namespace InboxWatcher.ImapClient
 
                     //move the message
                     _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, filter.FilterName);
+
                 }
             }
             catch (Exception ex)

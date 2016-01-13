@@ -154,11 +154,13 @@ namespace InboxWatcher.WebAPI.Controllers
 
             var selectedMessage = selectedMailBox.GetMessage(UniqueId);
 
-            selectedMailBox.SendMail(selectedMessage, UniqueId, address, false);
-
-            selectedMailBox.MoveMessage(UniqueId, selectedMessage.MessageId, destination, username);
-
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            if (selectedMailBox.SendMail(selectedMessage, UniqueId, address, false))
+            {
+                selectedMailBox.MoveMessage(UniqueId, selectedMessage.MessageId, destination, username);
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
+            
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
         }
 
         

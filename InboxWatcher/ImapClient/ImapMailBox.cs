@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
@@ -30,8 +31,7 @@ namespace InboxWatcher.ImapClient
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
 
-        private int _retryTime = 5000;
-        private Task _recoveryTask;
+        private bool _setupInProgress { get; set; }
 
         private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
@@ -72,29 +72,38 @@ namespace InboxWatcher.ImapClient
 
         public virtual void Setup()
         {
-            //if (_recoveryTask != null && !_recoveryTask.IsCompleted && !_recoveryTask.IsFaulted) return;
+            if (_setupInProgress) return;
+
+            _setupInProgress = true;
+
+            int retryTime = 5000;
 
             //if setup fails let's try again soon
-            if (!SetupClients())
+            while (!SetupClients())
             {
-                _recoveryTask = Task.Factory.StartNew(() =>
-                {
-                    Task.Delay(_retryTime);
-                    _retryTime *= 2;
-                    Setup();
-                });
+                Debug.WriteLine($"SetupClients failed - retry time is: {retryTime / 1000} seconds");
+                Task.Delay(retryTime).Wait();
 
-                return;
+                if (retryTime < 160)
+                {
+                    retryTime = retryTime*2;
+                }
             }
-            
-            //setup event handlers
-            _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
-            _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
-            _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
+
+            retryTime = 5000;
 
             //make worker get initial list of messages and then start idling
-            FreshenMailBox();
+            while (!FreshenMailBox())
+            {
+                Debug.WriteLine($"FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
+                Task.Delay(retryTime).Wait();
 
+                if (retryTime < 160)
+                {
+                    retryTime = retryTime * 2;
+                }
+            }
+            
             //get folders
             EmailFolders = _imapIdler.GetMailFolders();
 
@@ -105,21 +114,23 @@ namespace InboxWatcher.ImapClient
             Task.Factory.StartNew(() => _emailFilterer.FilterAllMessages(EmailList));
 
             Exceptions.Clear();
+            _setupInProgress = false;
         }
 
-        private void ImapClientExceptionHappened(object sender, EventArgs eventArgs)
+        private void ImapClientExceptionHappened(object sender, InboxWatcherArgs args)
         {
-            if (!Status().Green)
+            var ex = (Exception) sender;
+            var exception = new Exception(DateTime.Now.ToString(), ex);
+
+            Exceptions.Add(exception);
+
+            if (args.NeedReset)
             {
-                var ex = new Exception("Resetting clients", (Exception) sender);
-                Exceptions.Add(ex);
+                _imapWorker = null;
+                _imapIdler = null;
+
                 Setup();
-                return;
             }
-
-            Exceptions.Add((Exception)sender);
-
-            FreshenMailBox();
         }
 
         public MailBoxStatusDto Status()
@@ -194,10 +205,16 @@ namespace InboxWatcher.ImapClient
                 _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
                 _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
+                _emailSender.Setup();
                 _imapIdler.Setup();
                 _imapWorker.Setup();
+
+                //setup event handlers
+                _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
+                _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
+                _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
             }
-            catch (AggregateException ex)
+            catch (Exception ex)
             {
                 var exception = new Exception("Client setup failed.  Verify client settings and check inner exceptions for more information.", ex);
                 Exceptions.Add(exception);
@@ -212,17 +229,37 @@ namespace InboxWatcher.ImapClient
             NotificationActions.Add(action);
         }
 
-        private void FreshenMailBox()
+        private bool FreshenMailBox()
         {
             var templist = EmailList;
 
             EmailList.Clear();
-            EmailList.AddRange(_imapWorker.FreshenMailBox().Result);
 
-            foreach (var email in EmailList.Where(email => _mbLogger.LogEmailReceived(email)))
+            try
             {
-                NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received, MailBoxName));
-                NewMessageReceived?.Invoke(email, EventArgs.Empty);
+                EmailList.AddRange(_imapWorker.FreshenMailBox().Result);
+            }
+            catch (Exception ex)
+            {
+                Exceptions.Add(ex);
+                EmailList = templist;
+                return false;
+            }
+
+            using (var ctx = new MailModelContainer())
+            {
+                foreach (var email in EmailList.Where(email => _mbLogger.LogEmailReceived(email)))
+                {
+                    NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received, MailBoxName));
+                    NewMessageReceived?.Invoke(email, EventArgs.Empty);
+
+                    foreach(var em in ctx.Emails.Where(x => !x.InQueue && x.ImapMailBoxConfigurationId == _config.Id && x.EnvelopeID.Equals(email.Envelope.MessageId)))
+                    {
+                        em.InQueue = true;
+                    }
+                }
+
+                ctx.SaveChanges();
             }
 
             foreach (var summary in templist.Where(summary => !EmailList.Any(x => x.Envelope.MessageId.Equals(summary.Envelope.MessageId))))
@@ -243,7 +280,7 @@ namespace InboxWatcher.ImapClient
                 }
                 ctx.SaveChanges();
             }
-            
+            return true;
         }
 
         private void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)

@@ -20,12 +20,16 @@ namespace InboxWatcher.ImapClient
         public EmailSender(ImapClientDirector director)
         {
             _director = director;
-            _smtpClient = director.GetSmtpClient();
-            
+        }
+
+        public void Setup()
+        {
+            _smtpClient = _director.GetSmtpClient();
+
             _timer = new Timer();
-            _timer.Interval = 1000*60*2; //2 minutes
+            _timer.Interval = 1000 * 60 * 2; //2 minutes
             _timer.Elapsed += (s, e) => KeepAlive();
-            _timer.AutoReset = true;
+            _timer.AutoReset = false;
             _timer.Start();
         }
 
@@ -40,15 +44,12 @@ namespace InboxWatcher.ImapClient
             try
             {
                 await _smtpClient.NoOpAsync();
+                _timer.Start();
             }
             catch (Exception ex)
             {
-                if (!ex.Message.ToLower().Contains("connection timed out"))
-                {
-                    logger.Error(ex);
-                }
-                
-                _smtpClient = _director.GetSmtpClient();
+                var exception = new Exception("Exception happened during SMTP client No Op", ex);
+                throw exception;
             }
         }
 
@@ -123,17 +124,9 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
-
-                if (ex is ServiceNotConnectedException || ex.InnerException is ServiceNotConnectedException)
-                {
-                    KeepAlive();
-                    SendMail(message, uniqueId, emailDestination, moveToDest);
-                }
-
-                
-                //send an email with error message
-                return false;
+                var exception = new Exception("Exception happened during SMTP client sendmail", ex);
+                logger.Error(exception);
+                throw exception;
             }
 
             return true;
