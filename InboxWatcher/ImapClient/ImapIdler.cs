@@ -115,9 +115,7 @@ namespace InboxWatcher.ImapClient
                 {
                     var exception = new Exception(GetType().Name + " Exception Thrown during event subscription", ex);
                     logger.Error(exception);
-                    HandleException(exception);
-
-                    throw exception;
+                    HandleException(exception, true);
                 }
             }
 

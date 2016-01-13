@@ -17,6 +17,8 @@ namespace InboxWatcher.ImapClient
         private ImapClientDirector _director;
         private Timer _timer;
 
+        public event EventHandler<InboxWatcherArgs> ExceptionHappened;
+
         public EmailSender(ImapClientDirector director)
         {
             _director = director;
@@ -33,14 +35,8 @@ namespace InboxWatcher.ImapClient
             _timer.Start();
         }
 
-        private async void KeepAlive()
+        private async Task KeepAlive()
         {
-            if (!_smtpClient.IsConnected || !_smtpClient.IsAuthenticated)
-            {
-                _smtpClient = _director.GetSmtpClient();
-                KeepAlive();
-            }
-
             try
             {
                 await _smtpClient.NoOpAsync();
@@ -49,7 +45,8 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
-                throw exception;
+                logger.Error(exception);
+                ExceptionHappened.Invoke(exception, new InboxWatcherArgs());
             }
         }
 
@@ -67,7 +64,6 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-               
                     var client = _smtpClient;
 
                     var buildMessage = new MimeMessage();

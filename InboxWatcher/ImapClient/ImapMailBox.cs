@@ -21,8 +21,6 @@ namespace InboxWatcher.ImapClient
 {
     public class ImapMailBox
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
-
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
@@ -30,6 +28,8 @@ namespace InboxWatcher.ImapClient
 
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
+        private readonly ImapClientDirector _imapClientDirector;
+        private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private bool _setupInProgress { get; set; }
 
@@ -38,7 +38,7 @@ namespace InboxWatcher.ImapClient
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public List<Exception> Exceptions = new List<Exception>();
-        public static ImapClientDirector ImapClientDirector { get; set; }
+
         public string MailBoxName { get; private set; }
 
         public DateTime WorkerStartTime { get; private set; } 
@@ -61,16 +61,16 @@ namespace InboxWatcher.ImapClient
 
         public ImapMailBox(ImapClientDirector icd, IClientConfiguration config)
         {
-            ImapClientDirector = icd;
+            _imapClientDirector = icd;
             _config = config;
             MailBoxName = _config.MailBoxName;
             _mbLogger = new MailBoxLogger(_config);
 
-            Task.Factory.StartNew(Setup);
+            Setup();
         }
 
 
-        public virtual void Setup()
+        public virtual async Task Setup()
         {
             if (_setupInProgress) return;
 
@@ -81,8 +81,8 @@ namespace InboxWatcher.ImapClient
             //if setup fails let's try again soon
             while (!SetupClients())
             {
-                Debug.WriteLine($"SetupClients failed - retry time is: {retryTime / 1000} seconds");
-                Task.Delay(retryTime).Wait();
+                Debug.WriteLine($"{MailBoxName} SetupClients failed - retry time is: {retryTime / 1000} seconds");
+                await Task.Delay(retryTime);
 
                 if (retryTime < 160)
                 {
@@ -90,13 +90,15 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
+            Debug.WriteLine(MailBoxName + " SetupClients finished");
+
             retryTime = 5000;
 
             //make worker get initial list of messages and then start idling
             while (!FreshenMailBox())
             {
-                Debug.WriteLine($"FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
-                Task.Delay(retryTime).Wait();
+                Debug.WriteLine($"{MailBoxName} FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
+                await Task.Delay(retryTime);
 
                 if (retryTime < 160)
                 {
@@ -104,6 +106,8 @@ namespace InboxWatcher.ImapClient
                 }
             }
             
+            Debug.WriteLine($"{MailBoxName} FreshMailBox finished");
+
             //get folders
             EmailFolders = _imapIdler.GetMailFolders();
 
@@ -191,12 +195,14 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                _imapWorker = new ImapWorker(ImapClientDirector);
+                _imapWorker = new ImapWorker(_imapClientDirector);
                 WorkerStartTime = DateTime.Now;
-                _imapIdler = new ImapIdler(ImapClientDirector);
+                _imapIdler = new ImapIdler(_imapClientDirector);
                 IdlerStartTime = DateTime.Now;
 
-                _emailSender = new EmailSender(ImapClientDirector);
+                _emailSender = new EmailSender(_imapClientDirector);
+
+                _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
 
                 //exceptions that happen in the idler or worker get logged in a list in the mailbox
                 _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
@@ -222,6 +228,15 @@ namespace InboxWatcher.ImapClient
             }
 
             return true;
+        }
+
+        private void EmailSenderOnExceptionHappened(object sender, InboxWatcherArgs inboxWatcherArgs)
+        {
+            var exception = new Exception(DateTime.Now.ToString(),(Exception) sender);
+            Exceptions.Add(exception);
+            logger.Info("Exception happened with Email Sender - Creating a new email sender");
+            _emailSender = new EmailSender(_imapClientDirector);
+            _emailSender.Setup();
         }
 
         public void AddNotification(AbstractNotification action)
@@ -329,29 +344,16 @@ namespace InboxWatcher.ImapClient
         {
             var uid = new UniqueId(uniqueId);
 
-            MimeMessage result = new MimeMessage();
-
             try
             {
-                result = _imapWorker.GetMessage(uid).Result;
+                return _imapWorker.GetMessage(uid).Result;
             }
             catch (AggregateException ex)
             {
                 logger.Error(ex);
-
-                if (ex.InnerExceptions.Any(x => x is MessageNotFoundException))
-                {
-                    var messageId = EmailList.FirstOrDefault(x => x.UniqueId.Id == uniqueId)?.Envelope.MessageId;
-
-                    if (string.IsNullOrEmpty(messageId)) return result;
-
-                    var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
-
-                    result = _imapWorker.GetMessage(query).Result;
-                }
+                Exceptions.Add(ex);
+                return null;
             }
-
-            return result;
         }
 
 

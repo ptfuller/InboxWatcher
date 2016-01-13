@@ -114,7 +114,9 @@ namespace InboxWatcher.WebAPI.Controllers
         public Message Get(string mailBoxName, uint uniqueId)
         {
             var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
-            return new Message(selectedMailBox?.GetMessage(uniqueId));
+            var selectedMessage = selectedMailBox?.GetMessage(uniqueId);
+
+            return selectedMessage == null ? null : new Message(selectedMessage);
         }
 
         [Route("mailboxes/{mailBoxName}/{uniqueId}/sendto/{emailDestination}/{moveToDestinationFolder}")]
