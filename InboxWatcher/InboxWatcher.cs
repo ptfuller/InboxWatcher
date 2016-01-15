@@ -60,7 +60,7 @@ namespace InboxWatcher
 
             StartWebApi();
 
-            Task.Factory.StartNew(ConfigureMailBoxes);
+            ConfigureMailBoxes();
 
             logger.Info("Inbox Watcher Started");
         }
@@ -113,7 +113,7 @@ namespace InboxWatcher
         }
 
 
-        internal static void ConfigureMailBox(IClientConfiguration conf)
+        internal static async Task ConfigureMailBox(IClientConfiguration conf)
         {
             var director = new ImapClientDirector(conf);
             var mailbox = new ImapMailBox(director, conf);
@@ -126,7 +126,7 @@ namespace InboxWatcher
             MailBoxes.Add(mailbox);
         }
 
-        internal static void ConfigureMailBoxes()
+        internal static async Task ConfigureMailBoxes()
         {
             MailBoxes = new List<ImapMailBox>();
 

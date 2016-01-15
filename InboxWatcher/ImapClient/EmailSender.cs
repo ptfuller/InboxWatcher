@@ -45,8 +45,14 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
-                logger.Error(exception);
-                ExceptionHappened.Invoke(exception, new InboxWatcherArgs());
+
+                //I don't want a bunch of crap in my logs
+                if (!ex.Message.Contains("4.4.1 Connection timed out"))
+                {
+                    logger.Error(exception);
+                }
+                
+                ExceptionHappened?.Invoke(exception, new InboxWatcherArgs());
             }
         }
 
@@ -115,14 +121,15 @@ namespace InboxWatcher.ImapClient
 
 
 
-                    await client.SendAsync(buildMessage);
+                    await client.SendAsync(buildMessage).ConfigureAwait(false);
                 
             }
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client sendmail", ex);
                 logger.Error(exception);
-                throw exception;
+                ExceptionHappened?.Invoke(exception, new InboxWatcherArgs());
+                return false;
             }
 
             return true;

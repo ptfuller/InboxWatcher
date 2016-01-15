@@ -5,6 +5,7 @@ using System.Data.Entity.Validation;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading.Tasks;
 using InboxWatcher.Interface;
 using MailKit;
 using MimeKit;
@@ -21,15 +22,15 @@ namespace InboxWatcher
             _config = config;
         }
 
-        public bool LogEmailReceived(IMessageSummary summary)
+        public async Task<bool> LogEmailReceived(IMessageSummary summary)
         {
 
             if (string.IsNullOrEmpty(summary.Envelope.MessageId)) return false;
 
-            using (var Context = new MailModelContainer())
+            using (var context = new MailModelContainer())
             {
                 //if it's already in the DB we're not going to log it received
-                if (Context.Emails.Any(x => x.EnvelopeID.Equals(summary.Envelope.MessageId))) return false;
+                if (context.Emails.Any(x => x.EnvelopeID.Equals(summary.Envelope.MessageId))) return false;
 
                 //generate new Email and EmailLogs
                 var email = new Email()
@@ -55,8 +56,8 @@ namespace InboxWatcher
 
                 try
                 {
-                    Context.Emails.Add(email);
-                    Context.SaveChanges();
+                    context.Emails.Add(email);
+                    await context.SaveChangesAsync().ConfigureAwait(false);
                 }
                 catch (DbEntityValidationException ex)
                 {
@@ -79,12 +80,12 @@ namespace InboxWatcher
             return true;
         }
 
-        public void LogEmailRemoved(IMessageSummary email)
+        public async Task LogEmailRemoved(IMessageSummary email)
         {
-            using (var Context = new MailModelContainer())
+            using (var context = new MailModelContainer())
             {
                 var selectedEmail =
-                    Context.Emails.Include(e => e.EmailLogs).FirstOrDefault(
+                    context.Emails.Include(e => e.EmailLogs).FirstOrDefault(
                         x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
 
                 if (selectedEmail == null) return;
@@ -95,23 +96,23 @@ namespace InboxWatcher
                 }
                 
 
-                LogEmailChanged(email, "", "Removed");
+                await LogEmailChanged(email, "", "Removed").ConfigureAwait(false);
 
                 selectedEmail.Minutes = (int) (DateTime.Now.ToUniversalTime() - selectedEmail.TimeReceived.ToUniversalTime()).TotalMinutes;
                 selectedEmail.InQueue = false;
                 
 
-                Context.SaveChanges();
+                await context.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 
-        public void LogEmailChanged(IMessageSummary email, string actionTakenBy, string action)
+        public async Task LogEmailChanged(IMessageSummary email, string actionTakenBy, string action)
         {
-            using (var Context = new MailModelContainer())
+            using (var context = new MailModelContainer())
             {
 
                 var selectedEmails =
-                    Context.Emails.Include(x => x.EmailLogs).Where(
+                    context.Emails.Include(x => x.EmailLogs).Where(
                         x => _config.Id == x.ImapMailBoxConfigurationId && x.EnvelopeID.Equals(email.Envelope.MessageId));
 
                 var newLogs = new List<EmailLog>();
@@ -128,12 +129,12 @@ namespace InboxWatcher
                     newLogs.Add(el);
                 }
 
-                Context.EmailLogs.AddRange(newLogs);
-                Context.SaveChanges();
+                context.EmailLogs.AddRange(newLogs);
+                await context.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 
-        public void LogEmailChanged(string messageId, string actionTakenBy, string action)
+        public async Task LogEmailChanged(string messageId, string actionTakenBy, string action)
         {
             using (var ctx = new MailModelContainer())
             {
@@ -151,11 +152,11 @@ namespace InboxWatcher
                     TakenBy = actionTakenBy
                 });
 
-                ctx.SaveChanges();
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 
-        public void LogEmailSeen(IMessageSummary message)
+        public async Task LogEmailSeen(IMessageSummary message)
         {
             using (var Context = new MailModelContainer())
             {
@@ -166,12 +167,12 @@ namespace InboxWatcher
                 if (result == null || result.MarkedAsRead) return;
 
                 result.MarkedAsRead = true;
-                Context.SaveChanges();
-                LogEmailChanged(message, "Unknown", "Marked Read");
+                await Context.SaveChangesAsync().ConfigureAwait(false);
+                await LogEmailChanged(message, "Unknown", "Marked Read").ConfigureAwait(false);
             }
         }
 
-        public void LogEmailSent(MimeMessage message, string emailDestination, bool moved)
+        public async Task LogEmailSent(MimeMessage message, string emailDestination, bool moved)
         {
             using (var ctx = new MailModelContainer())
             {
@@ -185,7 +186,15 @@ namespace InboxWatcher
 
                 var newLogs = new List<EmailLog>();
 
-                selectedEmail.BodyText = HtmlToText.ConvertHtml(message.BodyParts.OfType<TextPart>().FirstOrDefault()?.Text);
+                try
+                {
+                    selectedEmail.BodyText =
+                        HtmlToText.ConvertHtml(message.BodyParts.OfType<TextPart>().FirstOrDefault()?.Text);
+                }
+                catch (Exception ex)
+                {
+                    selectedEmail.BodyText = "-";
+                }
 
                 var log = new EmailLog()
                 {
@@ -198,7 +207,7 @@ namespace InboxWatcher
 
                 newLogs.Add(log);
                 ctx.EmailLogs.AddRange(newLogs);
-                ctx.SaveChanges();
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
             }
         }
     }

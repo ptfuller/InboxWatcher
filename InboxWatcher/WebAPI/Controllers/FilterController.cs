@@ -69,13 +69,13 @@ namespace InboxWatcher.WebAPI.Controllers
 
         [Route("mailboxes/{mbname}/{id}")]
         [HttpPut]
-        public EmailFilter ChangeEmailFilter(string mbname, [FromBody] EmailFilterDto filterToAdd)
+        public EmailFilter ChangeEmailFilter(string mbname, [FromBody] EmailFilterDto filterToAdd, int id)
         {
             var filter = Mapper.Map<EmailFilter>(filterToAdd);
 
             using (var ctx = new MailModelContainer())
             {
-                var selection = ctx.EmailFilters.First(x => x.Id == filter.Id);
+                var selection = ctx.EmailFilters.First(x => x.Id == id);
 
                 selection.FilterName = filter.FilterName;
                 selection.ForwardThis = filter.ForwardThis;

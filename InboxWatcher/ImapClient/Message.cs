@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using InboxWatcher.Interface;
 using MimeKit;
 using MimeKit.Text;
@@ -28,7 +29,13 @@ namespace InboxWatcher.ImapClient
             MessageText = inMessage.GetTextBody(TextFormat.Text);
             if (string.IsNullOrEmpty(MessageText))
             {
-                MessageText = HtmlToText.ConvertHtml(inMessage.HtmlBody).Replace("\r", "").Replace("\n", "");
+                try
+                {
+                    MessageText = HtmlToText.ConvertHtml(inMessage.HtmlBody).Replace("\r", "").Replace("\n", "");
+                } catch(Exception ex)
+                {
+                    MessageText = "-";
+                }
             }
         }
     }

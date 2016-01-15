@@ -288,9 +288,9 @@
         emails.url = 'mailboxes/' + mb + '/emails/true';
         emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
 
-        allemails = new MailCollection();
-        allemails.url = 'mailboxes/' + mb + '/emails';
-        allemails.fetch({ success: function () { $("#totalEmails").html(allemails.length); } });
+        $.getJSON('/mailboxes/' + mb + '/emails/count', function(count) {
+            $("#totalEmails").html(count);
+        });
 
         notifications = new NotificationCollection();
         notifications.url = 'notifications/mailboxes/' + mb;

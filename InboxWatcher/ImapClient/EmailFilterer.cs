@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,6 @@ namespace InboxWatcher.ImapClient
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly ImapMailBox _attachedMailBox;
-        private bool _currentlyFiltering;
         private readonly List<EmailFilter> _emailFilters = new List<EmailFilter>();
 
         public EmailFilterer(ImapMailBox attachedMailBox)
@@ -28,8 +28,9 @@ namespace InboxWatcher.ImapClient
             }
         }
 
-        public void FilterAllMessages(IEnumerable<IMessageSummary> messages)
+        public async Task FilterAllMessages(IEnumerable<IMessageSummary> messages)
         {
+            Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering Messages");
             messages.ForEach(FilterMessage);
         }
 
@@ -41,10 +42,8 @@ namespace InboxWatcher.ImapClient
             FilterMessage(receivedMessage);
         }
 
-        private void FilterMessage(IMessageSummary msgSummary)
+        private async void FilterMessage(IMessageSummary msgSummary)
         {
-            if (_currentlyFiltering) return;
-            _currentlyFiltering = true;
 
             try
             {
@@ -65,12 +64,19 @@ namespace InboxWatcher.ImapClient
                     }
 
                     //get the message
-                    var theMessage = _attachedMailBox.GetMessage(msgSummary.UniqueId.Id);
+                    var theMessage = await _attachedMailBox.GetMessage(msgSummary.UniqueId.Id);
+
+                    if (theMessage == null) return;
                     
                     if (filter.ForwardThis)
                     {
+                        Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering {theMessage.Subject}");
+
                         //forward the message
-                        _attachedMailBox.SendMail(theMessage, msgSummary.UniqueId.Id, filter.ForwardToAddress, false);
+                        if (!await _attachedMailBox.SendMail(theMessage, msgSummary.UniqueId.Id, filter.ForwardToAddress, false))
+                        {
+                            return;
+                        }
                     }
 
                     //move the message
@@ -80,11 +86,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                _currentlyFiltering = false;
                 logger.Error(ex);
             }
-
-            _currentlyFiltering = false;
         }
     }
 }
