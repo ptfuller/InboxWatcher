@@ -55,7 +55,7 @@ namespace InboxWatcherTests
         public void TestStartIdling()
         {
             var director = new Mock<ImapClientDirector>(_config);
-            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+            director.Setup(x => x.GetClient().Result).Returns(_client.Object);
 
             var idle = new ImapIdler(director.Object);
 
@@ -68,7 +68,7 @@ namespace InboxWatcherTests
         public void TestMessageReceivedEventHandler()
         {
             var director = new Mock<ImapClientDirector>(_config);
-            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+            director.Setup(x => x.GetClient().Result).Returns(_client.Object);
 
             var idle = new ImapIdler(director.Object);
             idle.StartIdling();
@@ -86,7 +86,7 @@ namespace InboxWatcherTests
         public void TestTimerIdle()
         {
             var director = new Mock<ImapClientDirector>(_config);
-            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+            director.Setup(x => x.GetClient().Result).Returns(_client.Object);
 
             var idle = new ImapIdler(director.Object);
             idle.StartIdling();

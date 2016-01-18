@@ -26,7 +26,7 @@ namespace InboxWatcher.ImapClient
             DoneToken = new CancellationTokenSource();
             CancelToken = new CancellationTokenSource();
 
-            if (!ImapClient.Inbox.IsOpen) ImapClient.Inbox.Open(FolderAccess.ReadWrite);
+            if (!ImapClient.Inbox.IsOpen) await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite);
 
             IdleTask = Task.Run(async () =>
             {

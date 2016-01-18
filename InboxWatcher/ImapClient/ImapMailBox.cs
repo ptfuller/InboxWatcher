@@ -81,7 +81,7 @@ namespace InboxWatcher.ImapClient
             int retryTime = 5000;
 
             //if setup fails let's try again soon
-            while (!SetupClients())
+            while (!await SetupClients())
             {
                 Debug.WriteLine($"{MailBoxName} SetupClients failed - retry time is: {retryTime / 1000} seconds");
                 await Task.Delay(retryTime);
@@ -232,7 +232,7 @@ namespace InboxWatcher.ImapClient
             }
         }
 
-        private bool SetupClients()
+        private async Task<bool> SetupClients()
         {
             try
             {
@@ -252,9 +252,9 @@ namespace InboxWatcher.ImapClient
                 _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
                 _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
-                _emailSender.Setup();
-                _imapIdler.Setup();
-                _imapWorker.Setup();
+                await _emailSender.Setup();
+                await _imapIdler.Setup();
+                await _imapWorker.Setup();
             }
             catch (Exception ex)
             {
@@ -266,7 +266,7 @@ namespace InboxWatcher.ImapClient
             return true;
         }
 
-        private void EmailSenderOnExceptionHappened(object sender, InboxWatcherArgs inboxWatcherArgs)
+        private async void EmailSenderOnExceptionHappened(object sender, InboxWatcherArgs inboxWatcherArgs)
         {
             var exception = new Exception(DateTime.Now.ToString(),(Exception) sender);
 
@@ -276,9 +276,16 @@ namespace InboxWatcher.ImapClient
                 Exceptions.Add(exception);
                 logger.Info("Exception happened with Email Sender - Creating a new email sender");
             }
-            
+
+            await SetupEmailSender();
+        }
+
+        private async Task SetupEmailSender()
+        {
             _emailSender = new EmailSender(_imapClientDirector);
-            _emailSender.Setup();
+            await _emailSender.Setup();
+
+            _emailFilterer.FilterAllMessages(EmailList);
         }
 
         public void AddNotification(AbstractNotification action)

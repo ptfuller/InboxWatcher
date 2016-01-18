@@ -31,19 +31,26 @@ namespace InboxWatcher.ImapClient
         public async Task FilterAllMessages(IEnumerable<IMessageSummary> messages)
         {
             Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering Messages");
-            messages.ForEach(FilterMessage);
+
+            foreach (var message in messages)
+            {
+                await FilterMessage(message);
+            }
+
+            Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering All Done");
         }
 
         private async void FilterOnMessageReceived(object email, EventArgs args)
         {
             if (email == null) return;
             var receivedMessage = (IMessageSummary) email;
-            await Task.Delay(1500);
-            FilterMessage(receivedMessage);
+            
+            await FilterMessage(receivedMessage);
         }
 
-        private async void FilterMessage(IMessageSummary msgSummary)
+        private async Task FilterMessage(IMessageSummary msgSummary)
         {
+            await Task.Delay(1500);
 
             try
             {
@@ -67,11 +74,11 @@ namespace InboxWatcher.ImapClient
                     var theMessage = await _attachedMailBox.GetMessage(msgSummary.UniqueId.Id);
 
                     if (theMessage == null) return;
-                    
+
+                    Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering {theMessage.Subject}");
+
                     if (filter.ForwardThis)
                     {
-                        Debug.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering {theMessage.Subject}");
-
                         //forward the message
                         if (!await _attachedMailBox.SendMail(theMessage, msgSummary.UniqueId.Id, filter.ForwardToAddress, false))
                         {
@@ -80,13 +87,14 @@ namespace InboxWatcher.ImapClient
                     }
 
                     //move the message
-                    _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, filter.FilterName);
+                    await _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, filter.FilterName);
 
                 }
             }
             catch (Exception ex)
             {
                 logger.Error(ex);
+                throw ex;
             }
         }
     }

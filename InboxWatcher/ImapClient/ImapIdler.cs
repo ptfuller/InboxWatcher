@@ -70,7 +70,7 @@ namespace InboxWatcher.ImapClient
             Director = director;
         }
 
-        public virtual void Setup()
+        public virtual async Task Setup()
         {
             AreEventsSubscribed = false;
 
@@ -78,7 +78,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                ImapClient = Director.GetReadyClient();
+                ImapClient = await Director.GetClient();
                 ImapClient.Disconnected += (sender, args) =>
                 {
                     Debug.WriteLine("ImapClient disconnected");
@@ -93,7 +93,7 @@ namespace InboxWatcher.ImapClient
                 throw exception;
             }
 
-            StartIdling();
+            await StartIdling();
         }
 
         public virtual async Task StartIdling()

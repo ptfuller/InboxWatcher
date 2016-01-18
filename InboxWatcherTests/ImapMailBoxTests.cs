@@ -38,9 +38,8 @@ namespace InboxWatcherTests
             _inbox = new Mock<IMailFolder>();
             _client.Setup(x => x.Inbox).Returns(_inbox.Object);
 
-            ImapClientDirector.Setup(x => x.GetReadyClient()).Returns(_client.Object);
-            ImapClientDirector.Setup(x => x.GetClient()).Returns(_client.Object);
-            ImapClientDirector.Setup(x => x.GetThisClientReady(It.IsAny<IImapClient>())).Returns(_client.Object);
+            ImapClientDirector.Setup(x => x.GetClient().Result).Returns(_client.Object);
+            ImapClientDirector.Setup(x => x.GetClient().Result).Returns(_client.Object);
         }
 
         [TestMethod]

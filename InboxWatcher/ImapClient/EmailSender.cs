@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace InboxWatcher.ImapClient
         private SmtpClient _smtpClient;
         private ImapClientDirector _director;
         private Timer _timer;
+        private bool _emailIsSending;
 
         public event EventHandler<InboxWatcherArgs> ExceptionHappened;
 
@@ -24,22 +26,26 @@ namespace InboxWatcher.ImapClient
             _director = director;
         }
 
-        public void Setup()
+        public async Task Setup()
         {
-            _smtpClient = _director.GetSmtpClient();
+            _smtpClient = await _director.GetSmtpClient();
 
             _timer = new Timer();
-            _timer.Interval = 1000 * 60 * 2; //2 minutes
-            _timer.Elapsed += (s, e) => KeepAlive();
+            _timer.Interval = 1000 * 60 * 1.5; //1.5 minutes
+            _timer.Elapsed += async (s, e) => await KeepAlive().ConfigureAwait(false);
             _timer.AutoReset = false;
             _timer.Start();
+
+            Debug.WriteLine("SMTP Client Setup");
         }
 
         private async Task KeepAlive()
         {
+            if (_emailIsSending) return;
+
             try
             {
-                await _smtpClient.NoOpAsync();
+                await _smtpClient.NoOpAsync().ConfigureAwait(false);
                 _timer.Start();
             }
             catch (Exception ex)
@@ -68,6 +74,9 @@ namespace InboxWatcher.ImapClient
 
         public async Task<bool> SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
         {
+            _emailIsSending = true;
+            _timer.Stop();
+
             try
             {
                     var client = _smtpClient;
@@ -128,10 +137,14 @@ namespace InboxWatcher.ImapClient
             {
                 var exception = new Exception("Exception happened during SMTP client sendmail", ex);
                 logger.Error(exception);
+                _emailIsSending = false;
+                _timer.Start();
                 ExceptionHappened?.Invoke(exception, new InboxWatcherArgs());
                 return false;
             }
 
+            _timer.Start();
+            _emailIsSending = false;
             return true;
         }
     }

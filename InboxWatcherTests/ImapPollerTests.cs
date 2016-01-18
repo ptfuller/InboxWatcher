@@ -56,7 +56,7 @@ namespace InboxWatcherTests
         public void TestPollerGetsNewClientOnDisconnect()
         {
             var director = new Mock<ImapClientDirector>(_config);
-            director.Setup(x => x.GetReadyClient()).Returns(_client.Object);
+            director.Setup(x => x.GetClient().Result).Returns(_client.Object);
 
             var idler = new ImapIdler(director.Object);
 

@@ -1,4 +1,5 @@
-﻿using InboxWatcher.Interface;
+﻿using System.Threading.Tasks;
+using InboxWatcher.Interface;
 
 namespace InboxWatcher.ImapClient
 {
@@ -32,29 +33,14 @@ namespace InboxWatcher.ImapClient
             MailBoxName = configuration.MailBoxName;
         }
 
-        public virtual IImapClient GetClient()
+        public virtual async Task<IImapClient> GetClient()
         {
-            return Builder.Build().Result;
+            return await Builder.Build();
         }
 
-        public virtual IImapClient GetReadyClient()
+        public virtual async Task<SendClient> GetSmtpClient()
         {
-            return Builder.BuildReady();
-        }
-
-        public virtual IImapClient GetThisClientReady(IImapClient client)
-        {
-            return Builder.GetReady(client);
-        }
-
-        public virtual SendClient GetSmtpClient()
-        {
-            return Builder.GetSmtpClient();
-        }
-
-        public virtual SendClient GetSmtpClientAsync()
-        {
-            return Builder.GetSmtpClientAsync();
+            return await Builder.GetSmtpClient();
         }
     }
 }

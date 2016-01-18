@@ -117,72 +117,19 @@ namespace InboxWatcher.ImapClient
             return client;
         }
 
-        public virtual SendClient GetSmtpClient()
+        public virtual async Task<SendClient> GetSmtpClient()
         {
             var client = new SendClient();
-            
-            client.Connect(_smtpHostName, _smtpPort);
-            client.AuthenticationMechanisms.Remove("XOAUTH2");
-            client.Authenticate(_smtpUserName, _smtpPassword);
-            return client;
-        }
-
-        public IImapClient BuildReady()
-        {
-            return GetReady(Build().Result);
-        }
-
-        public IImapClient GetReady(IImapClient client)
-        {
-            if (!client.ConnectTask.IsCompleted)
-            {
-                if (!client.ConnectTask.Wait(5000)) return BuildReady();
-            }
-
-            if (!client.AuthTask.IsCompleted)
-            {
-                if (!client.AuthTask.Wait(5000)) return BuildReady();
-            }
-
-            if (!client.InboxOpenTask.IsCompleted)
-            {
-                if (!client.InboxOpenTask.Wait(5000)) return BuildReady();
-            }
-
-            if (client.IsConnected && client.IsAuthenticated)
-            {
-                if (!client.Inbox.IsOpen)
-                {
-                    client.Inbox.Open(FolderAccess.ReadWrite);
-                }
-                return client;
-            }
-
-            return BuildReady();
-        }
-
-        public SendClient GetSmtpClientAsync()
-        {
-            
-            var client = new SendClient();
-            client.UserName = _userName;
-            client.Password = _password;
+            client.SendAs = _sendName;
 
             if (string.IsNullOrEmpty(_sendName))
             {
                 _sendName = _userName;
             }
 
-            client.SendAs = _sendName;
-
-            client.ConnectTask = client.ConnectAsync(_host, _smtpPort, _smtpUseSSL);
-
+            await client.ConnectAsync(_smtpHostName, _smtpPort);
             client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-            client.Connected += (sender, args) => client.AuthTask = client.AuthenticateAsync(_userName, _password);
-
-            client.ConnectAsync(_host, _smtpPort, _smtpUseSSL);
-
+            await client.AuthenticateAsync(_smtpUserName, _smtpPassword);
             return client;
         }
 
