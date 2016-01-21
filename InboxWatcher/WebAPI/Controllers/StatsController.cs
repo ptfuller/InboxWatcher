@@ -15,7 +15,6 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public object Get(string mbname)
         {
-            var dto = new StatsDto();
             var date = DateTime.Today;
 
             using (var ctx = new MailModelContainer())

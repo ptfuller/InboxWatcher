@@ -13,7 +13,7 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage Get()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery-2.1.4.min.js");
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery.min.js");
             response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
@@ -25,7 +25,7 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetUnderscore()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            var content = Path.Combine(InboxWatcher.ResourcePath, "underscore.js");
+            var content = Path.Combine(InboxWatcher.ResourcePath, "underscore-min.js");
             response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
@@ -37,7 +37,7 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetEpoxy()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            var content = Path.Combine(InboxWatcher.ResourcePath, "epoxy.js");
+            var content = Path.Combine(InboxWatcher.ResourcePath, "backbone.epoxy.min.js");
             response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
@@ -85,7 +85,19 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetSignalR()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery.signalR-2.2.0.js");
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery.signalR-2.2.0.min.js");
+            response.Content = new StringContent(File.ReadAllText(content));
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
+
+            return response;
+        }
+
+        [Route("js/bootstrap.js")]
+        public HttpResponseMessage GetBootstrap()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "bootstrap.min.js");
             response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
