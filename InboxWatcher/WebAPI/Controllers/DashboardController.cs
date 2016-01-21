@@ -4,8 +4,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Web.Http;
 using InboxWatcher.Properties;
-using RazorEngine;
-using RazorEngine.Templating;
 
 namespace InboxWatcher.WebAPI.Controllers
 {

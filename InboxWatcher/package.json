@@ -1,0 +1,11 @@
+{
+	"version": "1.0.0",
+	"name": "Inboxwatcher",
+	"private": true,
+  "dependencies": {
+    "backbone": "1.2.3",
+    "epoxy": "0.4.1",
+    "jquery": "2.2.0",
+    "bootstrap": "3.3.6"
+  }
+}

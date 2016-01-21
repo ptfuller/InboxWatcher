@@ -60,7 +60,7 @@ namespace InboxWatcher
 
             StartWebApi();
 
-            ConfigureMailBoxes();
+            Task.Run(async () => { await ConfigureMailBoxes(); });
 
             logger.Info("Inbox Watcher Started");
         }
@@ -123,6 +123,8 @@ namespace InboxWatcher
                 mailbox.AddNotification(action);
             }
 
+            await mailbox.Setup();
+
             MailBoxes.Add(mailbox);
         }
 
@@ -134,10 +136,12 @@ namespace InboxWatcher
             var configs = Configs;
 
             //setup each ImapMailBox and add it to the list of mailboxes
-            foreach (var clientConfiguration in configs)
+            var setupTasks = configs.Select(clientConfiguration => Task.Run(async () =>
             {
                 var director = new ImapClientDirector(clientConfiguration);
                 var mailbox = new ImapMailBox(director, clientConfiguration);
+
+                await mailbox.Setup();
 
                 foreach (var action in SetupNotifications(clientConfiguration.Id))
                 {
@@ -145,7 +149,9 @@ namespace InboxWatcher
                 }
 
                 MailBoxes.Add(mailbox);
-            }
+            })).ToList();
+
+            await Task.WhenAll(setupTasks);
 
             //todo remove this - it's for debugging
             foreach (var imapMailBox in MailBoxes)
@@ -153,15 +159,15 @@ namespace InboxWatcher
                 imapMailBox.NewMessageReceived += (sender, eventArgs) =>
                 {
                     var summary = sender as IMessageSummary;
-                    Debug.WriteLine(imapMailBox.MailBoxName + ": Message Received: " + summary.Envelope.Subject);
-                    Debug.WriteLine("ID: " + summary.Envelope.MessageId);
+                    Trace.WriteLine(imapMailBox.MailBoxName + ": Message Received: " + summary.Envelope.Subject);
+                    Trace.WriteLine("ID: " + summary.Envelope.MessageId);
                 };
 
                 imapMailBox.MessageRemoved += (sender, eventArgs) =>
                 {
                     var summary = sender as IMessageSummary;
-                    Debug.WriteLine(imapMailBox.MailBoxName + ": Message Removed " + summary.Envelope.Subject);
-                    Debug.WriteLine("ID: " + summary.Envelope.MessageId);
+                    Trace.WriteLine(imapMailBox.MailBoxName + ": Message Removed " + summary.Envelope.Subject);
+                    Trace.WriteLine("ID: " + summary.Envelope.MessageId);
                 };
             }
         }

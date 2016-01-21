@@ -57,22 +57,10 @@ namespace InboxWatcher
                 try
                 {
                     context.Emails.Add(email);
-                    await context.SaveChangesAsync().ConfigureAwait(false);
+                    await context.SaveChangesAsync();
                 }
                 catch (DbEntityValidationException ex)
                 {
-                    foreach (var eve in ex.EntityValidationErrors)
-                    {
-                        Debug.WriteLine(
-                            "Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
-                            eve.Entry.Entity.GetType().Name, eve.Entry.State);
-                        foreach (var ve in eve.ValidationErrors)
-                        {
-                            Debug.WriteLine("- Property: \"{0}\", Error: \"{1}\"",
-                                ve.PropertyName, ve.ErrorMessage);
-                        }
-                    }
-
                     throw ex;
                 }
             }
@@ -96,13 +84,13 @@ namespace InboxWatcher
                 }
                 
 
-                await LogEmailChanged(email, "", "Removed").ConfigureAwait(false);
+                await LogEmailChanged(email, "", "Removed");
 
                 selectedEmail.Minutes = (int) (DateTime.Now.ToUniversalTime() - selectedEmail.TimeReceived.ToUniversalTime()).TotalMinutes;
                 selectedEmail.InQueue = false;
                 
 
-                await context.SaveChangesAsync().ConfigureAwait(false);
+                await context.SaveChangesAsync();
             }
         }
 
@@ -130,7 +118,7 @@ namespace InboxWatcher
                 }
 
                 context.EmailLogs.AddRange(newLogs);
-                await context.SaveChangesAsync().ConfigureAwait(false);
+                await context.SaveChangesAsync();
             }
         }
 
@@ -152,7 +140,7 @@ namespace InboxWatcher
                     TakenBy = actionTakenBy
                 });
 
-                await ctx.SaveChangesAsync().ConfigureAwait(false);
+                await ctx.SaveChangesAsync();
             }
         }
 
@@ -167,8 +155,8 @@ namespace InboxWatcher
                 if (result == null || result.MarkedAsRead) return;
 
                 result.MarkedAsRead = true;
-                await Context.SaveChangesAsync().ConfigureAwait(false);
-                await LogEmailChanged(message, "Unknown", "Marked Read").ConfigureAwait(false);
+                await Context.SaveChangesAsync();
+                await LogEmailChanged(message, "Unknown", "Marked Read");
             }
         }
 
@@ -207,7 +195,7 @@ namespace InboxWatcher
 
                 newLogs.Add(log);
                 ctx.EmailLogs.AddRange(newLogs);
-                await ctx.SaveChangesAsync().ConfigureAwait(false);
+                await ctx.SaveChangesAsync();
             }
         }
     }

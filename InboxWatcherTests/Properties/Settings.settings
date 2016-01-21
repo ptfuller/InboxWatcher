@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="InboxWatcherTests.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="TestUserName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Support1@alchemysystems.com</Value>
+    </Setting>
+    <Setting Name="TestPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">PSCGvfqhjdzbQ$`5</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

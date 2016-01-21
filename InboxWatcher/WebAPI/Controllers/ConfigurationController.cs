@@ -69,7 +69,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 ctx.SaveChanges();
             }
 
-            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(result); });
+            Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(result); });
 
             return new ClientConfigurationDto(result);
         }
@@ -88,7 +88,7 @@ namespace InboxWatcher.WebAPI.Controllers
             }
 
             InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
-            Task.Factory.StartNew(() => { InboxWatcher.ConfigureMailBox(conf); });
+            Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(conf); });
             return selection;
         }
 

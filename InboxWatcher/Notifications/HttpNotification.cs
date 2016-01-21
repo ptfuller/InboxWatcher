@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web;
 using System.Xml.Serialization;
 using InboxWatcher.Attributes;
@@ -26,7 +27,7 @@ namespace InboxWatcher.Notifications
 
         protected List<KeyValuePair<string, string>> Kvp;
 
-        public override bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
+        public override async Task<bool> Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
         {
             string response;
 
@@ -37,7 +38,7 @@ namespace InboxWatcher.Notifications
                     var summ = new NotificationSummary(summary, notificationType) {MailBoxName = mailBoxName};
                     try
                     {
-                        var result = client.PostAsJsonAsync(Url, summ).Result;
+                        var result = await client.PostAsJsonAsync(Url, summ);
                     }
                     catch (Exception)
                     {

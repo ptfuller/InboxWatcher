@@ -81,7 +81,7 @@ namespace InboxWatcher.ImapClient
                 ImapClient = await Director.GetClient();
                 ImapClient.Disconnected += (sender, args) =>
                 {
-                    Debug.WriteLine("ImapClient disconnected");
+                    Trace.WriteLine("ImapClient disconnected");
                 };
             }
             catch (Exception ex)
@@ -98,6 +98,8 @@ namespace InboxWatcher.ImapClient
 
         public virtual async Task StartIdling()
         {
+            if (IdleTask != null && !IdleTask.IsCompleted) return;
+
             DoneToken = new CancellationTokenSource();
             CancelToken = new CancellationTokenSource();
 
@@ -119,11 +121,12 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
+            //idle the imap client and wait for exceptions asynchronously
             IdleTask = Task.Run(async () =>
             {
                 try
                 {
-                    await ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token).ConfigureAwait(false); ;
+                    await ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
                 }
                 catch (Exception ex)
                 {
@@ -131,9 +134,9 @@ namespace InboxWatcher.ImapClient
                     HandleException(exception, true);
                 }
             });
-            
 
-            IdleLoop();
+
+            await IdleLoop();
         }
 
         private async void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)
@@ -154,31 +157,31 @@ namespace InboxWatcher.ImapClient
             messageArrived?.Invoke(sender, messagesArrivedEventArgs);
         }
 
-        protected virtual void IdleLoop()
+        protected virtual async Task IdleLoop()
         {
             Timeout = new Timer(9*60*1000);
             Timeout.Elapsed += async (s, e) =>
             {
-                await StopIdle().ConfigureAwait(false); ;
+                await StopIdle();
 
-                if (!ImapClient.IsConnected || !ImapClient.IsAuthenticated) Setup();
+                if (!ImapClient.IsConnected || !ImapClient.IsAuthenticated) await Setup();
 
                 if (!ImapClient.Inbox.IsOpen)
                 {
                     try
                     {
-                        await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite).ConfigureAwait(false); ;
+                        await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite);
                     }
                     catch (InvalidOperationException ex)
                     {
                         logger.Error(ex);
 
                         var exception = new Exception(GetType().FullName + " Error at Idle Loop", ex);
-                        HandleException(exception);
+                        HandleException(exception, true);
                     }
                 }
 
-                StartIdling();
+                await StartIdling();
             };
             Timeout.AutoReset = false;
             Timeout.Start();
@@ -198,8 +201,10 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
+                if (!IsIdle()) return;
+
                 DoneToken.Cancel();
-                await IdleTask.ConfigureAwait(false); ;
+                await IdleTask;
             }
             catch (Exception ex)
             {
@@ -224,22 +229,23 @@ namespace InboxWatcher.ImapClient
 
         public async Task<IEnumerable<IMailFolder>> GetMailFolders()
         {
-            if(ImapClient.IsIdle) await StopIdle().ConfigureAwait(false); ;
+            if (ImapClient.IsIdle) await StopIdle();
 
-            if(ImapClient.Inbox.IsOpen) await ImapClient.Inbox.CloseAsync().ConfigureAwait(false); ;
+            if (ImapClient.Inbox.IsOpen) await ImapClient.Inbox.CloseAsync();
 
             var allFolders = new List<IMailFolder>();
 
 
             if (ImapClient.PersonalNamespaces != null)
             {
-                var root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, CancellationToken.None).ConfigureAwait(false); ;
+                var root =
+                    await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, CancellationToken.None);
                 allFolders.AddRange(GetMoreFolders(root));
             }
 
-            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite).ConfigureAwait(false); ;
+            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite);
 
-            StartIdling();
+            await StartIdling();
 
             return allFolders;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -15,7 +16,6 @@ using MailKit;
 using MimeKit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
@@ -69,25 +69,27 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public PagedResult Search(string mailBoxName, string search = "", string order = "asc", int limit = 0, int offset = 0, bool inQueue = false)
         {
+            if (string.IsNullOrEmpty(search))
+            {
+                search = "";
+            }
+
             search = search.ToLower();
 
             var results = new PagedResult();
 
             using (var ctx = new MailModelContainer())
             {
-                var mailbox = ctx.ImapMailBoxConfigurations.Include(x => x.Emails.Select(e => e.EmailLogs)).FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+                var rows = ctx.Emails.Where(x => x.ImapMailBoxConfiguration.MailBoxName.Equals(mailBoxName)).Include(em => em.EmailLogs);
 
-                if (mailbox == null) return results;
-
-                var rows = mailbox.Emails.OrderBy(x => x.TimeReceived).AsQueryable();
+                if (!rows.Any()) return results;
 
                 if (!string.IsNullOrEmpty(search))
                 {
                     rows = rows.Where(x => x.Sender.ToLower().Contains(search) || 
                         x.Subject.ToLower().Contains(search) || 
                         x.BodyText.ToLower().Contains(search) || 
-                        x.TimeReceived.ToString("d").Contains(search) ||
-                        x.EmailLogs.Any(log => log.TakenBy.Contains(search)));
+                        x.EmailLogs.Any(log => log.TakenBy.Contains(search) || log.Action.Contains(search)));
                 }
 
                 if (inQueue)
@@ -95,13 +97,13 @@ namespace InboxWatcher.WebAPI.Controllers
                     rows = rows.Where(x => x.InQueue);
                 }
 
-                if (!order.Equals("asc")) rows = rows.OrderByDescending(x => x.TimeReceived);
+                rows = !order.Equals("asc") ? rows.OrderByDescending(x => x.TimeReceived) : rows.OrderBy(x => x.TimeReceived);
 
                 var rowCount = rows.Count();
 
                 rows = limit != 0 ? rows.Skip(offset).Take(limit) : rows;
 
-                results.rows = rows.Select(email => new EmailDto(email)).ToList();
+                results.rows = rows.ToList().Select(email => new EmailDto(email));
                 results.total = rowCount;
 
                 return results;
@@ -139,19 +141,22 @@ namespace InboxWatcher.WebAPI.Controllers
 
             var message = selectedMailBox?.GetMessage(uniqueId);
 
-            return message == null ? null : new Message(await message.ConfigureAwait(false));
+            return message == null ? null : new Message(await message);
         }
 
         [Route("mailboxes/{mailBoxName}/{uniqueId}/sendto/{emailDestination}/{moveToDestinationFolder}")]
         [HttpGet]
         public async Task<HttpResponseMessage> Get(string mailBoxName, uint uniqueId, string emailDestination, bool moveToDestinationFolder = false)
         {
+            Trace.WriteLine($"{emailDestination} is trying to get message {uniqueId}");
+
             var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
 
             var selectedMessage = await selectedMailBox.GetMessage(uniqueId);
 
-            if (await selectedMailBox.SendMail(selectedMessage, uniqueId, emailDestination, moveToDestinationFolder).ConfigureAwait(false))
+            if (await selectedMailBox.SendMail(selectedMessage, uniqueId, emailDestination, moveToDestinationFolder))
             {
+                Trace.WriteLine($"{emailDestination} got message with subject: {selectedMessage.Subject}");
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 
@@ -181,7 +186,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
             if (await selectedMailBox.SendMail(selectedMessage, UniqueId, address, false))
             {
-                await selectedMailBox.MoveMessage(UniqueId, selectedMessage.MessageId, destination, username).ConfigureAwait(false);
+                await selectedMailBox.MoveMessage(UniqueId, selectedMessage.MessageId, destination, username);
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
             
@@ -201,7 +206,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
             if (messageSummary == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError); }
 
-            await selectedMailBox.MoveMessage(messageSummary, destination, username).ConfigureAwait(false);
+            await selectedMailBox.MoveMessage(messageSummary, destination, username);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }

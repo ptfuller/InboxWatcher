@@ -32,11 +32,11 @@ namespace InboxWatcher.ImapClient
 
             _timer = new Timer();
             _timer.Interval = 1000 * 60 * 1.5; //1.5 minutes
-            _timer.Elapsed += async (s, e) => await KeepAlive().ConfigureAwait(false);
+            _timer.Elapsed += async (s, e) => await KeepAlive();
             _timer.AutoReset = false;
             _timer.Start();
 
-            Debug.WriteLine("SMTP Client Setup");
+            Trace.WriteLine("SMTP Client Setup");
         }
 
         private async Task KeepAlive()
@@ -45,7 +45,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                await _smtpClient.NoOpAsync().ConfigureAwait(false);
+                await _smtpClient.NoOpAsync();
                 _timer.Start();
             }
             catch (Exception ex)
@@ -130,8 +130,8 @@ namespace InboxWatcher.ImapClient
 
 
 
-                    await client.SendAsync(buildMessage).ConfigureAwait(false);
-                
+                await client.SendAsync(buildMessage);
+
             }
             catch (Exception ex)
             {

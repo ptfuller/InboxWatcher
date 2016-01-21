@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using InboxWatcher.DTO;
 using InboxWatcher.Enum;
 using InboxWatcher.Interface;
@@ -12,11 +13,9 @@ using InboxWatcher.Notifications;
 using InboxWatcher.WebAPI.Controllers;
 using MailKit;
 using MailKit.Search;
-using Microsoft.Ajax.Utilities;
 using Microsoft.AspNet.SignalR;
 using MimeKit;
 using NLog;
-using WebGrease.Css.Extensions;
 
 namespace InboxWatcher.ImapClient
 {
@@ -31,6 +30,8 @@ namespace InboxWatcher.ImapClient
         private readonly IClientConfiguration _config;
         private readonly ImapClientDirector _imapClientDirector;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
+
+        private BufferBlock<int> MessagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions {BoundedCapacity = 3});
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
@@ -67,8 +68,6 @@ namespace InboxWatcher.ImapClient
             _config = config;
             MailBoxName = _config.MailBoxName;
             _mbLogger = new MailBoxLogger(_config);
-
-            Setup();
         }
 
 
@@ -83,7 +82,7 @@ namespace InboxWatcher.ImapClient
             //if setup fails let's try again soon
             while (!await SetupClients())
             {
-                Debug.WriteLine($"{MailBoxName} SetupClients failed - retry time is: {retryTime / 1000} seconds");
+                Trace.WriteLine($"{MailBoxName} SetupClients failed - retry time is: {retryTime / 1000} seconds");
                 await Task.Delay(retryTime);
 
                 if (retryTime < 160000)
@@ -92,14 +91,14 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
-            Debug.WriteLine(MailBoxName + " SetupClients finished");
+            Trace.WriteLine(MailBoxName + " SetupClients finished");
 
             retryTime = 5000;
 
             //make worker get initial list of messages and then start idling
             while (!await FreshenMailBox())
             {
-                Debug.WriteLine($"{MailBoxName} FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
+                Trace.WriteLine($"{MailBoxName} FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
                 await Task.Delay(retryTime);
 
                 if (retryTime < 160000)
@@ -110,7 +109,7 @@ namespace InboxWatcher.ImapClient
 
             while (!SetupEvents())
             {
-                Debug.WriteLine($"{MailBoxName} SetupEvents failed - retry time is: {retryTime / 1000} seconds");
+                Trace.WriteLine($"{MailBoxName} SetupEvents failed - retry time is: {retryTime / 1000} seconds");
                 await Task.Delay(retryTime);
 
                 if (retryTime < 160000)
@@ -119,16 +118,16 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
-            Debug.WriteLine($"{MailBoxName} FreshMailBox finished");
+            Trace.WriteLine($"{MailBoxName} FreshMailBox finished");
 
             //get folders
-            EmailFolders = await _imapIdler.GetMailFolders().ConfigureAwait(false); ;
+            EmailFolders = await _imapIdler.GetMailFolders();
 
             //setup email filterer
             _emailFilterer = new EmailFilterer(this);
 
             //filter all new messages
-            _emailFilterer.FilterAllMessages(EmailList);
+            Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); });
 
             Exceptions.Clear();
             _setupInProgress = false;
@@ -155,7 +154,7 @@ namespace InboxWatcher.ImapClient
                 _imapWorker = null;
                 _imapIdler = null;
 
-                await Setup().ConfigureAwait(false);
+                await Setup();
             }
         }
 
@@ -236,8 +235,13 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
+                _emailSender = null;
+                _imapIdler = null;
+                _imapWorker = null;
+
                 _imapWorker = new ImapWorker(_imapClientDirector);
                 WorkerStartTime = DateTime.Now;
+
                 _imapIdler = new ImapIdler(_imapClientDirector);
                 IdlerStartTime = DateTime.Now;
 
@@ -246,15 +250,14 @@ namespace InboxWatcher.ImapClient
                 _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
 
                 //exceptions that happen in the idler or worker get logged in a list in the mailbox
-                _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
                 _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
-
-                _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
                 _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
-                await _emailSender.Setup();
-                await _imapIdler.Setup();
-                await _imapWorker.Setup();
+                var sender = _emailSender.Setup();
+                var idler = _imapIdler.Setup();
+                var worker = _imapWorker.Setup();
+
+                await Task.WhenAll(sender, idler, worker);
             }
             catch (Exception ex)
             {
@@ -270,8 +273,10 @@ namespace InboxWatcher.ImapClient
         {
             var exception = new Exception(DateTime.Now.ToString(),(Exception) sender);
 
+            _emailSender = null;
+
             //I don't want a bunch of crap in my logs
-            if (!exception.Message.Equals("Exception happened during SMTP client No Op"))
+            if (!exception.InnerException.Message.Equals("Exception happened during SMTP client No Op"))
             {
                 Exceptions.Add(exception);
                 logger.Info("Exception happened with Email Sender - Creating a new email sender");
@@ -285,7 +290,9 @@ namespace InboxWatcher.ImapClient
             _emailSender = new EmailSender(_imapClientDirector);
             await _emailSender.Setup();
 
-            _emailFilterer.FilterAllMessages(EmailList);
+            _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
+
+            await _emailFilterer.FilterAllMessages(EmailList);
         }
 
         public void AddNotification(AbstractNotification action)
@@ -305,7 +312,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                EmailList.AddRange(await _imapWorker.FreshenMailBox().ConfigureAwait(false));
+                EmailList.AddRange(await _imapWorker.FreshenMailBox());
             }
             catch (Exception ex)
             {
@@ -322,7 +329,12 @@ namespace InboxWatcher.ImapClient
                 {
                     if (!await _mbLogger.LogEmailReceived(email)) continue;
 
-                    NotificationActions.ForEach(x => x?.Notify(email, NotificationType.Received, MailBoxName));
+                    NotificationActions.ForEach(async x =>
+                    {
+                        var notify = x?.Notify(email, NotificationType.Received, MailBoxName);
+                        if (notify != null)
+                            await notify;
+                    });
                     NewMessageReceived?.Invoke(email, EventArgs.Empty);
 
                     //set any email that is in the inbox to InQueue = true.
@@ -362,23 +374,75 @@ namespace InboxWatcher.ImapClient
 
         private async void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            await HandleNewMessages(eventArgs.Count);
+            NewMessageQueue(eventArgs.Count);
         }
 
-        private async Task HandleNewMessages(int count)
+        private async Task NewMessageQueue(int count)
         {
-            var messages = await _imapWorker.GetNewMessages(count).ConfigureAwait(false);
+            try
+            {
+                if (!await MessagesReceivedBuffer.SendAsync(count))
+                {
+                    await Task.Delay(10000);
+                    NewMessageQueue(count);
+                    return;
+                }
+            }
+            catch (ArgumentNullException ex)
+            {
+                return;
+            }
+
+            var currentCount = MessagesReceivedBuffer.Count;
+            await Task.Delay(2000);
+
+            //messages received during wait or already processing max of 3
+            if (MessagesReceivedBuffer == null || MessagesReceivedBuffer.Count == 0 || MessagesReceivedBuffer.Count > currentCount)
+            {
+                return;
+            }
+
+            MessagesReceivedBuffer.Complete();
+            await HandleNewMessages();
+
+            //reset bufferblock
+            MessagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions { BoundedCapacity = 3 });
+        }
+
+        private async Task HandleNewMessages()
+        {
+            IEnumerable<IMessageSummary> messages;
+
+            try
+            {
+                IList<int> count = new List<int>();
+                MessagesReceivedBuffer.TryReceiveAll(out count);
+
+                messages = await _imapWorker.GetNewMessages(count.Sum());
+            }
+            catch (Exception ex)
+            {
+                Exceptions.Add(ex);
+                Setup();
+                return;
+            }
 
             foreach (var message in messages)
             {
                 if (message?.Envelope == null || EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
 
                 EmailList.Add(message);
-                NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Received, MailBoxName));
+                NotificationActions.ForEach(async x =>
+                {
+                    var notify = x?.Notify(message, NotificationType.Received, MailBoxName);
+                    if (notify != null)
+                        await notify;
+                });
                 NewMessageReceived?.Invoke(message, EventArgs.Empty);
-                _mbLogger.LogEmailReceived(message);
+                await _mbLogger.LogEmailReceived(message);
             }
 
+            //fresh ui via signalr
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.FreshenMailBox(MailBoxName);
         }
@@ -397,9 +461,15 @@ namespace InboxWatcher.ImapClient
 
             EmailList.RemoveAt(index);
 
-            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Removed, MailBoxName));
+            NotificationActions.ForEach(async x =>
+            {
+                var notify = x?.Notify(message, NotificationType.Removed, MailBoxName);
+                if (notify != null)
+                    await notify;
+            });
+
             MessageRemoved?.Invoke(message, EventArgs.Empty);
-            _mbLogger.LogEmailRemoved(message);
+            await _mbLogger.LogEmailRemoved(message);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.FreshenMailBox(MailBoxName);
@@ -417,8 +487,12 @@ namespace InboxWatcher.ImapClient
             if (EmailList[index] == null) return;
 
             var message = EmailList[index];
-            _mbLogger.LogEmailSeen(message);
-            NotificationActions.ForEach(x => x?.Notify(message, NotificationType.Seen, MailBoxName));
+            await _mbLogger.LogEmailSeen(message);
+            NotificationActions.ForEach(async x =>
+            {
+                var notify = x?.Notify(message, NotificationType.Seen, MailBoxName);
+                if (notify != null) await notify;
+            });
         }
 
         public async Task<MimeMessage> GetMessage(uint uniqueId)
@@ -427,55 +501,87 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                return await _imapWorker.GetMessage(uid).ConfigureAwait(false);
+                return await _imapWorker.GetMessage(uid);
             }
             catch (Exception ex)
             {
                 logger.Error(ex);
                 Exceptions.Add(ex);
+                Setup();
                 return null;
             }
         }
 
 
-        //todo this probably doesn't belong here - maybe another class has this responsibility?
         public async Task<bool> SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
         {
             try
             {
-                if (!await _emailSender.SendMail(message, uniqueId, emailDestination, moveToDest).ConfigureAwait(false))
+                if (!await _emailSender.SendMail(message, uniqueId, emailDestination, moveToDest))
                 {
-                    FreshenMailBox();
+                    await FreshenMailBox();
                     return false;
                 }
             }
             catch (Exception ex)
             {
                 logger.Error(ex);
-
-                _emailSender = new EmailSender(_imapClientDirector);
-                _emailSender.Setup();
-
                 return false;
             }
 
-            _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
+            if (moveToDest)
+            {
+                try
+                {
+                    await _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex);
+                    Exceptions.Add(ex);
+                    Setup();
+                    return false;
+                }
+            }
 
-            if (moveToDest) _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
+            await _mbLogger.LogEmailSent(message, emailDestination, moveToDest);
 
             return true;
         }
 
         public async Task MoveMessage(IMessageSummary summary, string moveToFolder, string actionTakenBy)
         {
+            try
+            {
+                await _imapWorker.MoveMessage(summary.UniqueId.Id, moveToFolder, MailBoxName);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                Exceptions.Add(ex);
+                Setup();
+                return;
+            }
+
             await _mbLogger.LogEmailChanged(summary, actionTakenBy, "Moved to " + moveToFolder);
-            _imapWorker.MoveMessage(summary.UniqueId.Id, moveToFolder, MailBoxName);
         }
 
         public async Task MoveMessage(uint uid, string messageid, string moveToFolder, string actionTakenBy)
         {
+            
+            try
+            {
+                await _imapWorker.MoveMessage(uid, moveToFolder, MailBoxName);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                Exceptions.Add(ex);
+                Setup();
+                return;
+            }
+
             await _mbLogger.LogEmailChanged(messageid, actionTakenBy, "Moved to " + moveToFolder);
-            _imapWorker.MoveMessage(uid, moveToFolder, MailBoxName);
         }
     }
 }

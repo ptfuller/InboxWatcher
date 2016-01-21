@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using InboxWatcher.Attributes;
 using InboxWatcher.Enum;
@@ -14,7 +15,7 @@ namespace InboxWatcher.Notifications
         [XmlAttribute]
         public string FilePath { get; set; } = "";
 
-        public override bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
+        public override async Task<bool> Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName)
         {
             var sb = new StringBuilder();
             sb.AppendLine("***** " + DateTime.Now + " : Action Happened *****");

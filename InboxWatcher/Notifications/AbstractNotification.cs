@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using InboxWatcher.Enum;
@@ -16,7 +17,7 @@ namespace InboxWatcher.Notifications
         [XmlAttribute]
         public virtual string Type { get; set; }
 
-        public abstract bool Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName);
+        public abstract Task<bool> Notify(IMessageSummary summary, NotificationType notificationType, string mailBoxName);
 
         public virtual string Serialize()
         {
