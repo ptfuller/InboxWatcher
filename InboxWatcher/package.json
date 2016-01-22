@@ -1,6 +1,7 @@
 {
 	"version": "1.0.0",
-	"name": "Inboxwatcher",
+  "name": "Inboxwatcher",
+  "author": "Peter Fuller <ptfuller@gmail.com>",
 	"private": true,
   "dependencies": {
     "backbone": "1.2.3",

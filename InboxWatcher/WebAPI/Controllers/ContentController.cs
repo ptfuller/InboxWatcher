@@ -49,7 +49,7 @@ namespace InboxWatcher.WebAPI.Controllers
         public HttpResponseMessage GetBackBone()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
-            var content = Path.Combine(InboxWatcher.ResourcePath, "backbone.js");
+            var content = Path.Combine(InboxWatcher.ResourcePath, "backbone-min.js");
             response.Content = new StringContent(File.ReadAllText(content));
 
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");

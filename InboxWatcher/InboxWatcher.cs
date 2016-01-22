@@ -51,9 +51,7 @@ namespace InboxWatcher
 
         protected override void OnStart(string[] args)
         {
-            //todo remove
             Debugger.Launch();
-
             ConfigureAutoMapper();
 
             ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
