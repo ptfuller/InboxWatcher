@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Web.Http;
 using InboxWatcher.DTO;
@@ -76,7 +78,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
         [Route("{id:int}")]
         [HttpPut]
-        public IClientConfiguration Put(int id, ClientConfigurationDto conf)
+        public IClientConfiguration Put(ClientConfigurationDto conf)
         {
             IClientConfiguration selection;
 
@@ -122,6 +124,35 @@ namespace InboxWatcher.WebAPI.Controllers
             response.Headers.Location = new Uri(url + "/config/ui");
 
             return response;
+        }
+
+        [Route("backup")]
+        [HttpGet]
+        public string Backup()
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var dbLocation = Path.Combine(assemblyLocation, "InboxWatcher.mdf");
+                var backupPath = Path.Combine(assemblyLocation, "Backups", "InboxWatcher.mdf");
+
+                if (!Directory.Exists(Path.Combine(assemblyLocation, "Backups")))
+                {
+                    Directory.CreateDirectory(Path.Combine(assemblyLocation, "Backups"));
+                }
+
+                try
+                {
+                    ctx.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, $"BACKUP DATABASE [{dbLocation}] TO DISK=N'{backupPath}' " +
+                                                                                                 $"WITH FORMAT, MEDIANAME='InboxWatcherBackup', MEDIADESCRIPTION='Media set for [{dbLocation}]'");
+                }
+                catch (Exception ex)
+                {
+                    return ex.ToString();
+                }
+
+                return "Success";
+            }
         }
     }
 }

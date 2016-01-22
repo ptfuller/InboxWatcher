@@ -113,6 +113,14 @@ namespace InboxWatcher
 
         internal static async Task ConfigureMailBox(IClientConfiguration conf)
         {
+            var selectedMailBox = MailBoxes.FirstOrDefault(x => x.MailBoxId == conf.Id);
+
+            //changing an existing config
+            if (selectedMailBox != null)
+            {
+                MailBoxes.Remove(selectedMailBox);
+            }
+
             var director = new ImapClientDirector(conf);
             var mailbox = new ImapMailBox(director, conf);
 

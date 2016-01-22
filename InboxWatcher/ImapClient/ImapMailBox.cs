@@ -16,6 +16,7 @@ using MailKit.Search;
 using Microsoft.AspNet.SignalR;
 using MimeKit;
 using NLog;
+using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
@@ -31,18 +32,20 @@ namespace InboxWatcher.ImapClient
         private readonly ImapClientDirector _imapClientDirector;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private BufferBlock<int> MessagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions {BoundedCapacity = 3});
+        private BufferBlock<int> _messagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions {BoundedCapacity = 3});
+        private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
 
-        private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
-
+        private Timer freshenTimer;
+        
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public List<Exception> Exceptions = new List<Exception>();
 
         public string MailBoxName { get; private set; }
+        public int MailBoxId { get; private set; }
 
         public DateTime WorkerStartTime { get; private set; } 
         public DateTime IdlerStartTime { get; private set; }
@@ -66,7 +69,9 @@ namespace InboxWatcher.ImapClient
         {
             _imapClientDirector = icd;
             _config = config;
+            freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
+            MailBoxId = _config.Id;
             _mbLogger = new MailBoxLogger(_config);
         }
 
@@ -130,6 +135,10 @@ namespace InboxWatcher.ImapClient
             Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); });
 
             Exceptions.Clear();
+
+            freshenTimer.Elapsed += (sender, args) => FreshenMailBox();
+            freshenTimer.Start();
+
             _setupInProgress = false;
         }
 
@@ -302,9 +311,13 @@ namespace InboxWatcher.ImapClient
 
         private async Task<bool> FreshenMailBox()
         {
+            freshenTimer.Stop();
+
             if (_freshening) return false;
 
             _freshening = true;
+
+            Trace.WriteLine($"{MailBoxName}: Freshening");
 
             var templist = EmailList;
 
@@ -369,6 +382,8 @@ namespace InboxWatcher.ImapClient
 
             _freshening = false;
 
+            freshenTimer.Start();
+
             return true;
         }
 
@@ -381,7 +396,7 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                if (!await MessagesReceivedBuffer.SendAsync(count))
+                if (!await _messagesReceivedBuffer.SendAsync(count))
                 {
                     await Task.Delay(10000);
                     NewMessageQueue(count);
@@ -393,20 +408,20 @@ namespace InboxWatcher.ImapClient
                 return;
             }
 
-            var currentCount = MessagesReceivedBuffer.Count;
+            var currentCount = _messagesReceivedBuffer.Count;
             await Task.Delay(2000);
 
             //messages received during wait or already processing max of 3
-            if (MessagesReceivedBuffer == null || MessagesReceivedBuffer.Count == 0 || MessagesReceivedBuffer.Count > currentCount)
+            if (_messagesReceivedBuffer == null || _messagesReceivedBuffer.Count == 0 || _messagesReceivedBuffer.Count > currentCount)
             {
                 return;
             }
 
-            MessagesReceivedBuffer.Complete();
+            _messagesReceivedBuffer.Complete();
             await HandleNewMessages();
 
             //reset bufferblock
-            MessagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions { BoundedCapacity = 3 });
+            _messagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions { BoundedCapacity = 3 });
         }
 
         private async Task HandleNewMessages()
@@ -416,7 +431,7 @@ namespace InboxWatcher.ImapClient
             try
             {
                 IList<int> count = new List<int>();
-                MessagesReceivedBuffer.TryReceiveAll(out count);
+                _messagesReceivedBuffer.TryReceiveAll(out count);
 
                 messages = await _imapWorker.GetNewMessages(count.Sum());
             }
