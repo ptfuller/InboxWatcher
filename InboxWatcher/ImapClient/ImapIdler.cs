@@ -70,7 +70,7 @@ namespace InboxWatcher.ImapClient
             Director = director;
         }
 
-        public virtual async Task Setup()
+        public virtual async Task Setup(bool isRecoverySetup = true)
         {
             AreEventsSubscribed = false;
 
@@ -86,11 +86,14 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
-
                 var exception = new Exception(GetType().Name + " Problem getting imap client", ex);
-                HandleException(exception);
-                throw exception;
+                logger.Error(exception);
+                HandleException(exception, true);
+
+                if (!isRecoverySetup)
+                {
+                    throw exception;
+                }
             }
 
             await StartIdling();

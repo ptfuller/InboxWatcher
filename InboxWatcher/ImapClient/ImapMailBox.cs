@@ -263,8 +263,8 @@ namespace InboxWatcher.ImapClient
                 _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
                 var sender = _emailSender.Setup();
-                var idler = _imapIdler.Setup();
-                var worker = _imapWorker.Setup();
+                var idler = _imapIdler.Setup(false);
+                var worker = _imapWorker.Setup(false);
 
                 await Task.WhenAll(sender, idler, worker);
             }
