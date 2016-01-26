@@ -52,7 +52,10 @@ namespace InboxWatcher
         protected override void OnStart(string[] args)
         {
             Debugger.Launch();
+
             ConfigureAutoMapper();
+
+            Trace.Listeners.Add(new SignalRTraceListener());
 
             ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
 

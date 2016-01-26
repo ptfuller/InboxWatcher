@@ -198,5 +198,22 @@ namespace InboxWatcher
                 await ctx.SaveChangesAsync();
             }
         }
+
+        public async Task LogEmailBackInQueue(IMessageSummary email)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var emails =
+                    ctx.Emails.Where(
+                        x => x.ImapMailBoxConfigurationId == _config.Id && x.EnvelopeID.Equals(email.Envelope.MessageId));
+
+                foreach (var em in emails)
+                {
+                    em.InQueue = true;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+        }
     }
 }

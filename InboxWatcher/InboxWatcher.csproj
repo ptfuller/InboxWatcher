@@ -258,6 +258,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
+    <Compile Include="SignalRTraceListener.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WebAPI\Controllers\ConfigurationController.cs" />
     <Compile Include="WebAPI\Controllers\DashboardController.cs" />

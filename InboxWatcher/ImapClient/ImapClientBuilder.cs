@@ -20,7 +20,6 @@ namespace InboxWatcher.ImapClient
         private string _userName;
         private string _sendName;
         private bool _useSecure = true;
-        private bool _smtpUseSSL = true;
         private string _smtpHostName;
         private string _smtpUserName;
         private string _smtpPassword;

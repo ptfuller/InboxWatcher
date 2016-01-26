@@ -82,6 +82,7 @@ namespace InboxWatcher.ImapClient
                     var client = _smtpClient;
 
                     var buildMessage = new MimeMessage();
+                    buildMessage.Sender = new MailboxAddress(_director.SendAs, _director.UserName);
                     buildMessage.From.Add(new MailboxAddress(_director.SendAs, _director.UserName));
                     buildMessage.To.Add(new MailboxAddress(emailDestination, emailDestination));
 
@@ -101,11 +102,11 @@ namespace InboxWatcher.ImapClient
                     }
 
                     string addresses = message.From.Mailboxes.Aggregate("",
-                        (current, address) => current + (address.Address + " "));
+                        (current, address) => current + (address.Address + "; "));
 
-                    string ccAddresses = message.Cc.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
+                    string ccAddresses = message.Cc.Mailboxes.Aggregate("", (a, b) => a + (b.Address + "; "));
 
-                    string toAddresses = message.To.Mailboxes.Aggregate("", (a, b) => a + (b.Address + " "));
+                    string toAddresses = message.To.Mailboxes.Aggregate("", (a, b) => a + (b.Address + "; "));
 
                     if (message.TextBody != null)
                     {

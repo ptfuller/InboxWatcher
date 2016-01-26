@@ -220,7 +220,7 @@ namespace InboxWatcher.ImapClient
                 var exception = new Exception("Exception thrown during FreshenMailBox", ex);
                 logger.Error(exception);
                 HandleException(exception);
-                //throw exception;
+                throw exception;
             }
 
             await StartIdling();

@@ -21,7 +21,9 @@
 
 </head>
 <body>
-
+<div class="terminal-container">
+    <div class="terminal-text" id="terminalText"></div>
+</div>
     <nav class="navbar navbar-inverse navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header">
@@ -343,7 +345,10 @@
 
         con.client.freshenMailBox = function (mbName) {
             if (mbName === SelectedMailBox) GetSummaries(mbName);
-            console.log('fetched summaries');
+        }
+
+        con.client.displayToTerminal = function(tText) {
+            $("#terminalText").append(tText + '<br/>');
         }
 
         $.connection.hub.start();

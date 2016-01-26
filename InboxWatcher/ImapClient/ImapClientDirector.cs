@@ -19,7 +19,7 @@ namespace InboxWatcher.ImapClient
                 .WithPort(configuration.Port)
                 .WithUseSecure(configuration.UseSecure)
                 .WithUserName(configuration.UserName)
-                .WithSmtpSendName(configuration.SmtpUserName)
+                .WithSmtpSendName(configuration.MailBoxName)
                 .WithSmtpHostName(configuration.SmtpHostName)
                 .WithSmtpUserName(configuration.SmtpUserName)
                 .WithSmtpPassword(configuration.SmtpPassword)
@@ -28,7 +28,7 @@ namespace InboxWatcher.ImapClient
 
             //todo add this value to the configuration object
             UserName = configuration.UserName;
-            SendAs = UserName;
+            SendAs = configuration.MailBoxName;
 
             MailBoxName = configuration.MailBoxName;
         }

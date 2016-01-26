@@ -74,7 +74,7 @@ namespace InboxWatcher.ImapClient
         {
             AreEventsSubscribed = false;
 
-            ImapClient?.Dispose();
+            //ImapClient?.Dispose();
 
             try
             {

@@ -80,6 +80,8 @@ namespace InboxWatcher.ImapClient
         {
             if (_setupInProgress) return;
 
+            Trace.WriteLine($"{MailBoxName} starting setup");
+
             _setupInProgress = true;
 
             int retryTime = 5000;
@@ -136,7 +138,12 @@ namespace InboxWatcher.ImapClient
 
             Exceptions.Clear();
 
-            freshenTimer.Elapsed += (sender, args) => FreshenMailBox();
+            freshenTimer.Elapsed += (sender, args) =>
+            {
+                FreshenMailBox();
+                Trace.WriteLine($"{MailBoxName} Freshening due to timer");
+            };
+
             freshenTimer.Start();
 
             _setupInProgress = false;
@@ -160,6 +167,7 @@ namespace InboxWatcher.ImapClient
 
             if (needReset)
             {
+                Trace.WriteLine($"{MailBoxName}: Something bad happened - resetting clients");
                 _imapWorker = null;
                 _imapIdler = null;
 
@@ -180,6 +188,7 @@ namespace InboxWatcher.ImapClient
             {
                 var exception = new Exception($"{MailBoxName} Exception happened during SetupEvents", ex);
                 logger.Error(exception);
+                Trace.WriteLine(exception.Message);
                 return false;
             }
 
@@ -272,6 +281,7 @@ namespace InboxWatcher.ImapClient
             {
                 var exception = new Exception("Client setup failed.  Verify client settings and check inner exceptions for more information.", ex);
                 Exceptions.Add(exception);
+                Trace.WriteLine(ex.Message);
                 return false;
             }
 
@@ -329,9 +339,11 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                Trace.WriteLine(ex.Message);
                 Exceptions.Add(ex);
                 EmailList = templist;
                 _freshening = false;
+                Setup();
                 return false;
             }
 
@@ -340,7 +352,11 @@ namespace InboxWatcher.ImapClient
                 //LogEmailReceived returns false if email already exists in db => foreach email that wasn't previously received
                 foreach (var email in EmailList)
                 {
-                    if (!await _mbLogger.LogEmailReceived(email)) continue;
+                    if (!await _mbLogger.LogEmailReceived(email))
+                    {
+                        await _mbLogger.LogEmailBackInQueue(email);
+                        continue;
+                    }
 
                     NotificationActions.ForEach(async x =>
                     {
@@ -426,6 +442,8 @@ namespace InboxWatcher.ImapClient
 
         private async Task HandleNewMessages()
         {
+            if (_setupInProgress) return;
+
             IEnumerable<IMessageSummary> messages;
 
             try
@@ -438,6 +456,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
+                Trace.WriteLine(ex.Message);
                 Setup();
                 return;
             }
@@ -503,6 +522,7 @@ namespace InboxWatcher.ImapClient
 
             var message = EmailList[index];
             await _mbLogger.LogEmailSeen(message);
+            Trace.WriteLine($"{MailBoxName}: {message.Envelope.Subject} was marked as read");
             NotificationActions.ForEach(async x =>
             {
                 var notify = x?.Notify(message, NotificationType.Seen, MailBoxName);
@@ -522,6 +542,7 @@ namespace InboxWatcher.ImapClient
             {
                 logger.Error(ex);
                 Exceptions.Add(ex);
+                Trace.WriteLine(ex.Message);
                 Setup();
                 return null;
             }
@@ -541,6 +562,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 logger.Error(ex);
+                Trace.WriteLine(ex.Message);
                 return false;
             }
 
@@ -554,6 +576,7 @@ namespace InboxWatcher.ImapClient
                 {
                     logger.Error(ex);
                     Exceptions.Add(ex);
+                    Trace.WriteLine(ex.Message);
                     Setup();
                     return false;
                 }
@@ -572,6 +595,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Setup();
@@ -590,6 +614,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Setup();
