@@ -75,7 +75,7 @@ namespace InboxWatcher.ImapClient
             
             var client = new ImapClientWrapper();
 
-            client.ConnectTask = client.ConnectAsync(_host, _port, _useSecure);
+            client.ConnectTask = client.ConnectAsync(_host, _port, _useSecure, Util.GetCancellationToken(10000));
 
             client.AuthenticationMechanisms.Remove("XOAUTH2");
 
@@ -89,7 +89,7 @@ namespace InboxWatcher.ImapClient
                 throw ex;
             }
 
-            client.AuthTask = client.AuthenticateAsync(_userName, _password);
+            client.AuthTask = client.AuthenticateAsync(_userName, _password, Util.GetCancellationToken(10000));
 
             try
             {
@@ -101,7 +101,7 @@ namespace InboxWatcher.ImapClient
                 throw ex;
             }
             
-            client.InboxOpenTask = client.Inbox.OpenAsync(FolderAccess.ReadWrite);
+            client.InboxOpenTask = client.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
 
             try
             {
@@ -126,9 +126,9 @@ namespace InboxWatcher.ImapClient
                 _sendName = _userName;
             }
 
-            await client.ConnectAsync(_smtpHostName, _smtpPort);
+            await client.ConnectAsync(_smtpHostName, _smtpPort, SecureSocketOptions.Auto, Util.GetCancellationToken(10000));
             client.AuthenticationMechanisms.Remove("XOAUTH2");
-            await client.AuthenticateAsync(_smtpUserName, _smtpPassword);
+            await client.AuthenticateAsync(_smtpUserName, _smtpPassword, Util.GetCancellationToken(10000));
             return client;
         }
 

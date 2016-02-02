@@ -31,7 +31,7 @@ namespace InboxWatcher
             {
                 //if it's already in the DB we're not going to log it received
                 if (context.Emails.Any(x => x.EnvelopeID.Equals(summary.Envelope.MessageId))) return false;
-
+                
                 //generate new Email and EmailLogs
                 var email = new Email()
                 {
@@ -42,7 +42,8 @@ namespace InboxWatcher
                     Minutes = (int) (DateTime.Now.ToUniversalTime() - summary.Date.ToUniversalTime()).TotalMinutes,
                     Sender = summary.Envelope.From.ToString(),
                     Subject = string.IsNullOrEmpty(summary.Envelope.Subject) ? "" :summary.Envelope.Subject,
-                    TimeReceived = summary.Date.LocalDateTime,
+                    TimeReceived = summary.InternalDate?.LocalDateTime ?? summary.Date.LocalDateTime,
+                    TimeSent = summary.Date.LocalDateTime,
                     ImapMailBoxConfigurationId = _config.Id
                 };
 

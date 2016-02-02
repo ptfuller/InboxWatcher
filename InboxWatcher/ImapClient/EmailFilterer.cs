@@ -39,15 +39,11 @@ namespace InboxWatcher.ImapClient
             try
             {
                 var messageSummaries = messages.ToList();
-
-                for (var i = 0; i < messageSummaries.Count; i++)
-                {
-                    await FilterMessage(messageSummaries[i]);
-                }
+                await Task.WhenAll(messageSummaries.Select(FilterMessage).ToArray());
             }
             catch
             {
-                
+                // ignored
             }
 
             _currentlyFiltering = false;
@@ -69,9 +65,7 @@ namespace InboxWatcher.ImapClient
 
         private async Task FilterMessage(IMessageSummary msgSummary)
         {
-            //Trace.WriteLine($"{_attachedMailBox.MailBoxName}: checking to see if message with subject:{msgSummary.Envelope.Subject} should be filtered");
-
-            await Task.Delay(1000);
+            await Task.Delay(1000); //let enough time pass so that the message is logged before it is filtered
 
             try
             {
@@ -90,9 +84,7 @@ namespace InboxWatcher.ImapClient
                         if (!msgSummary.Envelope.From[0].ToString().ToLower().Contains(filter.SentFromContains))
                             continue;
                     }
-
-                    //Trace.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering {msgSummary.Envelope.Subject}");
-
+                    
                     if (filter.ForwardThis)
                     {
                         //get the message
@@ -110,7 +102,6 @@ namespace InboxWatcher.ImapClient
 
                     //move the message
                     await _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, "Filter: " + filter.FilterName);
-
                 }
             }
             catch (Exception ex)

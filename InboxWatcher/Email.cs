@@ -30,6 +30,7 @@ namespace InboxWatcher
         public string BodyText { get; set; }
         public string EnvelopeID { get; set; }
         public int ImapMailBoxConfigurationId { get; set; }
+        public Nullable<System.DateTime> TimeSent { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<EmailLog> EmailLogs { get; set; }

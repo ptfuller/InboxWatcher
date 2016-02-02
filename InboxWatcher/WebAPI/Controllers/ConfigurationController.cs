@@ -134,7 +134,7 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var dbLocation = Path.Combine(assemblyLocation, "InboxWatcher.mdf");
-                var backupPath = Path.Combine(assemblyLocation, "Backups", "InboxWatcher.mdf");
+                var backupPath = Path.Combine(assemblyLocation, "Backups", $"InboxWatcher.mdf");
 
                 if (!Directory.Exists(Path.Combine(assemblyLocation, "Backups")))
                 {

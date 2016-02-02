@@ -2,20 +2,14 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Web.Http;
 using InboxWatcher.DTO;
 using InboxWatcher.ImapClient;
 using InboxWatcher.Interface;
-using MailKit;
-using MimeKit;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
@@ -209,6 +203,31 @@ namespace InboxWatcher.WebAPI.Controllers
             await selectedMailBox.MoveMessage(messageSummary, destination, username);
 
             return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+
+        [Route("getmessage/{uniqueId}/sendto/{username}")]
+        [HttpGet]
+        public async Task<HttpResponseMessage> FindMessageInMailBox(uint uniqueId, string username)
+        {
+            Trace.WriteLine($"{username} is trying to get a message with uid: {uniqueId}");
+
+            using (var ctx = new MailModelContainer())
+            {
+                var selectedEmail = ctx.Emails.FirstOrDefault(x => x.Id == uniqueId);
+
+                if (selectedEmail == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
+                var selectedMailBox =
+                    InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxId == selectedEmail.ImapMailBoxConfigurationId);
+
+                if (selectedMailBox == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
+                var selectedMessage = await selectedMailBox.GetEmailByUniqueId(selectedEmail.EnvelopeID);
+
+                if (!await selectedMailBox.SendMail(selectedMessage, uniqueId, username, false)) return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
         }
     }
 }

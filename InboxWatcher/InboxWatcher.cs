@@ -13,7 +13,9 @@ using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
 using InboxWatcher.Properties;
 using InboxWatcher.WebAPI;
+using InboxWatcher.WebAPI.Controllers;
 using MailKit;
+using Microsoft.AspNet.SignalR;
 using Microsoft.Owin.Hosting;
 using NLog;
 
@@ -64,6 +66,7 @@ namespace InboxWatcher
             Task.Run(async () => { await ConfigureMailBoxes(); });
 
             logger.Info("Inbox Watcher Started");
+            Trace.WriteLine("Inbox Watcher Started");
         }
 
         private void ConfigureAutoMapper()
@@ -81,7 +84,8 @@ namespace InboxWatcher
 
         protected override void OnStop()
         {
-            //MailBoxes.ForEach(x => x.Destroy());
+            //MailBoxes.ForEach(x => x.Destroy()); I don't think this is necessary
+            Trace.WriteLine("Service shutting down");
         }
 
 
@@ -135,6 +139,9 @@ namespace InboxWatcher
             await mailbox.Setup();
 
             MailBoxes.Add(mailbox);
+
+            var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
+            ctx.Clients.All.SetupMailboxes();
         }
 
         internal static async Task ConfigureMailBoxes()
@@ -161,6 +168,9 @@ namespace InboxWatcher
             })).ToList();
 
             await Task.WhenAll(setupTasks);
+
+            var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
+            ctx.Clients.All.SetupMailboxes();
 
             //todo remove this - it's for debugging
             foreach (var imapMailBox in MailBoxes)

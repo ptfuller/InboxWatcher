@@ -7,8 +7,6 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using Newtonsoft.Json;
-
 namespace InboxWatcher
 {
     using System;
@@ -25,7 +23,6 @@ namespace InboxWatcher
         public string MoveToFolder { get; set; }
         public int ImapMailBoxConfigurationId { get; set; }
     
-        [JsonIgnore]
         public virtual ImapMailBoxConfiguration ImapMailBoxConfiguration { get; set; }
     }
 }

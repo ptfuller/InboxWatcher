@@ -9,10 +9,11 @@
     <title>Inbox Watcher Dashboard</title>
 
     <script src="/js/jquery.js"></script>
+    <script src="/js/jquery-ui.js"></script>
     <script src="/js/underscore.js"></script>
     <script src="/js/backbone.js"></script>
     <script src="/js/epoxy.js"></script>
-    <script src="js/jquery.signalR-2.2.0.js"></script>
+    <script src="/js/jquery.signalR-2.2.0.js"></script>
 
     <link rel="stylesheet" href="/css/dashboard.css"/>
     <link rel="stylesheet" href="/css/bootstrap.css"/>
@@ -21,104 +22,106 @@
 
 </head>
 <body>
-<div class="terminal-container">
-    <div class="terminal-text" id="terminalText"></div>
-</div>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="#">Inbox Watcher</a>
-            </div>
-            <div id="navbar" class="navbar-collapse collapse">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="active"><a href="/dashboard">Dashboard</a></li>
-                    <li><a href="/configs/ui">Settings</a></li>
-                    <li><a href="/documentation">Help</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm-3 col-md-2 sidebar">
-                <strong>Active Mail Boxes:</strong>
-                <ul class="nav nav-sidebar" id="mailBoxList"></ul>
-            </div>
-            <div class="col-sm-9 main">
-                <h1 class="page-header">Inbox Watcher Dashboard</h1>
-
-                <div class="row placeholders">
-                    <div class="col-xs-6 col-sm-3 placeholder">
-                        <div class="circle circle-border">
-                            <div class="circle-inner">
-                                <div class="score-text" id="totalEmailsToday">
-                                    0
-                                </div>
-                            </div>
-                        </div>
-                        <h4>Emails Received</h4>
-                        <span class="text-muted">Today</span>
-                        </div>
-                        <div class="col-xs-6 col-sm-3 placeholder">
-                            <div class="circle circle-border">
-                                <div class="circle-inner">
-                                    <div class="score-text" id="totalEmails">
-                                        0
-                                    </div>
-                                </div>
-                            </div>
-                            <h4>Total Emails</h4>
-                            <span class="text-muted">In Database</span>
-                        </div>
-                        <div class="col-xs-6 col-sm-3 placeholder">
-                            <div class="circle circle-border">
-                                <div class="circle-inner">
-                                    <div class="score-text" id="attachedNotifications">
-                                        0
-                                    </div>
-                                </div>
-                            </div>
-                            <h4>Attached Notifications</h4>
-                        </div>
-                        <div class="col-xs-6 col-sm-3 placeholder">
-                            <div class="circle circle-border" id="exceptionBorder">
-                                <div class="circle-inner" id="exceptionCircle">
-                                    <div class="score-text" id="exceptions">
-                                        0
-                                    </div>
-                                </div>
-                            </div>
-                            <h4>Errors</h4>
-                        </div>
-                    </div>
-
-                <h2 class="sub-header" id="dbHeader"></h2>
-                <div class="table-responsive">
-                    <table class="wrap-table table table-bordered table-condensed table-hover">
-                        <thead>
-                        <tr>
-                            <th>Sent From</th>
-                            <th style="width: 40%">Subject</th>
-                            <th>Time Received</th>
-                            <th>CC'd</th>
-                            <th>UniqueID</th>
-                        </tr>
-                        </thead>
-                        <tbody id="mailTable"></tbody>
-                    </table>
-                </div>
-                <h2 class="sub-header" id="foldersHeader"></h2>
-                <div id="folders"></div>
-            </div>
+    <div class="terminal-parent" id="terminalParent">
+        <div class="terminal-container">
+            <div class="terminal-text" id="terminalText"></div>
         </div>
     </div>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Inbox Watcher</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="active"><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/configs/ui">Settings</a></li>
+                <li><a href="/documentation">Help</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <strong>Active Mail Boxes:</strong>
+            <ul class="nav nav-sidebar" id="mailBoxList"></ul>
+        </div>
+        <div class="col-sm-9 main">
+            <h1 class="page-header">Inbox Watcher Dashboard</h1>
+
+            <div class="row placeholders">
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <div class="circle circle-border">
+                        <div class="circle-inner">
+                            <div class="score-text" id="totalEmailsToday">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                    <h4>Emails Received</h4>
+                    <span class="text-muted">Today</span>
+                </div>
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <div class="circle circle-border">
+                        <div class="circle-inner">
+                            <div class="score-text" id="totalEmails">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                    <h4>Total Emails</h4>
+                    <span class="text-muted">In Database</span>
+                </div>
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <div class="circle circle-border">
+                        <div class="circle-inner">
+                            <div class="score-text" id="attachedNotifications">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                    <h4>Attached Notifications</h4>
+                </div>
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <div class="circle circle-border" id="exceptionBorder">
+                        <div class="circle-inner" id="exceptionCircle">
+                            <div class="score-text" id="exceptions">
+                                0
+                            </div>
+                        </div>
+                    </div>
+                    <h4>Errors</h4>
+                </div>
+            </div>
+
+            <h2 class="sub-header" id="dbHeader"></h2>
+            <div class="table-responsive">
+                <table class="wrap-table table table-bordered table-condensed table-hover">
+                    <thead>
+                    <tr>
+                        <th>Sent From</th>
+                        <th style="width: 40%">Subject</th>
+                        <th>Time Received</th>
+                        <th>CC'd</th>
+                        <th>UniqueID</th>
+                    </tr>
+                    </thead>
+                    <tbody id="mailTable"></tbody>
+                </table>
+            </div>
+            <h2 class="sub-header" id="foldersHeader"></h2>
+            <div id="folders"></div>
+        </div>
+    </div>
+</div>
 
 <script>
     var MailBoxes = [];
@@ -207,6 +210,11 @@
 
     $(document).ready(function () {
 
+        $("#terminalParent").draggable({
+            scroll: true,
+            refreshPositions: true
+        });
+
         $("#totalEmailsToday").click(function() {
             window.open('/mailboxes/' + SelectedMailBox + '/emails/true', '_blank');
         });
@@ -215,10 +223,18 @@
             window.open('/mailboxes/' + SelectedMailBox + '/emails', '_blank');
         });
 
-        $.getJSON('/mailboxes', function(data) {
+        SetupMailboxDisplay();
+    });
+
+    function SetupMailboxDisplay() {
+
+        MailBoxes = [];
+        $("#mailBoxList").html('');
+
+        $.getJSON('/mailboxes', function (data) {
             var items = [];
             var count = 0;
-            $.each(data, function(key, val) {
+            $.each(data, function (key, val) {
                 if (count === 0) {
                     items.push('<li class="active" id="box' + val + '"><a class="led-container" id="mailbox' + val + '" href="#">' + val + '</a></li>');
                     $("#dbHeader").text(val + ' Current Messages');
@@ -233,7 +249,7 @@
 
             GetAllStatuses(MailBoxes);
 
-            $.each(MailBoxes, function(key, val) {
+            $.each(MailBoxes, function (key, val) {
                 $("[id='mailbox" + val + "']").click(function () {
                     $(".active").removeClass('active');
                     $('#box' + val).addClass('active');
@@ -244,7 +260,7 @@
                     SelectedMailBox = val;
                     $("#dbHeader").text(SelectedMailBox + ' Current Messages');
 
-                    $(function() {
+                    $(function () {
                         $('[data-toggle="tooltip"]').tooltip({
                             container: 'body'
                         });
@@ -258,14 +274,14 @@
             GetStatus(MailBoxes[0]);
             SelectedMailBox = MailBoxes[0];
 
-            $(function() {
+            $(function () {
                 $('[data-toggle="tooltip"]').tooltip({
                     container: 'body'
                 });
             });
 
         });
-    });
+    }
 
     function GetFolders(val) {
         $.getJSON('/mailboxes/' + val + '/folders', function(folders) {
@@ -287,7 +303,7 @@
 
         emails = new MailCollection();
         emails.url = 'mailboxes/' + mb + '/emails/true';
-        emails.fetch({ success: function () { $("#totalEmailsToday").html(emails.length); } });
+        emails.fetch({ success: function() { $("#totalEmailsToday").html(emails.length); } });
 
         $.getJSON('/mailboxes/' + mb + '/emails/count', function(count) {
             $("#totalEmails").html(count);
@@ -295,7 +311,7 @@
 
         notifications = new NotificationCollection();
         notifications.url = 'notifications/mailboxes/' + mb;
-        notifications.fetch({ success: function () { $("#attachedNotifications").html(notifications.length) } });
+        notifications.fetch({ success: function() { $("#attachedNotifications").html(notifications.length) } });
     }
 
     function GetStatus(val) {
@@ -303,7 +319,7 @@
             $("#exceptions").html(exceptions.Exceptions.length);
             $(".page-header").html(val + ' Dashboard - <small>client started ' + exceptions.StartTime + '</small>');
 
-            //switch to red
+            //switch to ring to red
             if (exceptions.Exceptions.length > 0) {
                 $("#exceptionBorder").removeClass('circle-border');
                 $("#exceptionBorder").addClass('circle-border-red');
@@ -312,18 +328,27 @@
                 });
             }
 
-            //back to green
+            //switch ring back to green
             if (exceptions.Exceptions.length === 0) {
                 $("#exceptionCircle").unbind();
                 $("#exceptionBorder").removeClass('circle-border-red');
                 $("#exceptionBorder").addClass('circle-border');
             }
+
+            if (exceptions.Green) {
+                $("[id='mailbox" + val + "']").html(val + '<div class="led-green"></div>');
+            }
+
+            if (!exceptions.Green) {
+                $("[id='mailbox" + val + "']").html(val + '<div class="led-red"></div>');
+            }
+
         });
     }
 
     function GetAllStatuses(mb) {
-        $.each(mb, function (key, val) {
-            
+        $.each(mb, function(key, val) {
+
             $.getJSON('/mailboxes/' + val + '/status', function(exceptions) {
                 if (exceptions.Green) {
                     $("[id='mailbox" + val + "']").html(val + '<div class="led-green"></div>');
@@ -336,19 +361,25 @@
         });
     }
 </script>
-    <script src="/signalr/hubs"></script>
+<script src="/signalr/hubs"></script>
 <script>
     $(function() {
         //Set the hubs URL for the connection
         $.connection.hub.url = "/signalr";
         var con = $.connection.signalRController;
 
-        con.client.freshenMailBox = function (mbName) {
+        con.client.freshenMailBox = function(mbName) {
             if (mbName === SelectedMailBox) GetSummaries(mbName);
         }
 
-        con.client.displayToTerminal = function(tText) {
-            $("#terminalText").append(tText + '<br/>');
+        con.client.displayToTerminal = function (tText) {
+            var d = new Date();
+            $("#terminalText").append(d.toLocaleTimeString('en-GB') + ": " + tText + '<br/>');
+            $('.terminal-container').scrollTop($('.terminal-container')[0].scrollHeight);
+        }
+
+        con.client.setupMailboxes = function() {
+            SetupMailboxDisplay();
         }
 
         $.connection.hub.start();

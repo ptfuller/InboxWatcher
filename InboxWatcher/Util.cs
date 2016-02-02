@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using MimeKit;
 
 namespace InboxWatcher
@@ -24,6 +24,17 @@ namespace InboxWatcher
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Get a token that cancels after 1 minute
+        /// </summary>
+        /// <param name="ms">milleseconds to wait before cancel - default 60000</param>
+        /// <returns></returns>
+        public static CancellationToken GetCancellationToken(int ms = (1000 * 60 * 1))
+        {
+            var token = new CancellationTokenSource(ms);
+            return token.Token;
         }
     }
 }

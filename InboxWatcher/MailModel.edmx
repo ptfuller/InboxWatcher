@@ -43,6 +43,7 @@
     <Property Name="BodyText" Type="nvarchar(max)" Nullable="false" />
     <Property Name="EnvelopeID" Type="nvarchar(max)" Nullable="false" />
     <Property Name="ImapMailBoxConfigurationId" Type="int" Nullable="false" />
+    <Property Name="TimeSent" Type="datetime" Nullable="true" />
   </EntityType>
   <EntityType Name="EmailLogs">
     <Key>
@@ -195,6 +196,7 @@
                               ToRole="EmailLog" />
           <NavigationProperty Name="ImapMailBoxConfiguration" Relationship="MailModel.ImapMailBoxConfigurationEmail" FromRole="Email" ToRole="ImapMailBoxConfiguration" />
           <Property Name="ImapMailBoxConfigurationId" Type="Int32" Nullable="false" />
+          <Property Name="TimeSent" Type="DateTime" Nullable="true" />
         </EntityType>
         <EntityType Name="EmailLog">
           <Key>
@@ -325,6 +327,7 @@
           <ScalarProperty Name="BodyText" ColumnName="BodyText" />
           <ScalarProperty Name="EnvelopeID" ColumnName="EnvelopeID" />
           <ScalarProperty Name="ImapMailBoxConfigurationId" ColumnName="ImapMailBoxConfigurationId" />
+          <ScalarProperty Name="TimeSent" ColumnName="TimeSent" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

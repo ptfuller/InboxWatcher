@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, 2012 and Azure
 -- --------------------------------------------------
--- Date Created: 01/11/2016 08:34:10
+-- Date Created: 01/28/2016 09:11:49
 -- Generated from EDMX file: C:\Users\pfuller\Documents\Visual Studio 2015\Projects\InboxWatcher\InboxWatcher\MailModel.edmx
 -- --------------------------------------------------
 
@@ -25,6 +25,9 @@ IF OBJECT_ID(N'[dbo].[FK_NotificationConfigurationImapMailBoxConfiguration]', 'F
 GO
 IF OBJECT_ID(N'[dbo].[FK_ImapMailBoxConfigurationEmail]', 'F') IS NOT NULL
     ALTER TABLE [dbo].[Emails] DROP CONSTRAINT [FK_ImapMailBoxConfigurationEmail];
+GO
+IF OBJECT_ID(N'[dbo].[FK_ImapMailBoxConfigurationEmailFilter]', 'F') IS NOT NULL
+    ALTER TABLE [dbo].[EmailFilters] DROP CONSTRAINT [FK_ImapMailBoxConfigurationEmailFilter];
 GO
 
 -- --------------------------------------------------
@@ -62,7 +65,8 @@ CREATE TABLE [dbo].[Emails] (
     [MarkedAsRead] bit  NOT NULL,
     [BodyText] nvarchar(max)  NOT NULL,
     [EnvelopeID] nvarchar(max)  NOT NULL,
-    [ImapMailBoxConfigurationId] int  NOT NULL
+    [ImapMailBoxConfigurationId] int  NOT NULL,
+    [TimeSent] datetime  NULL
 );
 GO
 

@@ -31,7 +31,7 @@ namespace InboxWatcher.ImapClient
             _smtpClient = await _director.GetSmtpClient();
 
             _timer = new Timer();
-            _timer.Interval = 1000 * 60 * 1.5; //1.5 minutes
+            _timer.Interval = 1000 * 60 * 2; //2 minutes
             _timer.Elapsed += async (s, e) => await KeepAlive();
             _timer.AutoReset = false;
             _timer.Start();
@@ -45,14 +45,14 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                await _smtpClient.NoOpAsync();
+                await _smtpClient.NoOpAsync(Util.GetCancellationToken(1000));
                 _timer.Start();
             }
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
 
-                //I don't want a bunch of crap in my logs
+                //I don't want a bunch of crap in my logs - this happens constantly throughout the day
                 if (!ex.Message.Contains("4.4.1 Connection timed out"))
                 {
                     logger.Error(exception);
@@ -72,7 +72,7 @@ namespace InboxWatcher.ImapClient
             return _smtpClient.IsAuthenticated;
         }
 
-        public async Task<bool> SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest)
+        public async Task<bool> SendMail(MimeMessage message, string emailDestination, bool moveToDest)
         {
             _emailIsSending = true;
             _timer.Stop();
@@ -129,9 +129,7 @@ namespace InboxWatcher.ImapClient
 
                     buildMessage.Body = builder.ToMessageBody();
 
-
-
-                await client.SendAsync(buildMessage);
+                await client.SendAsync(buildMessage, Util.GetCancellationToken());
 
             }
             catch (Exception ex)

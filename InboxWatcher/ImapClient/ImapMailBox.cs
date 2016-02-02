@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -32,11 +33,13 @@ namespace InboxWatcher.ImapClient
         private readonly ImapClientDirector _imapClientDirector;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private BufferBlock<int> _messagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions {BoundedCapacity = 3});
+        private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
         private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
+        private int _numNewMessagesProcessing { get; set; }
+        private Task MessageProcessingIdler { get; set; }
 
         private Timer freshenTimer;
         
@@ -128,7 +131,7 @@ namespace InboxWatcher.ImapClient
             Trace.WriteLine($"{MailBoxName} FreshMailBox finished");
 
             //get folders
-            EmailFolders = await _imapIdler.GetMailFolders();
+            EmailFolders = await _imapWorker.GetMailFolders();
 
             //setup email filterer
             _emailFilterer = new EmailFilterer(this);
@@ -138,10 +141,10 @@ namespace InboxWatcher.ImapClient
 
             Exceptions.Clear();
 
-            freshenTimer.Elapsed += (sender, args) =>
+            freshenTimer.Elapsed += async (sender, args) =>
             {
-                FreshenMailBox();
                 Trace.WriteLine($"{MailBoxName} Freshening due to timer");
+                await FreshenMailBox();
             };
 
             freshenTimer.Start();
@@ -164,6 +167,7 @@ namespace InboxWatcher.ImapClient
             var exception = new Exception(DateTime.Now.ToString(), ex);
 
             Exceptions.Add(exception);
+            Trace.WriteLine(MailBoxName + ": " + ex.Message);
 
             if (needReset)
             {
@@ -405,59 +409,74 @@ namespace InboxWatcher.ImapClient
 
         private async void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            NewMessageQueue(eventArgs.Count);
+            _numNewMessagesProcessing++;
+
+            if (_numNewMessagesProcessing >= 5)
+            {
+                logger.Info(
+                    $"{MailBoxName}: Number of new messages being processed is {_numNewMessagesProcessing} - not processing additional messages for 2 minutes to prevent overload");
+                Trace.WriteLine(
+                    $"{MailBoxName}: Number of new messages being processed is {_numNewMessagesProcessing} - not processing additional messages for 2 minutes to prevent overload");
+                
+                if (MessageProcessingIdler == null || MessageProcessingIdler.IsCompleted)
+                {
+                    MessageProcessingIdler = Task.Run(async () =>
+                    {
+                        await Task.Delay(1000 * 60 * 2);
+                        await FreshenMailBox();
+                        _numNewMessagesProcessing = 0;
+                    });
+                }
+
+                return;
+            }
+
+            await NewMessageQueue(eventArgs.Count);
         }
 
         private async Task NewMessageQueue(int count)
         {
-            try
-            {
-                if (!await _messagesReceivedBuffer.SendAsync(count))
-                {
-                    await Task.Delay(10000);
-                    NewMessageQueue(count);
-                    return;
-                }
-            }
-            catch (ArgumentNullException ex)
-            {
-                return;
-            }
+            _messagesReceivedQueue.Enqueue(count);
+            var bufferCount = _messagesReceivedQueue.Count;
 
-            var currentCount = _messagesReceivedBuffer.Count;
             await Task.Delay(2000);
 
-            //messages received during wait or already processing max of 3
-            if (_messagesReceivedBuffer == null || _messagesReceivedBuffer.Count == 0 || _messagesReceivedBuffer.Count > currentCount)
+            //new messages received during the Task.Delay
+            if (_messagesReceivedQueue.Count > bufferCount)
             {
+                //let the newest message received handle the call to HandleNewMessages()
                 return;
             }
 
-            _messagesReceivedBuffer.Complete();
             await HandleNewMessages();
-
-            //reset bufferblock
-            _messagesReceivedBuffer = new BufferBlock<int>(new DataflowBlockOptions { BoundedCapacity = 3 });
         }
 
         private async Task HandleNewMessages()
         {
-            if (_setupInProgress) return;
+            if (_setupInProgress || _freshening) return;
+
+            var numMessages = new List<int>();
+
+            int value;
+
+            while (_messagesReceivedQueue.TryDequeue(out value))
+            {
+                numMessages.Add(value);
+            }
 
             IEnumerable<IMessageSummary> messages;
 
             try
             {
-                IList<int> count = new List<int>();
-                _messagesReceivedBuffer.TryReceiveAll(out count);
-
-                messages = await _imapWorker.GetNewMessages(count.Sum());
+                messages = await _imapWorker.GetNewMessages(numMessages.Sum());
+                _numNewMessagesProcessing -= numMessages.Sum();
             }
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
-                Setup();
+                _numNewMessagesProcessing -= numMessages.Sum();
+                await Setup();
                 return;
             }
 
@@ -523,6 +542,7 @@ namespace InboxWatcher.ImapClient
             var message = EmailList[index];
             await _mbLogger.LogEmailSeen(message);
             Trace.WriteLine($"{MailBoxName}: {message.Envelope.Subject} was marked as read");
+
             NotificationActions.ForEach(async x =>
             {
                 var notify = x?.Notify(message, NotificationType.Seen, MailBoxName);
@@ -543,7 +563,7 @@ namespace InboxWatcher.ImapClient
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
-                Setup();
+                await Setup();
                 return null;
             }
         }
@@ -553,7 +573,7 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                if (!await _emailSender.SendMail(message, uniqueId, emailDestination, moveToDest))
+                if (!await _emailSender.SendMail(message, emailDestination, moveToDest))
                 {
                     await FreshenMailBox();
                     return false;
@@ -577,7 +597,7 @@ namespace InboxWatcher.ImapClient
                     logger.Error(ex);
                     Exceptions.Add(ex);
                     Trace.WriteLine(ex.Message);
-                    Setup();
+                    await Setup();
                     return false;
                 }
             }
@@ -598,7 +618,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                Setup();
+                await Setup();
                 return;
             }
 
@@ -622,6 +642,15 @@ namespace InboxWatcher.ImapClient
             }
 
             await _mbLogger.LogEmailChanged(messageid, actionTakenBy, "Moved to " + moveToFolder);
+        }
+
+        public async Task<MimeMessage> GetEmailByUniqueId(string messageId)
+        {
+            //throw new NotImplementedException("Not yet working");
+            var tempWorker = new ImapWorker(_imapClientDirector);
+            await tempWorker.Setup(false);
+            var folders = await tempWorker.GetMailFolders();
+            return await tempWorker.GetEmailByUniqueId(messageId, folders);
         }
     }
 }

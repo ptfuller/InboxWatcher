@@ -43,18 +43,29 @@ namespace InboxWatcher.ImapClient
                 }
             });
             
-            await IdleLoop();
+            IdleLoop();
         }
 
         public async Task<IMessageSummary> GetMessageSummary(UniqueId uid)
         {
             await StopIdle();
 
-            var result =
-                await
-                    ImapClient.Inbox.FetchAsync(new List<UniqueId> {uid},
-                        MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
-            
+            IList<IMessageSummary> result;
+
+            try
+            {
+                result = await ImapClient.Inbox.FetchAsync(
+                    new List<UniqueId> {uid},
+                    MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
+                    Util.GetCancellationToken());
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                StartIdling();
+                throw ex;
+            }
+
             await StartIdling();
 
             return result.First();
@@ -64,10 +75,22 @@ namespace InboxWatcher.ImapClient
         {
             await StopIdle();
 
-            var result =
-                await
-                    ImapClient.Inbox.FetchAsync(index, index,
-                        MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
+            IList<IMessageSummary> result;
+
+            try
+            {
+                result =
+                    await
+                        ImapClient.Inbox.FetchAsync(index, index,
+                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId |
+                            MessageSummaryItems.InternalDate, Util.GetCancellationToken());
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                StartIdling();
+                throw ex;
+            }
 
             await StartIdling();
 
@@ -78,11 +101,9 @@ namespace InboxWatcher.ImapClient
         {
             await StopIdle();
 
-            var getToken = new CancellationTokenSource();
-
             try
             {
-                var message = await ImapClient.Inbox.GetMessageAsync(uid, getToken.Token);
+                var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken());
                 await StartIdling();
 
                 return message;
@@ -100,10 +121,10 @@ namespace InboxWatcher.ImapClient
         {
             await StopIdle();
 
-            var uids = await ImapClient.Inbox.SearchAsync(query);
+            var uids = await ImapClient.Inbox.SearchAsync(query, Util.GetCancellationToken(1000 * 60 * 5));
 
             var results =
-                await ImapClient.Inbox.FetchAsync(uids, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId);
+                await ImapClient.Inbox.FetchAsync(uids, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken());
 
             var message = await ImapClient.Inbox.GetMessageAsync(results.First().Index);
 
@@ -120,14 +141,12 @@ namespace InboxWatcher.ImapClient
             {
                     if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
                     {
-                        await ImapClient.Inbox.ExpungeAsync(new[] {uid});
+                        await ImapClient.Inbox.ExpungeAsync(new[] {uid}, Util.GetCancellationToken());
                     }
                     else
                     {
-                        var delToken = new CancellationTokenSource();
-                        await
-                            ImapClient.Inbox.AddFlagsAsync(new[] {uid}, MessageFlags.Deleted, null, true, delToken.Token);
-                        await ImapClient.Inbox.ExpungeAsync(delToken.Token);
+                        await ImapClient.Inbox.AddFlagsAsync(new[] {uid}, MessageFlags.Deleted, null, true, Util.GetCancellationToken());
+                        await ImapClient.Inbox.ExpungeAsync(Util.GetCancellationToken());
                     }
             }
             catch (Exception ex)
@@ -148,7 +167,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, CancellationToken.None);
+                root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, Util.GetCancellationToken());
             }
             catch (Exception ex)
             {
@@ -161,25 +180,25 @@ namespace InboxWatcher.ImapClient
 
                 try
                 {
-                    mbfolder = await root.GetSubfolderAsync(mbname);
+                    mbfolder = await root.GetSubfolderAsync(mbname, Util.GetCancellationToken());
                 }
                 catch (FolderNotFoundException ice)
                 {
-                    mbfolder = await root.CreateAsync(mbname, false);
+                    mbfolder = await root.CreateAsync(mbname, false, Util.GetCancellationToken());
                 }
 
                 try
                 {
-                    destFolder = await mbfolder.GetSubfolderAsync(emailDestination);
+                    destFolder = await mbfolder.GetSubfolderAsync(emailDestination, Util.GetCancellationToken());
                 }
                 catch (FolderNotFoundException ice)
                 {
-                    destFolder = await mbfolder.CreateAsync(emailDestination, true);
+                    destFolder = await mbfolder.CreateAsync(emailDestination, true, Util.GetCancellationToken());
                 }
 
                 try
                 {
-                    await ImapClient.Inbox.MoveToAsync(new UniqueId(uniqueId), destFolder);
+                    await ImapClient.Inbox.MoveToAsync(new UniqueId(uniqueId), destFolder, Util.GetCancellationToken());
                 }
                 catch (Exception ex)
                 {
@@ -213,7 +232,7 @@ namespace InboxWatcher.ImapClient
                 result.AddRange(
                     await
                         ImapClient.Inbox.FetchAsync(min, count,
-                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
+                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken()));
             }
             catch (Exception ex)
             {
@@ -248,7 +267,8 @@ namespace InboxWatcher.ImapClient
 
                 if (min < 0) min = 0;
 
-                result.AddRange(await ImapClient.Inbox.FetchAsync(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId));
+                result.AddRange(await ImapClient.Inbox.FetchAsync(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
+                    Util.GetCancellationToken()));
             }
             catch (Exception ex)
             {
@@ -260,6 +280,33 @@ namespace InboxWatcher.ImapClient
             await StartIdling();
 
             return result;
+        }
+
+        internal async Task<MimeMessage> GetEmailByUniqueId(string messageId, IEnumerable<IMailFolder> folders)
+        {
+            await StopIdle();
+
+            var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
+
+            foreach (var folder in folders)
+            {
+                await folder.OpenAsync(FolderAccess.ReadOnly);
+                Trace.WriteLine($"Looking for the message in:{folder.Name}");
+                var result = await folder.SearchAsync(query, Util.GetCancellationToken(1000 * 60 * 5));
+
+                if (result.Count > 0)
+                {
+                    var msg = folder.GetMessageAsync(result[0], Util.GetCancellationToken());
+                    await folder.CloseAsync(false, Util.GetCancellationToken());
+                    await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
+                    return await msg;
+                }
+
+                await folder.CloseAsync();
+            }
+
+            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
+            return null;
         }
     }
 }

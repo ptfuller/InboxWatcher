@@ -21,6 +21,18 @@ namespace InboxWatcher.WebAPI.Controllers
             return response;
         }
 
+        [Route("js/jquery-ui.js")]
+        public HttpResponseMessage GetJqueryUi()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery-ui.min.js");
+            response.Content = new StringContent(File.ReadAllText(content));
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/javascript");
+
+            return response;
+        }
+
         [Route("js/underscore.js")]
         public HttpResponseMessage GetUnderscore()
         {
