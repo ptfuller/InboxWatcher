@@ -218,11 +218,7 @@ font-size: 2.5vw;
 }
 
 .terminal-container {
-    overflow: auto;
-    position: relative;
-    right: -18px;
-    left: 5px;
-    bottom: -18px;
+
 }
 
 .terminal-text {

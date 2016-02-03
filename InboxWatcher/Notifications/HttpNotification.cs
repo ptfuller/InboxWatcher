@@ -38,7 +38,7 @@ namespace InboxWatcher.Notifications
                     var summ = new NotificationSummary(summary, notificationType) {MailBoxName = mailBoxName};
                     try
                     {
-                        var result = await client.PostAsJsonAsync(Url, summ);
+                        var result = await client.PostAsJsonAsync(Url, summ, Util.GetCancellationToken(10000));
                     }
                     catch (Exception)
                     {

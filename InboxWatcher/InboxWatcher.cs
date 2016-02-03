@@ -58,6 +58,7 @@ namespace InboxWatcher
             ConfigureAutoMapper();
 
             Trace.Listeners.Add(new SignalRTraceListener());
+            Trace.Listeners.Add(new NLogTraceListener());
 
             ResourcePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Resources");
 
@@ -154,6 +155,7 @@ namespace InboxWatcher
             //setup each ImapMailBox and add it to the list of mailboxes
             var setupTasks = configs.Select(clientConfiguration => Task.Run(async () =>
             {
+                Trace.WriteLine($"Setting up {clientConfiguration.MailBoxName}");
                 var director = new ImapClientDirector(clientConfiguration);
                 var mailbox = new ImapMailBox(director, clientConfiguration);
 

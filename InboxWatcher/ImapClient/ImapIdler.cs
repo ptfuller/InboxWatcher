@@ -23,6 +23,7 @@ namespace InboxWatcher.ImapClient
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
         protected bool AreEventsSubscribed;
+        protected SemaphoreSlim _stopIdleSemaphore = new SemaphoreSlim(1);
 
         private EventHandler<MessagesArrivedEventArgs> messageArrived;
         public event EventHandler<MessagesArrivedEventArgs> MessageArrived
@@ -93,6 +94,8 @@ namespace InboxWatcher.ImapClient
                     throw exception;
                 }
             }
+
+            Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} setup complete");
 
             await StartIdling();
         }
@@ -203,11 +206,24 @@ namespace InboxWatcher.ImapClient
             {
                 if (!IsIdle()) return;
 
+                await _stopIdleSemaphore.WaitAsync(Util.GetCancellationToken(1000));
+
+                Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} stopping idle");
+
                 DoneToken.Cancel();
                 await IdleTask;
+
+                _stopIdleSemaphore.Release();
             }
             catch (Exception ex)
             {
+                if (ex is OperationCanceledException)
+                {
+                    _stopIdleSemaphore.Release();
+                    return;
+                }
+
+                _stopIdleSemaphore.Release();
                 var exception = new Exception(GetType().Name + " Exception thrown during StopIdle()", ex);
                 logger.Error(exception);
                 HandleException(exception, true);

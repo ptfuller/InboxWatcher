@@ -363,6 +363,8 @@
 </script>
 <script src="/signalr/hubs"></script>
 <script>
+    var lines = 0;
+
     $(function() {
         //Set the hubs URL for the connection
         $.connection.hub.url = "/signalr";
@@ -374,8 +376,32 @@
 
         con.client.displayToTerminal = function (tText) {
             var d = new Date();
+
             $("#terminalText").append(d.toLocaleTimeString('en-GB') + ": " + tText + '<br/>');
-            $('.terminal-container').scrollTop($('.terminal-container')[0].scrollHeight);
+            lines++;
+
+            if (lines >= 100) {
+                var res = [];
+                var terminalContent = $("#terminalText").html().split("<br>");
+                var tCount = terminalContent.length;
+
+                for (var i = 50; i >= 0; i--) {
+                    res.push(terminalContent[tCount - i]);
+                    console.log(i);
+                    console.log(terminalContent[tCount - i]);
+                }
+
+                var out = res.join('<br/>');
+                out = out.substring(0, out.length - 5);
+
+                $("#terminalText").html('');
+                $("#terminalText").append(out);
+
+                lines = 50;
+            }
+
+            var objDiv = document.getElementById("terminalParent");
+            objDiv.scrollTop = objDiv.scrollHeight;
         }
 
         con.client.setupMailboxes = function() {

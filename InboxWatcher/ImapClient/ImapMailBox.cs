@@ -38,8 +38,9 @@ namespace InboxWatcher.ImapClient
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
-        private int _numNewMessagesProcessing { get; set; }
-        private Task MessageProcessingIdler { get; set; }
+        private SemaphoreSlim mutex;
+        private SemaphoreSlim _newMessagesSemaphore;
+        private Task _newMessagesTask;
 
         private Timer freshenTimer;
         
@@ -81,11 +82,11 @@ namespace InboxWatcher.ImapClient
 
         public virtual async Task Setup()
         {
-            if (_setupInProgress) return;
+            _setupInProgress = true;
+            mutex = new SemaphoreSlim(1);
+            _newMessagesSemaphore = new SemaphoreSlim(3);
 
             Trace.WriteLine($"{MailBoxName} starting setup");
-
-            _setupInProgress = true;
 
             int retryTime = 5000;
 
@@ -108,12 +109,12 @@ namespace InboxWatcher.ImapClient
             //make worker get initial list of messages and then start idling
             while (!await FreshenMailBox())
             {
-                Trace.WriteLine($"{MailBoxName} FreshenMailBox failed - retry time is: {retryTime / 1000} seconds");
+                Trace.WriteLine($"{MailBoxName} FreshenMailBox failed - retry time is: {retryTime/1000} seconds");
                 await Task.Delay(retryTime);
 
                 if (retryTime < 160000)
                 {
-                    retryTime = retryTime * 2;
+                    retryTime = retryTime*2;
                 }
             }
 
@@ -159,7 +160,7 @@ namespace InboxWatcher.ImapClient
 
         private async Task HandleExceptions(Exception ex, bool needReset)
         {
-            if (Exceptions.Count > 100)
+            if (Exceptions.Count > 20)
             {
                 Environment.Exit(1);
             }
@@ -169,14 +170,24 @@ namespace InboxWatcher.ImapClient
             Exceptions.Add(exception);
             Trace.WriteLine(MailBoxName + ": " + ex.Message);
 
+            //prevent this section from being accessed by more than 1 task at once - this should prevent multiple setups from happening
+            await mutex.WaitAsync();
+
+            if (_setupInProgress) return;
+
             if (needReset)
             {
+                _setupInProgress = true;
+
                 Trace.WriteLine($"{MailBoxName}: Something bad happened - resetting clients");
                 _imapWorker = null;
                 _imapIdler = null;
 
                 await Setup();
+                _setupInProgress = false;
             }
+
+            mutex.Release();
         }
 
         private bool SetupEvents()
@@ -343,11 +354,19 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
+                if (ex is NullReferenceException)
+                {
+                    Trace.WriteLine(ex.Message);
+                    Exceptions.Add(ex);
+                    EmailList = templist;
+                    _freshening = false;
+                    throw ex;
+                }
+
                 Trace.WriteLine(ex.Message);
                 Exceptions.Add(ex);
                 EmailList = templist;
                 _freshening = false;
-                Setup();
                 return false;
             }
 
@@ -409,46 +428,26 @@ namespace InboxWatcher.ImapClient
 
         private async void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            _numNewMessagesProcessing++;
-
-            if (_numNewMessagesProcessing >= 5)
-            {
-                logger.Info(
-                    $"{MailBoxName}: Number of new messages being processed is {_numNewMessagesProcessing} - not processing additional messages for 2 minutes to prevent overload");
-                Trace.WriteLine(
-                    $"{MailBoxName}: Number of new messages being processed is {_numNewMessagesProcessing} - not processing additional messages for 2 minutes to prevent overload");
-                
-                if (MessageProcessingIdler == null || MessageProcessingIdler.IsCompleted)
-                {
-                    MessageProcessingIdler = Task.Run(async () =>
-                    {
-                        await Task.Delay(1000 * 60 * 2);
-                        await FreshenMailBox();
-                        _numNewMessagesProcessing = 0;
-                    });
-                }
-
-                return;
-            }
-
+            Trace.WriteLine($"{MailBoxName}: New message event - {_newMessagesSemaphore.CurrentCount} threads can enter the semaphore");
             await NewMessageQueue(eventArgs.Count);
         }
 
         private async Task NewMessageQueue(int count)
         {
             _messagesReceivedQueue.Enqueue(count);
-            var bufferCount = _messagesReceivedQueue.Count;
-
-            await Task.Delay(2000);
-
-            //new messages received during the Task.Delay
-            if (_messagesReceivedQueue.Count > bufferCount)
+            
+            try
             {
-                //let the newest message received handle the call to HandleNewMessages()
-                return;
-            }
+                await _newMessagesSemaphore.WaitAsync(Util.GetCancellationToken(30000));
 
-            await HandleNewMessages();
+                await HandleNewMessages().ConfigureAwait(false);
+
+                _newMessagesSemaphore.Release();
+            }
+            catch (OperationCanceledException ex)
+            {
+                _newMessagesSemaphore.Release();
+            }
         }
 
         private async Task HandleNewMessages()
@@ -469,14 +468,14 @@ namespace InboxWatcher.ImapClient
             try
             {
                 messages = await _imapWorker.GetNewMessages(numMessages.Sum());
-                _numNewMessagesProcessing -= numMessages.Sum();
             }
             catch (Exception ex)
             {
                 Exceptions.Add(ex);
+                var exception = new Exception($"{MailBoxName}: Problem during HandleNewMessages", ex);
                 Trace.WriteLine(ex.Message);
-                _numNewMessagesProcessing -= numMessages.Sum();
-                await Setup();
+                logger.Error(exception);
+                //await Setup();
                 return;
             }
 
@@ -563,7 +562,7 @@ namespace InboxWatcher.ImapClient
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
-                await Setup();
+                //await Setup();
                 return null;
             }
         }
@@ -597,7 +596,7 @@ namespace InboxWatcher.ImapClient
                     logger.Error(ex);
                     Exceptions.Add(ex);
                     Trace.WriteLine(ex.Message);
-                    await Setup();
+                    //await Setup();
                     return false;
                 }
             }
@@ -618,7 +617,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                await Setup();
+                //await Setup();
                 return;
             }
 
@@ -637,7 +636,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                Setup();
+                //Setup();
                 return;
             }
 
