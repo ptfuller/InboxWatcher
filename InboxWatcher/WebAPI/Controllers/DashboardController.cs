@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Web.Http;
-using InboxWatcher.Properties;
 
 namespace InboxWatcher.WebAPI.Controllers
 {

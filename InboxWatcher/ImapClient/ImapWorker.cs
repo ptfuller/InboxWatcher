@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -22,38 +25,13 @@ namespace InboxWatcher.ImapClient
         public ImapWorker(ImapClientDirector director) : base(director)
         {
             _idleTimer.AutoReset = false;
-            _idleTimer.Elapsed += async (sender, args) =>
-            {
-                Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} starting idle");
-                await StartIdling();
-            };
+            _idleTimer.Elapsed -= IdleTimerOnElapsed;
+            _idleTimer.Elapsed += IdleTimerOnElapsed;
         }
 
-        public override async Task StartIdling()
+        private async void IdleTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-            if (IdleTask != null && !IdleTask.IsCompleted) return;
-
-            DoneToken = new CancellationTokenSource();
-            CancelToken = new CancellationTokenSource();
-
-            if (!ImapClient.Inbox.IsOpen) await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite);
-
-            IdleTask = Task.Run(async () =>
-            {
-                try
-                {
-                    await ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
-                }
-                catch (Exception ex)
-                {
-                    var exception = new Exception(GetType().Name + " Exception thrown during idle", ex);
-                    logger.Error(exception);
-                    Trace.WriteLine(ex.Message);
-                    HandleException(exception, true);
-                }
-            });
-            
-            IdleLoop();
+            await StartIdling();
         }
 
         public async Task<IMessageSummary> GetMessageSummary(UniqueId uid)
@@ -238,7 +216,12 @@ namespace InboxWatcher.ImapClient
 
             try
             {
+                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+
+                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
                 var count = ImapClient.Inbox.Count - 1;
+
                 var min = 0;
 
                 if (count > 500)
@@ -277,6 +260,10 @@ namespace InboxWatcher.ImapClient
 
             try
             {
+                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+
+                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
                 var min = ImapClient.Inbox.Count - numNewMessages;
 
                 //array index
@@ -290,9 +277,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 logger.Error(ex);
-                HandleException(ex);
-                _idleTimer.Start();
-                throw ex;
+                HandleException(ex, true);
             }
 
             _idleTimer.Start();

@@ -62,5 +62,33 @@ namespace InboxWatcher.WebAPI.Controllers
                 return query.ToList();
             }
         }
+
+
+        [Route("mailboxes/{mbname}/subjects")]
+        [HttpGet]
+        public object ActivitySubjects(string mbname)
+        {
+            var date = DateTime.Today;
+
+            using (var ctx = new MailModelContainer())
+            {
+                ctx.Configuration.ProxyCreationEnabled = false;
+
+                var query = ctx.Emails.Where(
+                    x =>
+                        x.ImapMailBoxConfiguration.MailBoxName.Equals(mbname) &&
+                        x.EmailLogs.Any(log => log.TakenBy.Contains("@") && log.Action.Contains("Sent to") && log.Action.Contains("and moved to")) &&
+                        x.InQueue == false &&
+                        x.TimeReceived.Year == date.Year &&
+                        x.TimeReceived.Month == date.Month &&
+                        x.TimeReceived.Day == date.Day)
+                    .Select(x => new {Name = x.EmailLogs.FirstOrDefault(l => l.TakenBy.Contains("@")).TakenBy, Subject = x.Subject})
+                    .GroupBy(x => x.Name, y => y.Subject).ToDictionary(x => x.Key);
+
+
+                //todo not working yet
+                return query;
+            }
+        }
     }
 }

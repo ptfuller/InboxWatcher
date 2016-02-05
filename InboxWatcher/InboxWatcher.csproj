@@ -193,6 +193,7 @@
     <Compile Include="ImapClient\EmailFilterer.cs" />
     <Compile Include="ImapClient\EmailSender.cs" />
     <Compile Include="ImapClient\InboxWatcherArgs.cs" />
+    <Compile Include="ImapClient\IntegrityCheckArgs.cs" />
     <Compile Include="Interface\IEmailLog.cs" />
     <Compile Include="Interface\IEmail.cs" />
     <Compile Include="ImapClient\ImapClientWrapper.cs" />

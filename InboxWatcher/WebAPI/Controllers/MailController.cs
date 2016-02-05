@@ -59,6 +59,19 @@ namespace InboxWatcher.WebAPI.Controllers
             }
         }
 
+        [Route("email/{id}")]
+        [HttpGet]
+        public Email GetEmail(int id)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                ctx.Configuration.ProxyCreationEnabled = false;
+                var email = ctx.Emails.Include(x => x.EmailLogs).FirstOrDefault(x => x.Id == id);
+
+                return email;
+            }
+        }
+
         [Route("mailboxes/{mailBoxName}/search")]
         [HttpGet]
         public PagedResult Search(string mailBoxName, string search = "", string order = "asc", int limit = 0, int offset = 0, bool inQueue = false)

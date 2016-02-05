@@ -134,7 +134,7 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 var dbLocation = Path.Combine(assemblyLocation, "InboxWatcher.mdf");
-                var backupPath = Path.Combine(assemblyLocation, "Backups", $"InboxWatcher.mdf");
+                var backupPath = Path.Combine(assemblyLocation, "Backups", "InboxWatcher.mdf");
 
                 if (!Directory.Exists(Path.Combine(assemblyLocation, "Backups")))
                 {
@@ -152,6 +152,24 @@ namespace InboxWatcher.WebAPI.Controllers
                 }
 
                 return "Success";
+            }
+        }
+
+        [Route("reset/{mbName}")]
+        [HttpGet]
+        public HttpResponseMessage ResetMailBox(string mbName)
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var selection = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.MailBoxName.Equals(mbName));
+
+                if (selection == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+                InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
+
+                Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(selection); });
+
+                return new HttpResponseMessage(HttpStatusCode.OK);
             }
         }
     }

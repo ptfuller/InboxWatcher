@@ -1,17 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
-using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
 using InboxWatcher.ImapClient;
 using InboxWatcher.Interface;
-using MailKit;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace InboxWatcher.WebAPI.Controllers
 {
@@ -27,7 +19,7 @@ namespace InboxWatcher.WebAPI.Controllers
         {
             var response = new HttpResponseMessage(HttpStatusCode.Redirect);
 
-            var link = Url.Link("ui", new {});
+            var link = Url.Link("Dashboard", new {});
 
             response.Headers.Location = new Uri(link);
 

@@ -125,7 +125,7 @@ namespace InboxWatcher.ImapClient
 
                 if (retryTime < 160000)
                 {
-                    retryTime = retryTime * 2;
+                    retryTime = retryTime*2;
                 }
             }
 
@@ -170,8 +170,15 @@ namespace InboxWatcher.ImapClient
             Exceptions.Add(exception);
             Trace.WriteLine(MailBoxName + ": " + ex.Message);
 
-            //prevent this section from being accessed by more than 1 task at once - this should prevent multiple setups from happening
-            await mutex.WaitAsync();
+            try
+            {
+                //prevent this section from being accessed by more than 1 task at once - this should prevent multiple setups from happening
+                await mutex.WaitAsync(Util.GetCancellationToken(500));
+            }
+            catch (OperationCanceledException)
+            {
+                if (_setupInProgress) return;
+            }
 
             if (_setupInProgress) return;
 
@@ -286,6 +293,8 @@ namespace InboxWatcher.ImapClient
                 _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
                 _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
+                _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
+
                 var sender = _emailSender.Setup();
                 var idler = _imapIdler.Setup(false);
                 var worker = _imapWorker.Setup(false);
@@ -301,6 +310,13 @@ namespace InboxWatcher.ImapClient
             }
 
             return true;
+        }
+
+        private async void ImapIdlerOnIntegrityCheck(object sender, IntegrityCheckArgs integrityCheckArgs)
+        {
+            if (integrityCheckArgs.InboxCount == EmailList.Count) return;
+            Trace.WriteLine($"{MailBoxName}: Integrity check.  Idler says: {integrityCheckArgs.InboxCount} emails and we have {EmailList.Count} in EmailList");
+            await FreshenMailBox();
         }
 
         private async void EmailSenderOnExceptionHappened(object sender, InboxWatcherArgs inboxWatcherArgs)
@@ -336,9 +352,9 @@ namespace InboxWatcher.ImapClient
 
         private async Task<bool> FreshenMailBox()
         {
-            freshenTimer.Stop();
-
             if (_freshening) return false;
+
+            freshenTimer.Stop();
 
             _freshening = true;
 
@@ -396,6 +412,15 @@ namespace InboxWatcher.ImapClient
                     }
                 }
 
+                //take care of any emails that may have been left as marked in queue from previous shutdown/disconnect
+                foreach (var email in ctx.Emails.Where(email => email.InQueue && email.ImapMailBoxConfigurationId == _config.Id))
+                {
+                    if (!templist.Any(x => x.Envelope.MessageId.Equals(email.EnvelopeID)))
+                    {
+                        email.InQueue = false;
+                    }
+                }
+
                 ctx.SaveChanges();
             }
 
@@ -404,21 +429,7 @@ namespace InboxWatcher.ImapClient
             {
                 await _mbLogger.LogEmailRemoved(summary);
             }
-
-
-            //take care of any emails that may have been left as marked in queue from previous shutdown/disconnect
-            using (var ctx = new MailModelContainer())
-            {
-                foreach (var email in ctx.Emails.Where(email => email.InQueue && email.ImapMailBoxConfigurationId == _config.Id))
-                {
-                    if (!templist.Any(x => x.Envelope.MessageId.Equals(email.EnvelopeID)))
-                    {
-                        email.InQueue = false;
-                    }
-                }
-                ctx.SaveChanges();
-            }
-
+            
             _freshening = false;
 
             freshenTimer.Start();
@@ -450,10 +461,9 @@ namespace InboxWatcher.ImapClient
             }
         }
 
+
         private async Task HandleNewMessages()
         {
-            if (_setupInProgress || _freshening) return;
-
             var numMessages = new List<int>();
 
             int value;

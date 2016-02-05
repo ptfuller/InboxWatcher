@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 using InboxWatcher.Interface;
 using MailKit;
 using NLog;
@@ -19,11 +21,11 @@ namespace InboxWatcher.ImapClient
         protected CancellationTokenSource CancelToken;
         protected CancellationTokenSource DoneToken;
         protected Timer Timeout;
-        protected Timer TaskCheckTimer;
+        protected Timer IntegrityCheckTimer;
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
         protected bool AreEventsSubscribed;
-        protected SemaphoreSlim _stopIdleSemaphore = new SemaphoreSlim(1);
+        protected SemaphoreSlim StopIdleSemaphore = new SemaphoreSlim(1);
 
         private EventHandler<MessagesArrivedEventArgs> messageArrived;
         public event EventHandler<MessagesArrivedEventArgs> MessageArrived
@@ -66,9 +68,49 @@ namespace InboxWatcher.ImapClient
 
         public event EventHandler<InboxWatcherArgs> ExceptionHappened;
 
+
+        /// <summary>
+        /// Fires every minute with a count of emails in the current inbox.  Use this to verify against count in ImapMailBox
+        /// </summary>
+        public event EventHandler<IntegrityCheckArgs> IntegrityCheck;
+
+        //************************************************************************************
+
         public ImapIdler(ImapClientDirector director)
         {
             Director = director;
+
+            Timeout = new Timer(9 * 60 * 1000);
+            Timeout.Elapsed -= IdleLoop;
+            Timeout.Elapsed += IdleLoop;
+
+            IntegrityCheckTimer = new Timer(60000);
+            IntegrityCheckTimer.Elapsed -= IntegrityCheckTimerOnElapsed;
+            IntegrityCheckTimer.Elapsed += IntegrityCheckTimerOnElapsed;
+        }
+
+        private async void IntegrityCheckTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+        {
+            //Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} running integrity check.  {ImapClient.Inbox.Count} emails in inbox");
+            IntegrityCheck?.Invoke(null, new IntegrityCheckArgs(ImapClient.Inbox.Count));
+        }
+
+        protected virtual void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)
+        {
+            if (messageFlagsChangedEventArgs.Flags.HasFlag(MessageFlags.Seen))
+            {
+                messageSeen?.Invoke(sender, messageFlagsChangedEventArgs);
+            }
+        }
+
+        protected virtual void Inbox_MessageExpunged(object sender, MessageEventArgs e)
+        {
+            messageExpunged?.Invoke(sender, e);
+        }
+
+        protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)
+        {
+            messageArrived?.Invoke(sender, messagesArrivedEventArgs);
         }
 
         public virtual async Task Setup(bool isRecoverySetup = true)
@@ -97,18 +139,20 @@ namespace InboxWatcher.ImapClient
 
             Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} setup complete");
 
+            IntegrityCheckTimer.Start();
+
             await StartIdling();
         }
 
-        public virtual async Task StartIdling()
+        public virtual async Task StartIdling([CallerMemberNameAttribute] string memberName = "")
         {
             if (IdleTask != null && !IdleTask.IsCompleted) return;
 
             DoneToken = new CancellationTokenSource();
             CancelToken = new CancellationTokenSource();
 
-            //this is here because we don't want these events assigned to classes inheriting from ImapIdler (ImapWorker)
-            if (!AreEventsSubscribed)
+            //only assign these events to the idler
+            if (!AreEventsSubscribed && GetType() == typeof(ImapIdler))
             {
                 try
                 {
@@ -125,6 +169,8 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
+            Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} starting idle called from {memberName}");
+
             //idle the imap client and wait for exceptions asynchronously
             IdleTask = Task.Run(async () =>
             {
@@ -139,55 +185,33 @@ namespace InboxWatcher.ImapClient
                 }
             });
 
-            IdleLoop();
-        }
-
-        protected virtual void InboxOnMessageFlagsChanged(object sender, MessageFlagsChangedEventArgs messageFlagsChangedEventArgs)
-        {
-            if (messageFlagsChangedEventArgs.Flags.HasFlag(MessageFlags.Seen))
-            {
-                messageSeen?.Invoke(sender, messageFlagsChangedEventArgs);
-            }
-        }
-
-        protected virtual void Inbox_MessageExpunged(object sender, MessageEventArgs e)
-        {
-            messageExpunged?.Invoke(sender, e);
-        }
-
-        protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)
-        {
-            messageArrived?.Invoke(sender, messagesArrivedEventArgs);
-        }
-
-        protected virtual void IdleLoop()
-        {
-            Timeout = new Timer(9*60*1000);
-            Timeout.Elapsed += async (s, e) =>
-            {
-                await StopIdle();
-
-                if (!ImapClient.IsConnected || !ImapClient.IsAuthenticated) await Setup();
-
-                if (!ImapClient.Inbox.IsOpen)
-                {
-                    try
-                    {
-                        await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.Error(ex);
-                        Trace.WriteLine($"{GetType().FullName}: {ex.Message}");
-                        var exception = new Exception(GetType().FullName + " Error at Idle Loop", ex);
-                        HandleException(exception, true);
-                    }
-                }
-
-                await StartIdling();
-            };
-            Timeout.AutoReset = false;
+            //reset idle every 10 minutes
+            Timeout.Stop();
             Timeout.Start();
+        }
+
+        protected virtual async void IdleLoop(object sender, ElapsedEventArgs args)
+        {
+            await StopIdle();
+
+            if (!ImapClient.IsConnected || !ImapClient.IsAuthenticated) await Setup();
+
+            if (!ImapClient.Inbox.IsOpen)
+            {
+                try
+                {
+                    await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex);
+                    Trace.WriteLine($"{GetType().FullName}: {ex.Message}");
+                    var exception = new Exception(GetType().FullName + " Error at Idle Loop", ex);
+                    HandleException(exception, true);
+                }
+            }
+
+            await StartIdling();
         }
 
         public virtual bool IsConnected()
@@ -200,30 +224,42 @@ namespace InboxWatcher.ImapClient
             return ImapClient.IsIdle;
         }
 
-        protected virtual async Task StopIdle()
+        public int Count()
+        {
+            if (ImapClient.IsIdle)
+            {
+                return ImapClient.Inbox.Count;
+            }
+
+            return 0;
+        }
+
+        protected virtual async Task StopIdle([CallerMemberNameAttribute] string memberName = "")
         {
             try
             {
                 if (!IsIdle()) return;
 
-                await _stopIdleSemaphore.WaitAsync(Util.GetCancellationToken(1000));
+                await StopIdleSemaphore.WaitAsync(Util.GetCancellationToken(1000));
 
-                Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} stopping idle");
+                if (!IsIdle()) return;
+
+                Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} stopping idle called from {memberName}");
 
                 DoneToken.Cancel();
                 await IdleTask;
 
-                _stopIdleSemaphore.Release();
+                StopIdleSemaphore.Release();
             }
             catch (Exception ex)
             {
                 if (ex is OperationCanceledException)
                 {
-                    _stopIdleSemaphore.Release();
+                    StopIdleSemaphore.Release();
                     return;
                 }
 
-                _stopIdleSemaphore.Release();
+                StopIdleSemaphore.Release();
                 var exception = new Exception(GetType().Name + " Exception thrown during StopIdle()", ex);
                 logger.Error(exception);
                 HandleException(exception, true);

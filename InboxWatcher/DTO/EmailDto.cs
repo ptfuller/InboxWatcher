@@ -14,6 +14,7 @@ namespace InboxWatcher.DTO
         public int Minutes { get; set; }
         public string Sender { get; set; }
         public DateTime TimeReceived { get; set; }
+        public DateTime? TimeSent { get; set; }
         public string Subject { get; set; }
         public bool MarkedAsRead { get; set; }
         public string BodyText { get; set; }
@@ -31,6 +32,7 @@ namespace InboxWatcher.DTO
             Minutes = email.Minutes;
             Sender = email.Sender;
             TimeReceived = email.TimeReceived;
+            TimeSent = email.TimeSent;
             Subject = email.Subject;
             MarkedAsRead = email.MarkedAsRead;
             BodyText = email.BodyText;
