@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using System.Timers;
 using InboxWatcher.DTO;
 using InboxWatcher.Enum;
 using InboxWatcher.Interface;
@@ -42,14 +43,14 @@ namespace InboxWatcher.ImapClient
         private SemaphoreSlim _newMessagesSemaphore;
         private Task _newMessagesTask;
 
-        private Timer freshenTimer;
+        private readonly Timer _freshenTimer;
         
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public List<Exception> Exceptions = new List<Exception>();
 
-        public string MailBoxName { get; private set; }
-        public int MailBoxId { get; private set; }
+        public string MailBoxName { get; }
+        public int MailBoxId { get; }
 
         public DateTime WorkerStartTime { get; private set; } 
         public DateTime IdlerStartTime { get; private set; }
@@ -73,7 +74,7 @@ namespace InboxWatcher.ImapClient
         {
             _imapClientDirector = icd;
             _config = config;
-            freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
+            _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
             _mbLogger = new MailBoxLogger(_config);
@@ -83,8 +84,9 @@ namespace InboxWatcher.ImapClient
         public virtual async Task Setup()
         {
             _setupInProgress = true;
-            mutex = new SemaphoreSlim(1);
-            _newMessagesSemaphore = new SemaphoreSlim(3);
+
+            if (mutex == null) mutex = new SemaphoreSlim(1);
+            if (_newMessagesSemaphore == null) _newMessagesSemaphore = new SemaphoreSlim(1);
 
             Trace.WriteLine($"{MailBoxName} starting setup");
 
@@ -142,15 +144,19 @@ namespace InboxWatcher.ImapClient
 
             Exceptions.Clear();
 
-            freshenTimer.Elapsed += async (sender, args) =>
-            {
-                Trace.WriteLine($"{MailBoxName} Freshening due to timer");
-                await FreshenMailBox();
-            };
+            _freshenTimer.Elapsed -= FreshenTimerOnElapsed;
+            _freshenTimer.Elapsed += FreshenTimerOnElapsed;
 
-            freshenTimer.Start();
+            _freshenTimer.Stop();
+            _freshenTimer.Start();
 
             _setupInProgress = false;
+        }
+
+        private async void FreshenTimerOnElapsed(object sender, ElapsedEventArgs args)
+        {
+            Trace.WriteLine($"{MailBoxName} Freshening due to timer");
+            await FreshenMailBox();
         }
 
         private async void ImapClientExceptionHappened(object sender, InboxWatcherArgs args)
@@ -202,8 +208,13 @@ namespace InboxWatcher.ImapClient
             try
             {
                 //setup event handlers
+                _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
                 _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
+
+                _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
                 _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
+
+                _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
                 _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
             }
             catch (Exception ex)
@@ -323,8 +334,8 @@ namespace InboxWatcher.ImapClient
         {
             var exception = new Exception(DateTime.Now.ToString(),(Exception) sender);
 
-            _emailSender = null;
-
+            Trace.WriteLine($"{MailBoxName}: Exception happened in the email sender: {exception.Message}");
+            
             //I don't want a bunch of crap in my logs
             if (!exception.InnerException.Message.Equals("Exception happened during SMTP client No Op"))
             {
@@ -337,12 +348,12 @@ namespace InboxWatcher.ImapClient
 
         private async Task SetupEmailSender()
         {
-            _emailSender = new EmailSender(_imapClientDirector);
+            //_emailSender = new EmailSender(_imapClientDirector);
             await _emailSender.Setup();
 
-            _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
+            //_emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
 
-            await _emailFilterer.FilterAllMessages(EmailList);
+            //await _emailFilterer.FilterAllMessages(EmailList);
         }
 
         public void AddNotification(AbstractNotification action)
@@ -354,7 +365,7 @@ namespace InboxWatcher.ImapClient
         {
             if (_freshening) return false;
 
-            freshenTimer.Stop();
+            _freshenTimer.Stop();
 
             _freshening = true;
 
@@ -432,7 +443,7 @@ namespace InboxWatcher.ImapClient
             
             _freshening = false;
 
-            freshenTimer.Start();
+            _freshenTimer.Start();
 
             return true;
         }
@@ -449,7 +460,17 @@ namespace InboxWatcher.ImapClient
             
             try
             {
+                var currentCount = _messagesReceivedQueue.Count;
+
                 await _newMessagesSemaphore.WaitAsync(Util.GetCancellationToken(30000));
+
+                await Task.Delay(2500);
+
+                if (_messagesReceivedQueue.Count > currentCount)
+                {
+                    _newMessagesSemaphore.Release();
+                    return;
+                }
 
                 await HandleNewMessages().ConfigureAwait(false);
 
@@ -584,7 +605,7 @@ namespace InboxWatcher.ImapClient
             {
                 if (!await _emailSender.SendMail(message, emailDestination, moveToDest))
                 {
-                    await FreshenMailBox();
+                    //await FreshenMailBox();
                     return false;
                 }
             }

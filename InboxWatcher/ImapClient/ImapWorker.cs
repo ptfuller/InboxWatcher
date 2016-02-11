@@ -20,10 +20,11 @@ namespace InboxWatcher.ImapClient
     {
         private CancellationTokenSource _fetchCancellationToken;
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private Timer _idleTimer = new Timer(60000);
+        private Timer _idleTimer;
 
         public ImapWorker(ImapClientDirector director) : base(director)
         {
+            _idleTimer = new Timer(60000);
             _idleTimer.AutoReset = false;
             _idleTimer.Elapsed -= IdleTimerOnElapsed;
             _idleTimer.Elapsed += IdleTimerOnElapsed;
@@ -214,12 +215,12 @@ namespace InboxWatcher.ImapClient
             await StopIdle();
             var result = new List<IMessageSummary>();
 
+            await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+
+            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
             try
             {
-                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-
-                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-
                 var count = ImapClient.Inbox.Count - 1;
 
                 var min = 0;
@@ -258,12 +259,12 @@ namespace InboxWatcher.ImapClient
 
             var result = new List<IMessageSummary>();
 
+            await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+
+            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
             try
             {
-                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-
-                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-
                 var min = ImapClient.Inbox.Count - numNewMessages;
 
                 //array index

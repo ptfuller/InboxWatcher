@@ -167,7 +167,12 @@ namespace InboxWatcher.WebAPI.Controllers
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 
-            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            var response = new HttpResponseMessage(HttpStatusCode.InternalServerError)
+            {
+                Content = new StringContent("Fail")
+            };
+
+            return response;
         }
 
 

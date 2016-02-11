@@ -24,19 +24,18 @@ namespace InboxWatcher.ImapClient
         public EmailSender(ImapClientDirector director)
         {
             _director = director;
+            _timer = new Timer();
+            _timer.Interval = 1000 * 60 * 1.5; //1.5 minutes
+            _timer.Elapsed += async (s, e) => await KeepAlive();
+            _timer.AutoReset = false;
+            _timer.Start();
         }
 
         public async Task Setup()
         {
             _smtpClient = await _director.GetSmtpClient();
 
-            _timer = new Timer();
-            _timer.Interval = 1000 * 60 * 2; //2 minutes
-            _timer.Elapsed += async (s, e) => await KeepAlive();
-            _timer.AutoReset = false;
-            _timer.Start();
-
-            Trace.WriteLine("SMTP Client Setup");
+            Trace.WriteLine($"{_director.MailBoxName}: SMTP Client Setup");
         }
 
         private async Task KeepAlive()
@@ -56,6 +55,7 @@ namespace InboxWatcher.ImapClient
                 if (!ex.Message.Contains("4.4.1 Connection timed out"))
                 {
                     logger.Error(exception);
+                    Trace.WriteLine($"{_director.MailBoxName}: {exception.Message}");
                 }
                 
                 ExceptionHappened?.Invoke(exception, new InboxWatcherArgs());
@@ -110,21 +110,23 @@ namespace InboxWatcher.ImapClient
 
                     if (message.TextBody != null)
                     {
-                        builder.TextBody = "***Message From " + _director.MailBoxName + "*** \nSent from: " + addresses +
+                        builder.TextBody = "***Message From " + _director.MailBoxName + "*** \n" +
+                                            "Message_pulled_by: " + emailDestination + 
+                                            "\nSent from: " + addresses +
                                            "\nSent to: " + toAddresses +
                                            "\nCC'd on email: " + ccAddresses + "\nMessage Date: " +
                                            message.Date.ToLocalTime().ToString("F")
-                                           + "\n---\n\n" + message.TextBody;
+                                           + "\n---\n" + message.TextBody;
                     }
 
                     if (message.HtmlBody != null)
                     {
-                        builder.HtmlBody = "<p>***Message From " + _director.MailBoxName + "***<br/><p>Sent from: " +
-                                           addresses +
-                                           "<br/><p>Sent to: " + toAddresses +
-                                           "<br/><p>CC'd on email: " + ccAddresses + "<br/><p>Message Date:" +
+                        builder.HtmlBody = "***Message From " + _director.MailBoxName + "*** <br/>" + 
+                                           "Message_pulled_by: " + emailDestination +
+                                           "<br/>Sent from: " + addresses + "<br/>Sent to: " + toAddresses +
+                                           "<br/>CC'd on email: " + ccAddresses + "<br/>Message Date:" +
                                            message.Date.ToLocalTime().ToString("F") +
-                                           "<br/>---<br/><br/>" + message.HtmlBody;
+                                           "<br/>---<br/>" + message.HtmlBody;
                     }
 
                     buildMessage.Body = builder.ToMessageBody();

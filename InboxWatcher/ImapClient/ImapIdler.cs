@@ -20,11 +20,10 @@ namespace InboxWatcher.ImapClient
         protected IImapClient ImapClient;
         protected CancellationTokenSource CancelToken;
         protected CancellationTokenSource DoneToken;
-        protected Timer Timeout;
-        protected Timer IntegrityCheckTimer;
+        protected readonly Timer Timeout;
+        protected readonly Timer IntegrityCheckTimer;
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
-        protected bool AreEventsSubscribed;
         protected SemaphoreSlim StopIdleSemaphore = new SemaphoreSlim(1);
 
         private EventHandler<MessagesArrivedEventArgs> messageArrived;
@@ -81,6 +80,7 @@ namespace InboxWatcher.ImapClient
             Director = director;
 
             Timeout = new Timer(9 * 60 * 1000);
+            Timeout.AutoReset = false;
             Timeout.Elapsed -= IdleLoop;
             Timeout.Elapsed += IdleLoop;
 
@@ -115,8 +115,6 @@ namespace InboxWatcher.ImapClient
 
         public virtual async Task Setup(bool isRecoverySetup = true)
         {
-            AreEventsSubscribed = false;
-
             try
             {
                 ImapClient = await Director.GetClient();
@@ -137,6 +135,8 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
+            IdleTask = null;
+
             Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} setup complete");
 
             IntegrityCheckTimer.Start();
@@ -152,14 +152,18 @@ namespace InboxWatcher.ImapClient
             CancelToken = new CancellationTokenSource();
 
             //only assign these events to the idler
-            if (!AreEventsSubscribed && GetType() == typeof(ImapIdler))
+            if (GetType() == typeof(ImapIdler))
             {
                 try
                 {
+                    ImapClient.Inbox.MessagesArrived -= InboxOnMessagesArrived;
                     ImapClient.Inbox.MessagesArrived += InboxOnMessagesArrived;
+
+                    ImapClient.Inbox.MessageExpunged -= Inbox_MessageExpunged;
                     ImapClient.Inbox.MessageExpunged += Inbox_MessageExpunged;
+
+                    ImapClient.Inbox.MessageFlagsChanged -= InboxOnMessageFlagsChanged;
                     ImapClient.Inbox.MessageFlagsChanged += InboxOnMessageFlagsChanged;
-                    AreEventsSubscribed = true;
                 }
                 catch (ObjectDisposedException ex)
                 {

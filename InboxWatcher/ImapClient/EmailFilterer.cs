@@ -34,11 +34,12 @@ namespace InboxWatcher.ImapClient
             if (_currentlyFiltering) return;
             _currentlyFiltering = true;
 
-            Trace.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering Messages");
+            var messageSummaries = messages.ToList();
+
+            Trace.WriteLine($"{_attachedMailBox.MailBoxName}: Filtering {messageSummaries.Count()} Messages");
 
             try
             {
-                var messageSummaries = messages.ToList();
                 await Task.WhenAll(messageSummaries.Select(FilterMessage).ToArray());
             }
             catch
@@ -60,7 +61,7 @@ namespace InboxWatcher.ImapClient
         {
             var msg = (IMessageSummary) email;
 
-            await Task.Run(async () => { await FilterMessage(msg); });
+            await FilterMessage(msg).ConfigureAwait(false);
         }
 
         private async Task FilterMessage(IMessageSummary msgSummary)
