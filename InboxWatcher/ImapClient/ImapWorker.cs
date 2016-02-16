@@ -216,7 +216,6 @@ namespace InboxWatcher.ImapClient
             var result = new List<IMessageSummary>();
 
             await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-
             await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
 
             try
@@ -243,7 +242,6 @@ namespace InboxWatcher.ImapClient
             }
 
             _idleTimer.Start();
-
             return result;
         }
 
@@ -257,11 +255,10 @@ namespace InboxWatcher.ImapClient
             _idleTimer.Stop();
             await StopIdle();
 
-            var result = new List<IMessageSummary>();
-
             await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-
             await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
+            var result = new List<IMessageSummary>();
 
             try
             {
@@ -315,6 +312,12 @@ namespace InboxWatcher.ImapClient
             _idleTimer.Start();
 
             return null;
+        }
+
+        public override void Dispose()
+        {
+            _idleTimer.Dispose();
+            base.Dispose();
         }
     }
 }

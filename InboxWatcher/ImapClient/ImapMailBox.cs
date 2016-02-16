@@ -208,13 +208,8 @@ namespace InboxWatcher.ImapClient
             try
             {
                 //setup event handlers
-                _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
                 _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
-
-                _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
                 _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
-
-                _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
                 _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
             }
             catch (Exception ex)
@@ -268,27 +263,33 @@ namespace InboxWatcher.ImapClient
                 return status;
             }
         }
-
-        public void Destroy()
-        {
-            try
-            {
-                _imapIdler.Destroy();
-                _imapWorker.Destroy();
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex);
-            }
-        }
+       
 
         private async Task<bool> SetupClients()
         {
             try
             {
-                _emailSender = null;
-                _imapIdler = null;
-                _imapWorker = null;
+                if (_emailSender != null)
+                {
+                    _emailSender.ExceptionHappened -= EmailSenderOnExceptionHappened;
+                    _emailSender.Dispose();
+                }
+
+                if (_imapIdler != null)
+                {
+                    _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
+                    _imapIdler.IntegrityCheck -= ImapIdlerOnIntegrityCheck;
+                    _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
+                    _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
+                    _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
+                    _imapIdler.Dispose();
+                }
+
+                if (_imapWorker != null)
+                {
+                    _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
+                    _imapWorker.Dispose();
+                }
 
                 _imapWorker = new ImapWorker(_imapClientDirector);
                 WorkerStartTime = DateTime.Now;

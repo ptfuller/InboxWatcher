@@ -102,11 +102,6 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 var selection = ctx.ImapMailBoxConfigurations.First(x => x.Id == id);
 
-                foreach (var mailBox in InboxWatcher.MailBoxes.Where(x => x.MailBoxName.Equals(selection.MailBoxName)))
-                {
-                    mailBox.Destroy();
-                }
-
                 InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
 
                 ctx.ImapMailBoxConfigurations.Attach(selection);

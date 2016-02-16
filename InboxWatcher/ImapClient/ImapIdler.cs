@@ -13,15 +13,15 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapIdler
+    public class ImapIdler : IDisposable
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
         protected IImapClient ImapClient;
         protected CancellationTokenSource CancelToken;
         protected CancellationTokenSource DoneToken;
-        protected readonly Timer Timeout;
-        protected readonly Timer IntegrityCheckTimer;
+        protected Timer Timeout;
+        protected Timer IntegrityCheckTimer;
         protected readonly ImapClientDirector Director;
         protected Task IdleTask;
         protected SemaphoreSlim StopIdleSemaphore = new SemaphoreSlim(1);
@@ -319,6 +319,19 @@ namespace InboxWatcher.ImapClient
             }
 
             return results;
+        }
+
+        public virtual void Dispose()
+        {
+            Timeout.Dispose();
+            IntegrityCheckTimer.Dispose();
+            IdleTask.Dispose();
+            ImapClient.Dispose();
+        }
+
+        ~ImapIdler()
+        {
+            Trace.WriteLine($"{Director.MailBoxName}:{GetType().Name}:Disposed");
         }
     }
 }

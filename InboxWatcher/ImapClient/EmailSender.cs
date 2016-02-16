@@ -11,12 +11,13 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class EmailSender
+    public class EmailSender : IDisposable
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private SmtpClient _smtpClient;
         private ImapClientDirector _director;
         private Timer _timer;
+        private Task _recoveryTask;
         private bool _emailIsSending;
 
         public event EventHandler<InboxWatcherArgs> ExceptionHappened;
@@ -25,7 +26,7 @@ namespace InboxWatcher.ImapClient
         {
             _director = director;
             _timer = new Timer();
-            _timer.Interval = 1000 * 60 * 1.5; //1.5 minutes
+            _timer.Interval = 1000 * 60 * 2; //2 minutes
             _timer.Elapsed += async (s, e) => await KeepAlive();
             _timer.AutoReset = false;
             _timer.Start();
@@ -45,12 +46,13 @@ namespace InboxWatcher.ImapClient
             try
             {
                 await _smtpClient.NoOpAsync(Util.GetCancellationToken(1000));
+                Trace.WriteLine($"{_director.MailBoxName}:SMTP Client NoOp successful");
                 _timer.Start();
             }
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
-
+                Trace.WriteLine($"{_director.MailBoxName}:SMTP Client NoOp failed");
                 //I don't want a bunch of crap in my logs - this happens constantly throughout the day
                 if (!ex.Message.Contains("4.4.1 Connection timed out"))
                 {
@@ -140,13 +142,25 @@ namespace InboxWatcher.ImapClient
                 logger.Error(exception);
                 _emailIsSending = false;
                 _timer.Start();
-                ExceptionHappened?.Invoke(exception, new InboxWatcherArgs());
+
+                var args = new InboxWatcherArgs();
+                //args.Message = message;
+                //args.EmailDestination = emailDestination;
+                //args.MoveToDest = moveToDest;
+                ExceptionHappened?.Invoke(exception, args);
+
                 return false;
             }
 
             _timer.Start();
             _emailIsSending = false;
             return true;
+        }
+
+        public void Dispose()
+        {
+            _smtpClient.Dispose();
+            _timer.Dispose();
         }
     }
 }
