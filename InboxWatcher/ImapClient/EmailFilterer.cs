@@ -61,7 +61,7 @@ namespace InboxWatcher.ImapClient
         {
             var msg = (IMessageSummary) email;
 
-            await FilterMessage(msg).ConfigureAwait(false);
+            await FilterMessage(msg);
         }
 
         private async Task FilterMessage(IMessageSummary msgSummary)
@@ -94,10 +94,9 @@ namespace InboxWatcher.ImapClient
                         if (theMessage == null) return;
 
                         //forward the message
-                        while (!await _attachedMailBox.SendMail(theMessage, msgSummary.UniqueId.Id, filter.ForwardToAddress, false))
+                        if (!await _attachedMailBox.SendMail(theMessage, msgSummary.UniqueId.Id, filter.ForwardToAddress, false))
                         {
-                            //Trace.WriteLine($"{_attachedMailBox.MailBoxName}: problem sending filtered message {theMessage.Subject} - waiting...");
-                            await Task.Delay(10000);
+                            return;
                         }
                     }
 

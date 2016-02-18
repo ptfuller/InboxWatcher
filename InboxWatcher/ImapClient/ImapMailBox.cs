@@ -604,11 +604,19 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                if (!await _emailSender.SendMail(message, emailDestination, moveToDest))
+                var success = false;
+
+                for (var i = 0; i < 4; i++)
                 {
-                    //await FreshenMailBox();
-                    return false;
+                    if (await _emailSender.SendMail(message, emailDestination, moveToDest))
+                    {
+                        success = true;
+                        break;
+                    }
+                    await Task.Delay(4000);
                 }
+
+                if (!success) return false;
             }
             catch (Exception ex)
             {

@@ -6,10 +6,9 @@ InboxWatcher provides an email management solution geared towards a ticketing/he
 todo: 
 - [X] SignalR
 - [X] Better handling of Smtp / sending emails
-- [ ] Better README.md
 - [X] Add email filtering
 - [X] Improved status display on dashboard (show when starting up and when started via signalR)
 - [ ] Search for old emails in mailbox
 - [ ] Ability to configure DB
 - [ ] Additional notification types (sms, signalr, wcf, more?)
-- [ ] Catch up on tests
+- [ ] Automate Backups
