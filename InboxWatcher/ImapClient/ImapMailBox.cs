@@ -193,9 +193,7 @@ namespace InboxWatcher.ImapClient
                 _setupInProgress = true;
 
                 Trace.WriteLine($"{MailBoxName}: Something bad happened - resetting clients");
-                _imapWorker = null;
-                _imapIdler = null;
-
+                
                 await Setup();
                 _setupInProgress = false;
             }

@@ -81,7 +81,6 @@ namespace InboxWatcher.ImapClient
 
             Timeout = new Timer(9 * 60 * 1000);
             Timeout.AutoReset = false;
-            Timeout.Elapsed -= IdleLoop;
             Timeout.Elapsed += IdleLoop;
 
             IntegrityCheckTimer = new Timer(60000);
@@ -91,7 +90,8 @@ namespace InboxWatcher.ImapClient
 
         private async void IntegrityCheckTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
-            //Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} running integrity check.  {ImapClient.Inbox.Count} emails in inbox");
+            //only run if we're fetching all messages
+            if (ImapClient.Inbox.Count > 500) return;
             IntegrityCheck?.Invoke(null, new IntegrityCheckArgs(ImapClient.Inbox.Count));
         }
 
@@ -180,6 +180,7 @@ namespace InboxWatcher.ImapClient
             {
                 try
                 {
+                    if (!ImapClient.Inbox.IsOpen) await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
                     await ImapClient.IdleAsync(DoneToken.Token, CancelToken.Token);
                 }
                 catch (Exception ex)
