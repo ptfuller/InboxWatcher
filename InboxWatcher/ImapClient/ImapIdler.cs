@@ -84,7 +84,6 @@ namespace InboxWatcher.ImapClient
             Timeout.Elapsed += IdleLoop;
 
             IntegrityCheckTimer = new Timer(60000);
-            IntegrityCheckTimer.Elapsed -= IntegrityCheckTimerOnElapsed;
             IntegrityCheckTimer.Elapsed += IntegrityCheckTimerOnElapsed;
         }
 
@@ -289,8 +288,7 @@ namespace InboxWatcher.ImapClient
             if (ImapClient.Inbox.IsOpen) await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken());
 
             var allFolders = new List<IMailFolder>();
-
-
+            
             if (ImapClient.PersonalNamespaces != null)
             {
                 var root =
@@ -324,9 +322,24 @@ namespace InboxWatcher.ImapClient
 
         public virtual void Dispose()
         {
+            Timeout.Elapsed -= IdleLoop;
+            Timeout.Stop();
             Timeout.Dispose();
+
+            IntegrityCheckTimer.Elapsed -= IntegrityCheckTimerOnElapsed;
+            IntegrityCheckTimer.Stop();
             IntegrityCheckTimer.Dispose();
-            IdleTask.Dispose();
+
+            if (IdleTask.IsCompleted)
+            {
+                IdleTask.Dispose();
+            }
+            else
+            {
+                DoneToken.Cancel();
+                CancelToken.Cancel();
+            }
+
             ImapClient.Dispose();
         }
 

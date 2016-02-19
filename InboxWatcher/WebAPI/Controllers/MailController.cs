@@ -121,7 +121,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public IEnumerable<string> GetFolders(string mailBoxName)
         {
-            var mailbox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            var mailbox = InboxWatcher.MailBoxes.Values.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
             return mailbox?.EmailFolders.Select(x => x.FullName);
         }
 
@@ -129,14 +129,14 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public IEnumerable<string> GetMailboxes()
         {
-            return InboxWatcher.MailBoxes != null && InboxWatcher.MailBoxes.Count > 0 ? InboxWatcher.MailBoxes.Select(x => x.MailBoxName).ToList() : new List<string>();
+            return InboxWatcher.MailBoxes != null && InboxWatcher.MailBoxes.Count > 0 ? InboxWatcher.MailBoxes.Values.Select(x => x.MailBoxName).ToList() : new List<string>();
         }
 
         [Route("mailboxes/{mailBoxName}")]
         [HttpGet]
         public IEnumerable<ISummary> Get(string mailBoxName)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
             return selectedMailBox?.EmailList.Select(messageSummary => new Summary(messageSummary)).ToList().OrderByDescending(x => x.Received);
         }
 
@@ -144,7 +144,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public async Task<Message> Get(string mailBoxName, uint uniqueId)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.First(x => x.MailBoxName.Equals(mailBoxName));
 
             var message = selectedMailBox?.GetMessage(uniqueId);
 
@@ -157,7 +157,7 @@ namespace InboxWatcher.WebAPI.Controllers
         {
             Trace.WriteLine($"{emailDestination} is trying to get message {uniqueId}");
 
-            var selectedMailBox = InboxWatcher.MailBoxes.First(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.First(x => x.MailBoxName.Equals(mailBoxName));
 
             var selectedMessage = await selectedMailBox.GetMessage(uniqueId);
 
@@ -180,7 +180,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public MailBoxStatusDto GetStatus(string mailBoxName)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
 
             return selectedMailBox?.Status();
         }
@@ -190,7 +190,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpPut]
         public async Task<HttpResponseMessage> MoveMessageToAlternateMailbox(string mailBoxName, uint UniqueId, string destination, string address, string username)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
 
             if (selectedMailBox == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError);}
 
@@ -210,7 +210,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpPut]
         public async Task<HttpResponseMessage> MoveMessageToFolder(string mailBoxName, uint UniqueId, string destination, string username)
         {
-            var selectedMailBox = InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
+            var selectedMailBox = InboxWatcher.MailBoxes.Values.FirstOrDefault(x => x.MailBoxName.Equals(mailBoxName));
 
             if (selectedMailBox == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError); }
 
@@ -235,8 +235,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
                 if (selectedEmail == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
-                var selectedMailBox =
-                    InboxWatcher.MailBoxes.FirstOrDefault(x => x.MailBoxId == selectedEmail.ImapMailBoxConfigurationId);
+                var selectedMailBox = InboxWatcher.MailBoxes[selectedEmail.ImapMailBoxConfigurationId];
 
                 if (selectedMailBox == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 

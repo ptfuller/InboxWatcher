@@ -33,7 +33,7 @@ namespace InboxWatcher
         /// <summary>
         ///     All running ImapMailBoxes are held in this list
         /// </summary>
-        public static List<ImapMailBox> MailBoxes { get; set; }
+        public static Dictionary<int, ImapMailBox> MailBoxes { get; set; }
 
         /// <summary>
         ///     The path to the html, js, and css resources for the UI
@@ -85,7 +85,6 @@ namespace InboxWatcher
 
         protected override void OnStop()
         {
-            //MailBoxes.ForEach(x => x.Destroy()); I don't think this is necessary
             Trace.WriteLine("Service shutting down");
         }
 
@@ -121,12 +120,12 @@ namespace InboxWatcher
 
         internal static async Task ConfigureMailBox(IClientConfiguration conf)
         {
-            var selectedMailBox = MailBoxes.FirstOrDefault(x => x.MailBoxId == conf.Id);
+            var selectedMailBox = MailBoxes.FirstOrDefault(x => x.Key == conf.Id).Value;
 
             //changing an existing config
             if (selectedMailBox != null)
             {
-                MailBoxes.Remove(selectedMailBox);
+                MailBoxes.Remove(selectedMailBox.MailBoxId);
             }
 
             var director = new ImapClientDirector(conf);
@@ -139,7 +138,7 @@ namespace InboxWatcher
 
             await mailbox.Setup();
 
-            MailBoxes.Add(mailbox);
+            MailBoxes.Add(mailbox.MailBoxId, mailbox);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();
@@ -147,7 +146,7 @@ namespace InboxWatcher
 
         internal static async Task ConfigureMailBoxes()
         {
-            MailBoxes = new List<ImapMailBox>();
+            MailBoxes = new Dictionary<int, ImapMailBox>();
 
             //get configuration objects from database
             var configs = Configs;
@@ -166,16 +165,16 @@ namespace InboxWatcher
                     mailbox.AddNotification(action);
                 }
 
-                MailBoxes.Add(mailbox);
+                MailBoxes.Add(mailbox.MailBoxId, mailbox);
             })).ToList();
-
+            
             await Task.WhenAll(setupTasks);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();
 
             //todo remove this - it's for debugging
-            foreach (var imapMailBox in MailBoxes)
+            foreach (var imapMailBox in MailBoxes.Values)
             {
                 imapMailBox.NewMessageReceived += (sender, eventArgs) =>
                 {

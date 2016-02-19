@@ -28,12 +28,6 @@ namespace InboxWatcher.ImapClient
         public EmailSender(ImapClientDirector director)
         {
             _director = director;
-            _timer = new Timer();
-            _timer.Interval = 1000 * 60 * 2; //2 minutes
-            _timer.Elapsed -= _timer_Elapsed;
-            _timer.Elapsed += _timer_Elapsed;
-            _timer.AutoReset = false;
-            _timer.Start();
         }
 
         private async void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -49,8 +43,27 @@ namespace InboxWatcher.ImapClient
                 await _setupSemaphore.WaitAsync(Util.GetCancellationToken(10000));
                 _setupInProgress = true;
 
+                if (_timer != null)
+                {
+                    _timer.Elapsed -= _timer_Elapsed;
+                    _timer.Dispose();
+                }
+
+                _timer = new Timer();
+                _timer.Interval = 1000 * 60 * 2; //2 minutes
+                _timer.Elapsed += _timer_Elapsed;
+                _timer.AutoReset = false;
+                _timer.Start();
+
+                if (_smtpClient != null)
+                {
+                    _smtpClient.Disconnected -= SmtpClientOnDisconnected;
+                    _smtpClient.Dispose();
+                }
+
                 _smtpClient = await _director.GetSmtpClient();
                 _smtpClient.Disconnected += SmtpClientOnDisconnected;
+
                 Trace.WriteLine($"{_director.MailBoxName}: SMTP Client Setup");
 
                 _setupSemaphore.Release();
@@ -58,7 +71,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                //ignore
+                Trace.WriteLine($"{_director.MailBoxName}:{ex.Message}");
             }
             
         }
@@ -168,7 +181,14 @@ namespace InboxWatcher.ImapClient
             }
             finally
             {
-                _timer.Start();
+                try
+                {
+                    _timer.Start();
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    
+                }
                 _emailIsSending = false;
             }
 

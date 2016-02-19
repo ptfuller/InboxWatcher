@@ -89,7 +89,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 ctx.SaveChanges();
             }
 
-            InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
+            InboxWatcher.MailBoxes.Remove(conf.Id);
             Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(conf); });
             return selection;
         }
@@ -102,7 +102,7 @@ namespace InboxWatcher.WebAPI.Controllers
             {
                 var selection = ctx.ImapMailBoxConfigurations.First(x => x.Id == id);
 
-                InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
+                InboxWatcher.MailBoxes.Remove(selection.Id);
 
                 ctx.ImapMailBoxConfigurations.Attach(selection);
                 ctx.ImapMailBoxConfigurations.Remove(selection);
@@ -160,7 +160,7 @@ namespace InboxWatcher.WebAPI.Controllers
 
                 if (selection == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
 
-                InboxWatcher.MailBoxes.RemoveAll(x => x.MailBoxName.Equals(selection.MailBoxName));
+                InboxWatcher.MailBoxes.Remove(selection.Id);
 
                 Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(selection); });
 

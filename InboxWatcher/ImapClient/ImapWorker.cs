@@ -215,11 +215,11 @@ namespace InboxWatcher.ImapClient
             await StopIdle();
             var result = new List<IMessageSummary>();
 
-            await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-
             try
             {
+                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+
                 var count = ImapClient.Inbox.Count - 1;
 
                 var min = 0;

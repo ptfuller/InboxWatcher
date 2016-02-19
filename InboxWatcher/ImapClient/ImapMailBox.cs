@@ -140,7 +140,9 @@ namespace InboxWatcher.ImapClient
             _emailFilterer = new EmailFilterer(this);
 
             //filter all new messages
-            Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); });
+            #pragma warning disable 4014
+            Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); }).ConfigureAwait(false);
+            #pragma warning restore 4014
 
             Exceptions.Clear();
 
@@ -347,12 +349,7 @@ namespace InboxWatcher.ImapClient
 
         private async Task SetupEmailSender()
         {
-            //_emailSender = new EmailSender(_imapClientDirector);
             await _emailSender.Setup();
-
-            //_emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
-
-            //await _emailFilterer.FilterAllMessages(EmailList);
         }
 
         public void AddNotification(AbstractNotification action)
