@@ -9,18 +9,16 @@ using NLog;
 
 namespace InboxWatcher.ImapClient
 {
-    public class EmailFilterer
+    public class EmailFilterer : IEmailFilterer
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private readonly ImapMailBox _attachedMailBox;
+        private readonly IImapMailBox _attachedMailBox;
         private readonly List<EmailFilter> _emailFilters = new List<EmailFilter>();
         private bool _currentlyFiltering;
 
-        public EmailFilterer(ImapMailBox attachedMailBox)
+        public EmailFilterer(IImapMailBox attachedMailBox)
         {
             _attachedMailBox = attachedMailBox;
-
-            _attachedMailBox.NewMessageReceived -= FilterOnMessageReceived;
             _attachedMailBox.NewMessageReceived += FilterOnMessageReceived;
 
             using (var ctx = new MailModelContainer())

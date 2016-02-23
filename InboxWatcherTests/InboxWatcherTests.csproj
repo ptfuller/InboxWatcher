@@ -127,23 +127,12 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="DTO\EmailDtoTests.cs" />
-    <Compile Include="DTO\EmailLogDtoTests.cs" />
-    <Compile Include="ImapClientBuilderTests.cs" />
-    <Compile Include="ImapClientDirectorTests.cs" />
-    <Compile Include="Notifications\FindNotificationConfigurationTypes.cs" />
-    <Compile Include="Notifications\MessageSummaryToListKeyValuePairTests.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="ImapIdlerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ImapPollerTests.cs" />
-    <Compile Include="ImapMailBoxTests.cs" />
-    <Compile Include="WebAPI\Controllers\DashboardControllerTests.cs" />
-    <Compile Include="WebAPI\Controllers\NotificationControllerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InboxWatcher\InboxWatcher.csproj">
