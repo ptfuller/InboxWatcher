@@ -22,12 +22,12 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapMailBox
+    public class ImapMailBox : IImapMailBox
     {
         private ImapIdler _imapIdler;
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
-        private EmailFilterer _emailFilterer;
+        private IEmailFilterer _emailFilterer;
 
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
@@ -108,6 +108,8 @@ namespace InboxWatcher.ImapClient
             Trace.WriteLine(MailBoxName + " SetupClients finished");
 
             retryTime = 5000;
+
+            _freshening = false;
 
             //make worker get initial list of messages and then start idling
             while (!await FreshenMailBox())
