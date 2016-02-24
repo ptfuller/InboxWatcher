@@ -56,16 +56,16 @@
     <StartupObject>InboxWatcher.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Antlr3.Runtime, Version=3.4.1.9004, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
-      <HintPath>..\packages\Antlr.3.4.1.9004\lib\Antlr3.Runtime.dll</HintPath>
+    <Reference Include="Antlr3.Runtime, Version=3.5.0.2, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="AutoMapper, Version=4.1.1.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
-      <HintPath>..\packages\AutoMapper.4.1.1\lib\net45\AutoMapper.dll</HintPath>
+    <Reference Include="AutoMapper, Version=4.2.0.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoMapper.4.2.0\lib\net45\AutoMapper.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="BouncyCastle, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
-      <HintPath>..\packages\MimeKit.1.2.19\lib\net45\BouncyCastle.dll</HintPath>
+      <HintPath>..\packages\MimeKit.1.2.21\lib\net45\BouncyCastle.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
@@ -81,7 +81,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="MailKit, Version=1.2.0.0, Culture=neutral, PublicKeyToken=4e064fe7c44a8f1b, processorArchitecture=MSIL">
-      <HintPath>..\packages\MailKit.1.2.16\lib\net45\MailKit.dll</HintPath>
+      <HintPath>..\packages\MailKit.1.2.19\lib\net45\MailKit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.AspNet.SignalR.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -113,11 +113,15 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="MimeKit, Version=1.2.0.0, Culture=neutral, PublicKeyToken=bede1c8a46c66814, processorArchitecture=MSIL">
-      <HintPath>..\packages\MimeKit.1.2.19\lib\net45\MimeKit.dll</HintPath>
+      <HintPath>..\packages\MimeKit.1.2.21\lib\net45\MimeKit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Ninject, Version=3.2.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
+      <HintPath>..\packages\Ninject.3.2.2.0\lib\net45-full\Ninject.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
@@ -173,6 +177,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\NotificationAttribute.cs" />
+    <Compile Include="ConfigurationProvider.cs" />
     <Compile Include="DTO\ClientConfigurationDto.cs" />
     <Compile Include="DTO\EmailDto.cs" />
     <Compile Include="DTO\EmailFilterDto.cs" />
@@ -192,6 +197,7 @@
     <Compile Include="HtmlToText.cs" />
     <Compile Include="ImapClient\EmailFilterer.cs" />
     <Compile Include="ImapClient\EmailSender.cs" />
+    <Compile Include="Interface\IImapClientDirector.cs" />
     <Compile Include="Interface\IEmailFilterer.cs" />
     <Compile Include="Interface\IImapMailBox.cs" />
     <Compile Include="ImapClient\InboxWatcherArgs.cs" />

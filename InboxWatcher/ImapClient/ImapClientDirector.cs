@@ -3,16 +3,18 @@ using InboxWatcher.Interface;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapClientDirector
+    public class ImapClientDirector : IImapClientDirector
     {
         private ImapClientBuilder Builder { get; }
-
+        private readonly IClientConfiguration _configuration;
         public string SendAs { get; set; }
         public string UserName { get; set; }
         public string MailBoxName { get; set; }
 
         public ImapClientDirector(IClientConfiguration configuration)
         {
+            this._configuration = configuration;
+
             Builder = new ImapClientBuilder()
                 .WithHost(configuration.HostName)
                 .WithPassword(configuration.Password)
@@ -26,7 +28,7 @@ namespace InboxWatcher.ImapClient
                 .WithSmtpPort(configuration.SmtpPort);
 
 
-            //todo add this value to the configuration object
+            //todo add this value to the _configuration object
             UserName = configuration.UserName;
             SendAs = configuration.MailBoxName;
 
@@ -41,6 +43,11 @@ namespace InboxWatcher.ImapClient
         public virtual async Task<SendClient> GetSmtpClient()
         {
             return await Builder.GetSmtpClient();
+        }
+
+        internal IClientConfiguration GetConfiguration()
+        {
+            return _configuration;
         }
     }
 }
