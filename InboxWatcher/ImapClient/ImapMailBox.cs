@@ -58,22 +58,11 @@ namespace InboxWatcher.ImapClient
         public event EventHandler NewMessageReceived;
         public event EventHandler MessageRemoved;
 
-        public ImapMailBox(ImapClientDirector icd, IEnumerable<AbstractNotification> notificationActions, IClientConfiguration config) :
-                this(icd, config)
-        {
-            NotificationActions.AddRange(notificationActions);
-        }
-        
-        public ImapMailBox(ImapClientDirector icd, AbstractNotification notificationAction, IClientConfiguration config) :
-            this(icd, config)
-        {
-            NotificationActions.Add(notificationAction);
-        }
 
-        public ImapMailBox(ImapClientDirector icd, IClientConfiguration config)
+        public ImapMailBox(ImapClientDirector icd)
         {
             _imapClientDirector = icd;
-            _config = config;
+            _config = icd.GetConfiguration();
             _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
