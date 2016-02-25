@@ -161,6 +161,8 @@ namespace InboxWatcher.WebAPI.Controllers
 
             var selectedMessage = await selectedMailBox.GetMessage(uniqueId);
 
+            if (selectedMessage == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+
             if (await selectedMailBox.SendMail(selectedMessage, uniqueId, emailDestination, moveToDestinationFolder))
             {
                 Trace.WriteLine($"{emailDestination} got message with subject: {selectedMessage.Subject}");
@@ -195,6 +197,8 @@ namespace InboxWatcher.WebAPI.Controllers
             if (selectedMailBox == null) { return new HttpResponseMessage(HttpStatusCode.InternalServerError);}
 
             var selectedMessage = await selectedMailBox.GetMessage(UniqueId);
+
+            if (selectedMessage == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
             if (await selectedMailBox.SendMail(selectedMessage, UniqueId, address, false))
             {

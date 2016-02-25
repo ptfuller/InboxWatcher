@@ -170,28 +170,23 @@ namespace InboxWatcher.ImapClient
 
                 buildMessage.Body = builder.ToMessageBody();
 
-                await client.SendAsync(buildMessage, Util.GetCancellationToken());
+                await client.SendAsync(buildMessage);
             }
             catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
+
                 await Setup();
                 await Task.Delay(1000);
+
+                _emailIsSending = false;
+                _timer.Start();
+
                 return false;
             }
-            finally
-            {
-                try
-                {
-                    _timer.Start();
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    
-                }
-                _emailIsSending = false;
-            }
 
+            _emailIsSending = false;
+            _timer.Start();
             return true;
         }
 

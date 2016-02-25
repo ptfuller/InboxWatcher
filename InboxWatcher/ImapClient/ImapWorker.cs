@@ -94,7 +94,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken());
+                var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken(120000));
                 _idleTimer.Start();
                 return message;
             }

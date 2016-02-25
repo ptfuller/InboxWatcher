@@ -36,6 +36,7 @@ namespace InboxWatcher.ImapClient
 
         private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
         private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
+        private List<uint> CurrentlyProcessingIds = new List<uint>();
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
@@ -578,6 +579,10 @@ namespace InboxWatcher.ImapClient
 
         public async Task<MimeMessage> GetMessage(uint uniqueId)
         {
+            if (CurrentlyProcessingIds.Contains(uniqueId)) return null;
+
+            CurrentlyProcessingIds.Add(uniqueId);
+
             var uid = new UniqueId(uniqueId);
 
             try
@@ -589,6 +594,7 @@ namespace InboxWatcher.ImapClient
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
+                CurrentlyProcessingIds.Remove(uniqueId);
                 //await Setup();
                 return null;
             }
