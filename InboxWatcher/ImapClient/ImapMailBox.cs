@@ -587,6 +587,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
+                CurrentlyProcessingIds.Remove(uniqueId);
                 return await _imapWorker.GetMessage(uid);
             }
             catch (Exception ex)
