@@ -42,8 +42,6 @@ namespace InboxWatcher
         /// </summary>
         public static string ResourcePath { get; internal set; }
 
-        internal static Queue<ImapMailBoxConfiguration> ClientConfigurations = new Queue<ImapMailBoxConfiguration>();
-
         private static IKernel _kernel;
 
         protected override void OnStart(string[] args)
@@ -56,11 +54,6 @@ namespace InboxWatcher
             //Debugger.Launch();
 
             _kernel = ConfigureNinject();
-
-            foreach (var config in GetConfigs())
-            {
-                ClientConfigurations.Enqueue(config);
-            }
 
             ConfigureAutoMapper();
 
@@ -81,8 +74,9 @@ namespace InboxWatcher
         {
             _kernel = new StandardKernel();
 
-            _kernel.Bind<IClientConfiguration>().ToProvider<ConfigurationProvider>();
+            _kernel.Bind<IClientConfiguration>().To<ImapClientConfiguration>();
             _kernel.Bind<IImapClientDirector>().To<ImapClientDirector>();
+            _kernel.Bind<IImapMailBox>().To<ImapMailBox>();
             
             return _kernel;
         }
@@ -153,6 +147,7 @@ namespace InboxWatcher
                 MailBoxes.Remove(selectedMailBox.MailBoxId);
             }
 
+            //create mailboxes via ninject
             var director = _kernel.Get<ImapClientDirector>(new ConstructorArgument("configuration", conf));
             var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
 
@@ -172,13 +167,13 @@ namespace InboxWatcher
         internal static async Task ConfigureMailBoxes()
         {
             MailBoxes = new Dictionary<int, ImapMailBox>();
-            var count = ClientConfigurations.Count;
-
             var tasks = new List<Task>();
 
-            for (var i = 0; i < count; i++)
+            foreach(var config in GetConfigs())
             {
-                var mailbox = _kernel.Get<ImapMailBox>();
+                var director = _kernel.Get<IImapClientDirector>(new ConstructorArgument("configuration", config));
+                var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
+
                 MailBoxes.Add(mailbox.MailBoxId, mailbox);
                 tasks.Add(mailbox.Setup());
 
@@ -187,7 +182,7 @@ namespace InboxWatcher
                     mailbox.AddNotification(action);
                 }
             }
-            Debugger.Break();
+
             await Task.WhenAll(tasks);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
