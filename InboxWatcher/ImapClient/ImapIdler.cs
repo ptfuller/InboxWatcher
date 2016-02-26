@@ -109,6 +109,8 @@ namespace InboxWatcher.ImapClient
 
         protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)
         {
+            //todo remove this trace for testing
+            Trace.WriteLine($"Idler got a message arrived event current count: {ImapClient.Inbox.Count}");
             messageArrived?.Invoke(sender, messagesArrivedEventArgs);
         }
 

@@ -217,8 +217,8 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+                //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+                //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
 
                 var count = ImapClient.Inbox.Count - 1;
 
@@ -231,7 +231,7 @@ namespace InboxWatcher.ImapClient
 
                 result.AddRange(
                     await
-                        ImapClient.Inbox.FetchAsync(min, count,
+                        ImapClient.Inbox.FetchAsync(min, /*count*/-1,
                             MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken()));
             }
             catch (Exception ex)
@@ -255,8 +255,8 @@ namespace InboxWatcher.ImapClient
             _idleTimer.Stop();
             await StopIdle();
 
-            await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+            //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+            //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
 
             var result = new List<IMessageSummary>();
 
@@ -269,7 +269,7 @@ namespace InboxWatcher.ImapClient
 
                 if (min < 0) min = 0;
 
-                result.AddRange(await ImapClient.Inbox.FetchAsync(min, max, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
+                result.AddRange(await ImapClient.Inbox.FetchAsync(min, /*max*/-1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
                     Util.GetCancellationToken()));
             }
             catch (Exception ex)

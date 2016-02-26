@@ -45,6 +45,7 @@ namespace InboxWatcher.ImapClient
 
                 if (_timer != null)
                 {
+                    _timer.Enabled = false;
                     _timer.Elapsed -= _timer_Elapsed;
                     _timer.Dispose();
                 }
@@ -55,13 +56,18 @@ namespace InboxWatcher.ImapClient
                 _timer.AutoReset = false;
                 _timer.Start();
 
+                SmtpClient oldClient = null;
+
                 if (_smtpClient != null)
                 {
                     _smtpClient.Disconnected -= SmtpClientOnDisconnected;
-                    _smtpClient.Dispose();
+                    oldClient = _smtpClient;
                 }
 
                 _smtpClient = await _director.GetSmtpClient();
+
+                oldClient?.Dispose();
+
                 _smtpClient.Disconnected += SmtpClientOnDisconnected;
 
                 Trace.WriteLine($"{_director.MailBoxName}: SMTP Client Setup");
@@ -95,7 +101,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
-                Trace.WriteLine($"{_director.MailBoxName}:SMTP Client NoOp failed");
+                Trace.WriteLine($"{_director.MailBoxName}:SMTP Client NoOp failed{exception.InnerException}");
 
                 await Setup();
             }
@@ -113,6 +119,7 @@ namespace InboxWatcher.ImapClient
 
         public async Task<bool> SendMail(MimeMessage message, string emailDestination, bool moveToDest)
         {
+            if (_setupInProgress) return false;
             _emailIsSending = true;
             _timer.Stop();
 
@@ -177,8 +184,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
 
                 await Setup();
-                await Task.Delay(1000);
-
+                
                 _emailIsSending = false;
                 _timer.Start();
 
