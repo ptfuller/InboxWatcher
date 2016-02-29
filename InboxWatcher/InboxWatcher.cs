@@ -18,6 +18,7 @@ using MailKit;
 using Microsoft.AspNet.SignalR;
 using Microsoft.Owin.Hosting;
 using Ninject;
+using Ninject.Extensions.Factory;
 using Ninject.Parameters;
 using NLog;
 
@@ -43,6 +44,7 @@ namespace InboxWatcher
         public static string ResourcePath { get; internal set; }
 
         private static IKernel _kernel;
+        private IKernel Kernel { get; set; }
 
         protected override void OnStart(string[] args)
         {
@@ -54,6 +56,7 @@ namespace InboxWatcher
             //Debugger.Launch();
 
             _kernel = ConfigureNinject();
+            Kernel = _kernel;
 
             ConfigureAutoMapper();
 
@@ -75,8 +78,8 @@ namespace InboxWatcher
             _kernel = new StandardKernel();
 
             _kernel.Bind<IClientConfiguration>().To<ImapClientConfiguration>();
-            _kernel.Bind<IImapClientDirector>().To<ImapClientDirector>();
             _kernel.Bind<IImapMailBox>().To<ImapMailBox>();
+            _kernel.Bind<IImapFactory>().ToFactory();
             
             return _kernel;
         }
@@ -148,7 +151,7 @@ namespace InboxWatcher
             }
 
             //create mailboxes via ninject
-            var director = _kernel.Get<ImapClientDirector>(new ConstructorArgument("configuration", conf));
+            var director = _kernel.Get<ImapClientFactory>(new ConstructorArgument("configuration", conf));
             var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
 
             foreach (var action in SetupNotifications(conf.Id))
@@ -164,15 +167,14 @@ namespace InboxWatcher
             ctx.Clients.All.SetupMailboxes();
         }
 
-        internal static async Task ConfigureMailBoxes()
+        internal async Task ConfigureMailBoxes()
         {
             MailBoxes = new Dictionary<int, ImapMailBox>();
             var tasks = new List<Task>();
 
             foreach(var config in GetConfigs())
             {
-                var director = _kernel.Get<IImapClientDirector>(new ConstructorArgument("configuration", config));
-                var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
+                var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("configuration", config));
 
                 MailBoxes.Add(mailbox.MailBoxId, mailbox);
                 tasks.Add(mailbox.Setup());

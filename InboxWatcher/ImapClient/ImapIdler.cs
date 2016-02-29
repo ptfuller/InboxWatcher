@@ -22,7 +22,7 @@ namespace InboxWatcher.ImapClient
         protected CancellationTokenSource DoneToken;
         protected Timer Timeout;
         protected Timer IntegrityCheckTimer;
-        protected readonly ImapClientDirector Director;
+        protected readonly ImapClientFactory Factory;
         protected Task IdleTask;
         protected SemaphoreSlim StopIdleSemaphore = new SemaphoreSlim(1);
 
@@ -75,9 +75,9 @@ namespace InboxWatcher.ImapClient
 
         //************************************************************************************
 
-        public ImapIdler(ImapClientDirector director)
+        public ImapIdler(ImapClientFactory factory)
         {
-            Director = director;
+            Factory = factory;
 
             Timeout = new Timer(9 * 60 * 1000);
             Timeout.AutoReset = false;
@@ -118,14 +118,14 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                ImapClient = await Director.GetClient();
+                ImapClient = await Factory.GetClient();
                 ImapClient.Disconnected += (sender, args) =>
                 {
                     Trace.WriteLine("ImapClient disconnected");
                 };
 
-                ImapClient.Inbox.Opened += (sender, args) => { Trace.WriteLine($"{Director.MailBoxName} {GetType().Name} Inbox opened"); };
-                ImapClient.Inbox.Closed += (sender, args) => { Trace.WriteLine($"{Director.MailBoxName} {GetType().Name} Inbox closed"); };
+                ImapClient.Inbox.Opened += (sender, args) => { Trace.WriteLine($"{Factory.MailBoxName} {GetType().Name} Inbox opened"); };
+                ImapClient.Inbox.Closed += (sender, args) => { Trace.WriteLine($"{Factory.MailBoxName} {GetType().Name} Inbox closed"); };
             }
             catch (Exception ex)
             {
@@ -141,7 +141,7 @@ namespace InboxWatcher.ImapClient
 
             IdleTask = null;
 
-            Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} setup complete");
+            Trace.WriteLine($"{Factory.MailBoxName}: {GetType().Name} setup complete");
 
             IntegrityCheckTimer.Start();
 
@@ -177,7 +177,7 @@ namespace InboxWatcher.ImapClient
                 }
             }
 
-            Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} starting idle called from {memberName}");
+            Trace.WriteLine($"{Factory.MailBoxName}: {GetType().Name} starting idle called from {memberName}");
 
             //idle the imap client and wait for exceptions asynchronously
             IdleTask = Task.Run(async () =>
@@ -253,7 +253,7 @@ namespace InboxWatcher.ImapClient
 
                 if (!IsIdle()) return;
 
-                Trace.WriteLine($"{Director.MailBoxName}: {GetType().Name} stopping idle called from {memberName}");
+                //Trace.WriteLine($"{Factory.MailBoxName}: {GetType().Name} stopping idle called from {memberName}");
 
                 DoneToken.Cancel();
                 await IdleTask;
@@ -353,7 +353,7 @@ namespace InboxWatcher.ImapClient
 
         ~ImapIdler()
         {
-            Trace.WriteLine($"{Director.MailBoxName}:{GetType().Name}:Disposed");
+            //Trace.WriteLine($"{Factory.MailBoxName}:{GetType().Name}:Disposed");
         }
     }
 }

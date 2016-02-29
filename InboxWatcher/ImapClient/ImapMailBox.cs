@@ -28,10 +28,10 @@ namespace InboxWatcher.ImapClient
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
         private IEmailFilterer _emailFilterer;
+        private ImapClientFactory _factory;
 
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
-        private readonly ImapClientDirector _imapClientDirector;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
@@ -60,10 +60,13 @@ namespace InboxWatcher.ImapClient
         public event EventHandler MessageRemoved;
 
 
-        public ImapMailBox(ImapClientDirector icd)
+        public ImapMailBox(IClientConfiguration configuration, ImapClientFactory factory)
         {
-            _imapClientDirector = icd;
-            _config = icd.GetConfiguration();
+            _factory = factory;
+            _config = configuration;
+
+
+
             _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
@@ -282,14 +285,14 @@ namespace InboxWatcher.ImapClient
                     _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
                     _imapWorker.Dispose();
                 }
-
-                _imapWorker = new ImapWorker(_imapClientDirector);
+                
+                _imapWorker = new ImapWorker(_factory);
                 WorkerStartTime = DateTime.Now;
 
-                _imapIdler = new ImapIdler(_imapClientDirector);
+                _imapIdler = new ImapIdler(_factory);
                 IdlerStartTime = DateTime.Now;
 
-                _emailSender = new EmailSender(_imapClientDirector);
+               // _emailSender = new EmailSender(_imapClientDirector);
 
                 _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
 
@@ -679,10 +682,11 @@ namespace InboxWatcher.ImapClient
         public async Task<MimeMessage> GetEmailByUniqueId(string messageId)
         {
             //throw new NotImplementedException("Not yet working");
-            var tempWorker = new ImapWorker(_imapClientDirector);
-            await tempWorker.Setup(false);
-            var folders = await tempWorker.GetMailFolders();
-            return await tempWorker.GetEmailByUniqueId(messageId, folders);
+            //var tempWorker = new ImapWorker(_imapClientDirector);
+            //await tempWorker.Setup(false);
+            //var folders = await tempWorker.GetMailFolders();
+            //return await tempWorker.GetEmailByUniqueId(messageId, folders);
+            return null;
         }
     }
 }

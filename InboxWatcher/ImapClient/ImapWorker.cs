@@ -22,7 +22,7 @@ namespace InboxWatcher.ImapClient
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private Timer _idleTimer;
 
-        public ImapWorker(ImapClientDirector director) : base(director)
+        public ImapWorker(ImapClientFactory factory) : base(factory)
         {
             _idleTimer = new Timer(60000);
             _idleTimer.AutoReset = false;
@@ -216,7 +216,7 @@ namespace InboxWatcher.ImapClient
             await StopIdle();
             var result = new List<IMessageSummary>();
 
-            Trace.WriteLine($"{Director.MailBoxName}: Worker got call to freshen");
+            //Trace.WriteLine($"{Factory.MailBoxName}: Worker got call to freshen");
 
             try
             {
