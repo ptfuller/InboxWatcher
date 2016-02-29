@@ -216,6 +216,8 @@ namespace InboxWatcher.ImapClient
             await StopIdle();
             var result = new List<IMessageSummary>();
 
+            Trace.WriteLine($"{Director.MailBoxName}: Worker got call to freshen");
+
             try
             {
                 //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
