@@ -105,7 +105,6 @@ namespace InboxWatcher.ImapClient
                 HandleException(exception, true);
             }
 
-            _idleTimer.Start();
             return null;
         }
 
