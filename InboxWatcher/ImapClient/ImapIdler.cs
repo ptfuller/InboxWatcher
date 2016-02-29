@@ -123,6 +123,9 @@ namespace InboxWatcher.ImapClient
                 {
                     Trace.WriteLine("ImapClient disconnected");
                 };
+
+                ImapClient.Inbox.Opened += (sender, args) => { Trace.WriteLine($"{Director.MailBoxName} {GetType().Name} Inbox opened"); };
+                ImapClient.Inbox.Closed += (sender, args) => { Trace.WriteLine($"{Director.MailBoxName} {GetType().Name} Inbox closed"); };
             }
             catch (Exception ex)
             {
@@ -254,6 +257,9 @@ namespace InboxWatcher.ImapClient
 
                 DoneToken.Cancel();
                 await IdleTask;
+
+                await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken());
+                await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
 
                 StopIdleSemaphore.Release();
             }

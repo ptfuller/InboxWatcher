@@ -94,6 +94,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
+                ImapClient.Inbox.Check();
                 var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken(120000));
                 _idleTimer.Start();
                 return message;
@@ -219,7 +220,7 @@ namespace InboxWatcher.ImapClient
             {
                 //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
                 //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-
+                
                 var count = ImapClient.Inbox.Count - 1;
 
                 var min = 0;
@@ -262,6 +263,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
+                
                 var min = ImapClient.Inbox.Count - numNewMessages;
 
                 //array index
