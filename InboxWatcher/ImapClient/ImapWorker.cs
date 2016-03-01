@@ -209,7 +209,7 @@ namespace InboxWatcher.ImapClient
         /// Get the 500 newest message summaries
         /// </summary>
         /// <returns>message summaries for the newest 500 messages in the inbox</returns>
-        public async Task<IEnumerable<IMessageSummary>> FreshenMailBox()
+        public async Task<IEnumerable<IMessageSummary>> FreshenMailBox(int workerCount)
         {
             _idleTimer.Stop();
             await StopIdle();
@@ -219,9 +219,12 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-                //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-                
+                if (workerCount != ImapClient.Inbox.Count)
+                {
+                    await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
+                    await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
+                }
+
                 var count = ImapClient.Inbox.Count - 1;
 
                 var min = 0;

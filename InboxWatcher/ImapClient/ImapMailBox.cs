@@ -374,7 +374,7 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                EmailList.AddRange(await _imapWorker.FreshenMailBox());
+                EmailList.AddRange(await _imapWorker.FreshenMailBox(_imapIdler.Count()));
             }
             catch (Exception ex)
             {
