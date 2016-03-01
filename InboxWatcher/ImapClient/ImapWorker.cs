@@ -37,7 +37,7 @@ namespace InboxWatcher.ImapClient
 
         public async Task<IMessageSummary> GetMessageSummary(UniqueId uid)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             IList<IMessageSummary> result;
@@ -52,17 +52,17 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 HandleException(ex, true);
-                _idleTimer.Start();
+                _idleTimer?.Start();
                 return null;
             }
             
-            _idleTimer.Start();
+            _idleTimer?.Start();
             return result.First();
         }
 
         public async Task<IMessageSummary> GetMessageSummary(int index)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             IList<IMessageSummary> result;
@@ -78,25 +78,25 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 HandleException(ex, true);
-                _idleTimer.Start();
+                _idleTimer?.Start();
                 return null;
             }
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
 
             return result.First();
         }
 
         public async Task<MimeMessage> GetMessage(UniqueId uid)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             try
             {
                 ImapClient.Inbox.Check();
                 var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken(120000));
-                _idleTimer.Start();
+                _idleTimer?.Start();
                 return message;
             }
             catch (Exception ex)
@@ -110,7 +110,7 @@ namespace InboxWatcher.ImapClient
 
         public async Task<MimeMessage> GetMessage(HeaderSearchQuery query)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             var uids = await ImapClient.Inbox.SearchAsync(query, Util.GetCancellationToken(1000 * 60 * 5));
@@ -120,13 +120,13 @@ namespace InboxWatcher.ImapClient
 
             var message = await ImapClient.Inbox.GetMessageAsync(results.First().Index);
             
-            _idleTimer.Start();
+            _idleTimer?.Start();
             return message;
         }
 
         public async Task<bool> DeleteMessage(UniqueId uid)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             try
@@ -145,17 +145,17 @@ namespace InboxWatcher.ImapClient
             {
                 logger.Error(ex);
                 HandleException(ex);
-                _idleTimer.Start();
+                _idleTimer?.Start();
                 return false;
             }
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
             return true;
         }
 
         public async Task MoveMessage(uint uniqueId, string emailDestination, string mbname)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
             IMailFolder root;
 
@@ -166,7 +166,7 @@ namespace InboxWatcher.ImapClient
             catch (Exception ex)
             {
                 HandleException(ex);
-                _idleTimer.Start();
+                _idleTimer?.Start();
                 return;
             }
 
@@ -202,7 +202,7 @@ namespace InboxWatcher.ImapClient
                     HandleException(ex, true);
                 }
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace InboxWatcher.ImapClient
         /// <returns>message summaries for the newest 500 messages in the inbox</returns>
         public async Task<IEnumerable<IMessageSummary>> FreshenMailBox(int workerCount)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
             var result = new List<IMessageSummary>();
 
@@ -246,7 +246,7 @@ namespace InboxWatcher.ImapClient
                 HandleException(exception, true);
             }
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
             return result;
         }
 
@@ -257,7 +257,7 @@ namespace InboxWatcher.ImapClient
         /// <returns>MessageSummaries of newly received messages</returns>
         public async Task<IEnumerable<IMessageSummary>> GetNewMessages(int numNewMessages)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
@@ -284,14 +284,14 @@ namespace InboxWatcher.ImapClient
                 HandleException(ex, true);
             }
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
 
             return result;
         }
 
         internal async Task<MimeMessage> GetEmailByUniqueId(string messageId, IEnumerable<IMailFolder> folders)
         {
-            _idleTimer.Stop();
+            _idleTimer?.Stop();
             await StopIdle();
 
             var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
@@ -315,14 +315,14 @@ namespace InboxWatcher.ImapClient
 
             await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
 
-            _idleTimer.Start();
+            _idleTimer?.Start();
 
             return null;
         }
 
         public override void Dispose()
         {
-            _idleTimer.Dispose();
+            _idleTimer?.Dispose();
             base.Dispose();
         }
     }

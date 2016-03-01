@@ -195,8 +195,8 @@ namespace InboxWatcher.ImapClient
             });
 
             //reset idle every 10 minutes
-            Timeout.Stop();
-            Timeout.Start();
+            Timeout?.Stop();
+            Timeout?.Start();
         }
 
         protected virtual async void IdleLoop(object sender, ElapsedEventArgs args)
