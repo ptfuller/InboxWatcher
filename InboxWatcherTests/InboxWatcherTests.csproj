@@ -156,6 +156,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ImapClient\ImapIdlerTests.cs" />
     <Compile Include="InboxWatcherTests.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

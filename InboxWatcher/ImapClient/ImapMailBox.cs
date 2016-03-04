@@ -28,8 +28,8 @@ namespace InboxWatcher.ImapClient
         private ImapWorker _imapWorker;
         private EmailSender _emailSender;
         private IEmailFilterer _emailFilterer;
-        private ImapClientFactory _factory;
 
+        private readonly IImapFactory _factory;
         private readonly MailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -60,12 +60,10 @@ namespace InboxWatcher.ImapClient
         public event EventHandler MessageRemoved;
 
 
-        public ImapMailBox(IClientConfiguration configuration, ImapClientFactory factory)
+        public ImapMailBox(IClientConfiguration configuration, IImapFactory factory)
         {
             _factory = factory;
             _config = configuration;
-
-
 
             _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
@@ -292,7 +290,7 @@ namespace InboxWatcher.ImapClient
                 _imapIdler = new ImapIdler(_factory);
                 IdlerStartTime = DateTime.Now;
 
-               // _emailSender = new EmailSender(_imapClientDirector);
+                _emailSender = new EmailSender(_factory);
 
                 _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
 

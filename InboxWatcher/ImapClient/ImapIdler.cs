@@ -13,7 +13,7 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapIdler : IDisposable
+    public class ImapIdler : IDisposable, IImapIdler
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -22,7 +22,7 @@ namespace InboxWatcher.ImapClient
         protected CancellationTokenSource DoneToken;
         protected Timer Timeout;
         protected Timer IntegrityCheckTimer;
-        protected readonly ImapClientFactory Factory;
+        protected readonly IImapFactory Factory;
         protected Task IdleTask;
         protected SemaphoreSlim StopIdleSemaphore = new SemaphoreSlim(1);
 
@@ -75,7 +75,7 @@ namespace InboxWatcher.ImapClient
 
         //************************************************************************************
 
-        public ImapIdler(ImapClientFactory factory)
+        public ImapIdler(IImapFactory factory)
         {
             Factory = factory;
 
@@ -123,7 +123,7 @@ namespace InboxWatcher.ImapClient
                 {
                     Trace.WriteLine("ImapClient disconnected");
                 };
-
+                
                 ImapClient.Inbox.Opened += (sender, args) => { Trace.WriteLine($"{Factory.MailBoxName} {GetType().Name} Inbox opened"); };
                 ImapClient.Inbox.Closed += (sender, args) => { Trace.WriteLine($"{Factory.MailBoxName} {GetType().Name} Inbox closed"); };
             }
@@ -235,12 +235,7 @@ namespace InboxWatcher.ImapClient
 
         public int Count()
         {
-            if (ImapClient.IsIdle)
-            {
-                return ImapClient.Inbox.Count;
-            }
-
-            return 0;
+            return ImapClient.Inbox.Count;
         }
 
         protected virtual async Task StopIdle([CallerMemberNameAttribute] string memberName = "")
@@ -253,7 +248,7 @@ namespace InboxWatcher.ImapClient
 
                 if (!IsIdle()) return;
 
-                //Trace.WriteLine($"{Factory.MailBoxName}: {GetType().Name} stopping idle called from {memberName}");
+                Trace.WriteLine($"{Factory.MailBoxName}: {GetType().Name} stopping idle called from {memberName}");
 
                 DoneToken.Cancel();
                 await IdleTask;
@@ -276,11 +271,6 @@ namespace InboxWatcher.ImapClient
                 logger.Error(exception);
                 HandleException(exception, true);
             }
-        }
-
-        public void Destroy()
-        {
-            ImapClient.Dispose();
         }
 
         protected void HandleException(Exception ex, bool needReset = false)
@@ -353,7 +343,7 @@ namespace InboxWatcher.ImapClient
 
         ~ImapIdler()
         {
-            //Trace.WriteLine($"{Factory.MailBoxName}:{GetType().Name}:Disposed");
+            Trace.WriteLine($"{Factory.MailBoxName}:{GetType().Name}:Disposed");
         }
     }
 }

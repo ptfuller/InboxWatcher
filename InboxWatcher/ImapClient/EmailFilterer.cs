@@ -52,6 +52,7 @@ namespace InboxWatcher.ImapClient
         private async void FilterOnMessageReceived(object email, EventArgs args)
         {
             if (email == null) return;
+            if (_currentlyFiltering) return;
             await HandleFilteringMessage(email);
         }
 

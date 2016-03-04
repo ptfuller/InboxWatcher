@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
-using MailKit;
 using MailKit.Net.Smtp;
 using MimeKit;
 using NLog;
@@ -17,7 +15,7 @@ namespace InboxWatcher.ImapClient
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private SmtpClient _smtpClient;
-        private IClientConfiguration _configuration;
+        private readonly IImapFactory _factory;
         private Timer _timer;
         private Task _recoveryTask;
         private bool _emailIsSending;
@@ -26,9 +24,9 @@ namespace InboxWatcher.ImapClient
 
         public event EventHandler<InboxWatcherArgs> ExceptionHappened;
 
-        public EmailSender(IClientConfiguration configuration)
+        public EmailSender(IImapFactory factory)
         {
-            _configuration = configuration;
+            _factory = factory;
         }
 
         private async void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -65,27 +63,27 @@ namespace InboxWatcher.ImapClient
                     oldClient = _smtpClient;
                 }
 
-                //_smtpClient = await _configuration.GetSmtpClient();
+                _smtpClient = await _factory.GetSmtpClient();
 
                 oldClient?.Dispose();
 
                 _smtpClient.Disconnected += SmtpClientOnDisconnected;
 
-                //Trace.WriteLine($"{_configuration.MailBoxName}: SMTP Client Setup");
+                Trace.WriteLine($"{_factory.MailBoxName}: SMTP Client Setup");
 
                 _setupSemaphore.Release();
                 _setupInProgress = false;
             }
             catch (Exception ex)
             {
-                //Trace.WriteLine($"{_configuration.MailBoxName}:{ex.Message}");
+                Trace.WriteLine($"{_factory.MailBoxName}:{ex.Message}");
             }
             
         }
 
         private async void SmtpClientOnDisconnected(object sender, EventArgs eventArgs)
         {
-            //Trace.WriteLine($"{_configuration.MailBoxName}: SMTP Client Disconnected");
+            Trace.WriteLine($"{_factory.MailBoxName}: SMTP Client Disconnected");
             await Setup();
         }
 
@@ -96,13 +94,13 @@ namespace InboxWatcher.ImapClient
             try
             {
                 await _smtpClient.NoOpAsync(Util.GetCancellationToken(1000));
-                //Trace.WriteLine($"{_configuration.MailBoxName}:SMTP Client NoOp successful");
+                Trace.WriteLine($"{_factory.MailBoxName}:SMTP Client NoOp successful");
                 _timer.Start();
             }
             catch (Exception ex)
             {
                 var exception = new Exception("Exception happened during SMTP client No Op", ex);
-                //Trace.WriteLine($"{_configuration.MailBoxName}:SMTP Client NoOp failed{exception.InnerException}");
+                Trace.WriteLine($"{_factory.MailBoxName}:SMTP Client NoOp failed{exception.InnerException}");
 
                 await Setup();
             }
@@ -129,8 +127,8 @@ namespace InboxWatcher.ImapClient
                 var client = _smtpClient;
 
                 var buildMessage = new MimeMessage();
-                buildMessage.Sender = new MailboxAddress(_configuration.MailBoxName, _configuration.UserName);
-                buildMessage.From.Add(new MailboxAddress(_configuration.MailBoxName, _configuration.UserName));
+                buildMessage.Sender = new MailboxAddress(_factory.MailBoxName, _factory.GetConfiguration().UserName);
+                buildMessage.From.Add(new MailboxAddress(_factory.MailBoxName, _factory.GetConfiguration().UserName));
                 buildMessage.To.Add(new MailboxAddress(emailDestination, emailDestination));
 
                 buildMessage.ReplyTo.AddRange(message.From.Mailboxes);
@@ -157,7 +155,7 @@ namespace InboxWatcher.ImapClient
 
                 if (message.TextBody != null)
                 {
-                    builder.TextBody = "***Message From " + _configuration.MailBoxName + "*** \n" +
+                    builder.TextBody = "***Message From " + _factory.GetConfiguration().MailBoxName + "*** \n" +
                                        "Message_pulled_by: " + emailDestination +
                                        "\nSent from: " + addresses +
                                        "\nSent to: " + toAddresses +
@@ -168,7 +166,7 @@ namespace InboxWatcher.ImapClient
 
                 if (message.HtmlBody != null)
                 {
-                    builder.HtmlBody = "***Message From " + _configuration.MailBoxName + "*** <br/>" +
+                    builder.HtmlBody = "***Message From " + _factory.GetConfiguration().MailBoxName + "*** <br/>" +
                                        "Message_pulled_by: " + emailDestination +
                                        "<br/>Sent from: " + addresses + "<br/>Sent to: " + toAddresses +
                                        "<br/>CC'd on email: " + ccAddresses + "<br/>Message Date:" +

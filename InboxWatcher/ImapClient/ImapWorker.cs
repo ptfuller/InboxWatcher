@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using InboxWatcher.Interface;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -22,7 +23,7 @@ namespace InboxWatcher.ImapClient
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private Timer _idleTimer;
 
-        public ImapWorker(ImapClientFactory factory) : base(factory)
+        public ImapWorker(IImapFactory factory) : base(factory)
         {
             _idleTimer = new Timer(60000);
             _idleTimer.AutoReset = false;
@@ -216,13 +217,10 @@ namespace InboxWatcher.ImapClient
             await StopIdle();
             var result = new List<IMessageSummary>();
 
-            //Trace.WriteLine($"{Factory.MailBoxName}: Worker got call to freshen");
+            Trace.WriteLine($"{Factory.MailBoxName}: Worker got call to freshen");
 
             try
             {
-                //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-                //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-                
                 var count = ImapClient.Inbox.Count - 1;
 
                 var min = 0;
@@ -257,10 +255,7 @@ namespace InboxWatcher.ImapClient
         {
             _idleTimer.Stop();
             await StopIdle();
-
-            //await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken(10000));
-            //await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken(10000));
-
+            
             var result = new List<IMessageSummary>();
 
             try

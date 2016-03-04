@@ -204,7 +204,9 @@
     <Compile Include="HtmlToText.cs" />
     <Compile Include="ImapClient\EmailFilterer.cs" />
     <Compile Include="ImapClient\EmailSender.cs" />
+    <Compile Include="Interface\IImapIdler.cs" />
     <Compile Include="Interface\IEmailFilterer.cs" />
+    <Compile Include="Interface\IImapFactory.cs" />
     <Compile Include="Interface\IImapMailBox.cs" />
     <Compile Include="ImapClient\InboxWatcherArgs.cs" />
     <Compile Include="ImapClient\IntegrityCheckArgs.cs" />
