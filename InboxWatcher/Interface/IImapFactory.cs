@@ -8,7 +8,10 @@ namespace InboxWatcher.Interface
         string MailBoxName { get; set; }
         Task<IImapClient> GetClient();
         Task<SendClient> GetSmtpClient();
-        ImapMailBox GetMailBox();
+        IImapMailBox GetMailBox();
+        IImapIdler GetImapIdler();
+        IImapWorker GetImapWorker();
+        IEmailSender GetEmailSender();
         IClientConfiguration GetConfiguration();
     }
 }

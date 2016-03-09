@@ -17,11 +17,10 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapWorker : ImapIdler
+    public class ImapWorker : ImapIdler, IImapWorker
     {
         private CancellationTokenSource _fetchCancellationToken;
-        private static Logger logger = LogManager.GetCurrentClassLogger();
-        private Timer _idleTimer;
+        private readonly Timer _idleTimer;
 
         public ImapWorker(IImapFactory factory) : base(factory)
         {
@@ -35,58 +34,7 @@ namespace InboxWatcher.ImapClient
         {
             await StartIdling();
         }
-
-        public async Task<IMessageSummary> GetMessageSummary(UniqueId uid)
-        {
-            _idleTimer.Stop();
-            await StopIdle();
-
-            IList<IMessageSummary> result;
-
-            try
-            {
-                result = await ImapClient.Inbox.FetchAsync(
-                    new List<UniqueId> {uid},
-                    MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
-                    Util.GetCancellationToken());
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex, true);
-                _idleTimer.Start();
-                return null;
-            }
-            
-            _idleTimer.Start();
-            return result.First();
-        }
-
-        public async Task<IMessageSummary> GetMessageSummary(int index)
-        {
-            _idleTimer.Stop();
-            await StopIdle();
-
-            IList<IMessageSummary> result;
-
-            try
-            {
-                result =
-                    await
-                        ImapClient.Inbox.FetchAsync(index, index,
-                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId |
-                            MessageSummaryItems.InternalDate, Util.GetCancellationToken());
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex, true);
-                _idleTimer.Start();
-                return null;
-            }
-
-            _idleTimer.Start();
-
-            return result.First();
-        }
+        
 
         public async Task<MimeMessage> GetMessage(UniqueId uid)
         {
@@ -95,64 +43,37 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                ImapClient.Inbox.Check();
-                var message = await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken(120000));
-                _idleTimer.Start();
-                return message;
+                return await ImapClient.Inbox.GetMessageAsync(uid, Util.GetCancellationToken(120000));
             }
-            catch (Exception ex)
+            finally
             {
-                var exception = new Exception("Exception Happened at GetMessage", ex);
-                HandleException(exception, true);
+                _idleTimer.Start();
             }
-
-            _idleTimer.Start();
-            return null;
         }
 
-        public async Task<MimeMessage> GetMessage(HeaderSearchQuery query)
-        {
-            _idleTimer.Stop();
-            await StopIdle();
-
-            var uids = await ImapClient.Inbox.SearchAsync(query, Util.GetCancellationToken(1000 * 60 * 5));
-
-            var results =
-                await ImapClient.Inbox.FetchAsync(uids, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken());
-
-            var message = await ImapClient.Inbox.GetMessageAsync(results.First().Index);
-            
-            _idleTimer.Start();
-            return message;
-        }
-
-        public async Task<bool> DeleteMessage(UniqueId uid)
+        public async Task DeleteMessage(UniqueId uid)
         {
             _idleTimer.Stop();
             await StopIdle();
 
             try
             {
-                    if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
-                    {
-                        await ImapClient.Inbox.ExpungeAsync(new[] {uid}, Util.GetCancellationToken());
-                    }
-                    else
-                    {
-                        await ImapClient.Inbox.AddFlagsAsync(new[] {uid}, MessageFlags.Deleted, null, true, Util.GetCancellationToken());
-                        await ImapClient.Inbox.ExpungeAsync(Util.GetCancellationToken());
-                    }
+                if (ImapClient.Capabilities.HasFlag(ImapCapabilities.UidPlus))
+                {
+                    await ImapClient.Inbox.ExpungeAsync(new[] {uid}, Util.GetCancellationToken());
+                }
+                else
+                {
+                    await
+                        ImapClient.Inbox.AddFlagsAsync(new[] {uid}, MessageFlags.Deleted, null, true,
+                            Util.GetCancellationToken());
+                    await ImapClient.Inbox.ExpungeAsync(Util.GetCancellationToken());
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                logger.Error(ex);
-                HandleException(ex);
                 _idleTimer.Start();
-                return false;
             }
-
-            _idleTimer.Start();
-            return true;
         }
 
         public async Task MoveMessage(uint uniqueId, string emailDestination, string mbname)
@@ -165,15 +86,13 @@ namespace InboxWatcher.ImapClient
             {
                 root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, Util.GetCancellationToken());
             }
-            catch (Exception ex)
+            finally
             {
-                HandleException(ex);
                 _idleTimer.Start();
-                return;
             }
 
             IMailFolder mbfolder;
-                IMailFolder destFolder;
+            IMailFolder destFolder;
 
                 try
                 {
@@ -197,14 +116,10 @@ namespace InboxWatcher.ImapClient
                 {
                     await ImapClient.Inbox.MoveToAsync(new UniqueId(uniqueId), destFolder, Util.GetCancellationToken());
                 }
-                catch (Exception ex)
+                finally
                 {
-                    var exception = new Exception("Exception Thrown during MoveMessage", ex);
-                    logger.Error(exception);
-                    HandleException(ex, true);
+                    _idleTimer.Start();
                 }
-
-            _idleTimer.Start();
         }
 
         /// <summary>
@@ -221,29 +136,24 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                var count = ImapClient.Inbox.Count - 1;
-
                 var min = 0;
 
-                if (count > 500)
+                if (ImapClient.Inbox.Count > 500)
                 {
-                    min = count - 500;
+                    min = ImapClient.Inbox.Count - 500;
                 }
 
                 result.AddRange(
                     await
-                        ImapClient.Inbox.FetchAsync(min, /*count*/-1,
+                        ImapClient.Inbox.FetchAsync(min, -1,
                             MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken()));
-            }
-            catch (Exception ex)
-            {
-                var exception = new Exception("Exception thrown during FreshenMailBox", ex);
-                logger.Error(exception);
-                HandleException(exception, true);
-            }
 
-            _idleTimer.Start();
-            return result;
+                return result;
+            }
+            finally
+            {
+                _idleTimer.Start();
+            }
         }
 
         /// <summary>
@@ -260,63 +170,19 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                
                 var min = ImapClient.Inbox.Count - numNewMessages;
-
-                //array index
-                var max = ImapClient.Inbox.Count - 1;
 
                 if (min < 0) min = 0;
 
-                result.AddRange(await ImapClient.Inbox.FetchAsync(min, /*max*/-1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
+                result.AddRange(await ImapClient.Inbox.FetchAsync(min, -1, MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate,
                     Util.GetCancellationToken()));
+
+                return result;
             }
-            catch (Exception ex)
+            finally
             {
-                logger.Error(ex);
-                HandleException(ex, true);
+                _idleTimer.Start();
             }
-
-            _idleTimer.Start();
-
-            return result;
-        }
-
-        internal async Task<MimeMessage> GetEmailByUniqueId(string messageId, IEnumerable<IMailFolder> folders)
-        {
-            _idleTimer.Stop();
-            await StopIdle();
-
-            var query = SearchQuery.HeaderContains("MESSAGE-ID", messageId);
-
-            foreach (var folder in folders)
-            {
-                await folder.OpenAsync(FolderAccess.ReadOnly);
-                Trace.WriteLine($"Looking for the message in:{folder.Name}");
-                var result = await folder.SearchAsync(query, Util.GetCancellationToken(1000 * 60 * 5));
-
-                if (result.Count > 0)
-                {
-                    var msg = folder.GetMessageAsync(result[0], Util.GetCancellationToken());
-                    await folder.CloseAsync(false, Util.GetCancellationToken());
-                    await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
-                    return await msg;
-                }
-
-                await folder.CloseAsync();
-            }
-
-            await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
-
-            _idleTimer.Start();
-
-            return null;
-        }
-
-        public override void Dispose()
-        {
-            _idleTimer.Dispose();
-            base.Dispose();
         }
     }
 }

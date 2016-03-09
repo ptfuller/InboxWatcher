@@ -43,9 +43,24 @@ namespace InboxWatcher.ImapClient
             return client;
         }
 
-        public ImapMailBox GetMailBox()
+        public IImapMailBox GetMailBox()
         {
             return new ImapMailBox(_configuration, this);
+        }
+
+        public IImapIdler GetImapIdler()
+        {
+            return new ImapIdler(this);
+        }
+
+        public IImapWorker GetImapWorker()
+        {
+            return new ImapWorker(this);
+        }
+
+        public IEmailSender GetEmailSender()
+        {
+            return new EmailSender(this);
         }
 
         public IClientConfiguration GetConfiguration()

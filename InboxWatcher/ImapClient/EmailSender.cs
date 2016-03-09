@@ -11,7 +11,7 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class EmailSender : IDisposable
+    public class EmailSender : IEmailSender
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private SmtpClient _smtpClient;
@@ -193,12 +193,6 @@ namespace InboxWatcher.ImapClient
             _emailIsSending = false;
             _timer.Start();
             return true;
-        }
-
-        public void Dispose()
-        {
-            _smtpClient.Dispose();
-            _timer.Dispose();
         }
     }
 }

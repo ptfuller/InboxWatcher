@@ -9,14 +9,12 @@ namespace InboxWatcher.Interface
 {
     public interface IImapIdler
     {
-        event EventHandler<InboxWatcherArgs> ExceptionHappened;
         event EventHandler<IntegrityCheckArgs> IntegrityCheck;
         event EventHandler<MessagesArrivedEventArgs> MessageArrived;
         event EventHandler<MessageEventArgs> MessageExpunged;
         event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
 
         int Count();
-        void Dispose();
         Task<IEnumerable<IMailFolder>> GetMailFolders();
         bool IsConnected();
         bool IsIdle();

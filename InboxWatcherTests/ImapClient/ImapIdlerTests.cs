@@ -83,23 +83,7 @@ namespace InboxWatcher.ImapClient.Tests
             trace.Verify(x => x.WriteLine(It.Is<string>(z => z.Contains("Inbox closed"))));
         }
 
-
-
-        [TestMethod]
-        public void HandleExceptionTest()
-        {
-            var factory = new Mock<IImapFactory>();
-            var idler = new ImapIdler(factory.Object);
-
-            var eventCalled = false;
-            idler.ExceptionHappened += (sender, args) => eventCalled = true;
-
-            var pvtObject = new PrivateObject(idler);
-            pvtObject.Invoke("HandleException", new object[] { new Exception("test exception"), false });
-
-            Assert.IsTrue(eventCalled);
-        }
-
+        
         [TestMethod()]
         public void StartIdlingTest()
         {
@@ -111,15 +95,58 @@ namespace InboxWatcher.ImapClient.Tests
         }
 
         [TestMethod()]
+        public void StartIdlingTestWithException()
+        {
+            //simulate an idling client that suddenly disconnects
+            client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(async () =>
+                {
+                    //idle for 1 second and then throw exception
+                    await Task.Delay(1000);
+                    throw new ServiceNotConnectedException("client disconnected");
+                })).Callback(() => //after the first failure things clear up and the client is working again
+                {
+                    client.Setup(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()))
+                        .Returns(Task.CompletedTask);
+                });
+            
+            //setup imapIdler
+            imapIdler.Setup().Wait();
+
+            //verify that inbox was opened and client idled
+            inbox.Verify(x => x.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>()));
+            client.Verify(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()));
+
+            //get the private idle task from idler
+            var pvt = new PrivateObject(imapIdler);
+            var idleTask = (Task) pvt.GetFieldOrProperty("IdleTask");
+            
+            //the task is running and hasn't faulted yet
+            Assert.AreNotEqual(null, idleTask);
+            Assert.IsFalse(idleTask.IsCompleted);
+            Assert.IsFalse(idleTask.IsFaulted);
+
+            //wait for the exception to be thrown
+            idleTask.Wait();
+
+            //verify that the setup method was called and a new client is fetched
+            factory.Verify(x => x.GetClient(), Times.Exactly(2));
+        }
+
+        [TestMethod()]
         public void IdleLoopTest()
         {
-            imapIdler.Setup(false).Wait();
-
             client.Setup(x => x.IsConnected).Returns(true);
             client.Setup(x => x.IsAuthenticated).Returns(true);
-            inbox.Setup(x => x.IsOpen).Returns(true);
+            inbox.Setup(x => x.IsOpen).Returns(false);
 
-            client.Verify(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()));
+            var pvt = new PrivateObject(imapIdler);
+
+            imapIdler.Setup(false).Wait();
+            pvt.Invoke("IdleLoop", new object[] {null, null});
+
+            inbox.Verify(x => x.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>()));
+            client.Verify(x => x.IdleAsync(It.IsAny<CancellationToken>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [TestMethod()]

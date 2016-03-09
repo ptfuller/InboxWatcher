@@ -24,9 +24,9 @@ namespace InboxWatcher.ImapClient
 {
     public class ImapMailBox : IImapMailBox
     {
-        private ImapIdler _imapIdler;
-        private ImapWorker _imapWorker;
-        private EmailSender _emailSender;
+        private IImapIdler _imapIdler;
+        private IImapWorker _imapWorker;
+        private IEmailSender _emailSender;
         private IEmailFilterer _emailFilterer;
 
         private readonly IImapFactory _factory;
@@ -40,14 +40,13 @@ namespace InboxWatcher.ImapClient
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
-        private SemaphoreSlim mutex;
-        private SemaphoreSlim _newMessagesSemaphore;
+
         private Task _newMessagesTask;
 
         private readonly Timer _freshenTimer;
         
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
-        public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
+        public IList<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public List<Exception> Exceptions = new List<Exception>();
 
         public string MailBoxName { get; }
@@ -75,10 +74,7 @@ namespace InboxWatcher.ImapClient
         public virtual async Task Setup()
         {
             _setupInProgress = true;
-
-            if (mutex == null) mutex = new SemaphoreSlim(1);
-            if (_newMessagesSemaphore == null) _newMessagesSemaphore = new SemaphoreSlim(1);
-
+            
             Trace.WriteLine($"{MailBoxName} starting setup");
 
             int retryTime = 5000;
@@ -154,48 +150,6 @@ namespace InboxWatcher.ImapClient
             await FreshenMailBox();
         }
 
-        private async void ImapClientExceptionHappened(object sender, InboxWatcherArgs args)
-        {
-            await HandleExceptions((Exception) sender, args.NeedReset);
-        }
-
-        private async Task HandleExceptions(Exception ex, bool needReset)
-        {
-            if (Exceptions.Count > 20)
-            {
-                Environment.Exit(1);
-            }
-
-            var exception = new Exception(DateTime.Now.ToString(), ex);
-
-            Exceptions.Add(exception);
-            Trace.WriteLine(MailBoxName + ": " + ex.Message);
-
-            try
-            {
-                //prevent this section from being accessed by more than 1 task at once - this should prevent multiple setups from happening
-                await mutex.WaitAsync(Util.GetCancellationToken(500));
-            }
-            catch (OperationCanceledException)
-            {
-                if (_setupInProgress) return;
-            }
-
-            if (_setupInProgress) return;
-
-            if (needReset)
-            {
-                _setupInProgress = true;
-
-                Trace.WriteLine($"{MailBoxName}: Something bad happened - resetting clients");
-                
-                await Setup();
-                _setupInProgress = false;
-            }
-
-            mutex.Release();
-        }
-
         private bool SetupEvents()
         {
             try
@@ -262,41 +216,29 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
+                //1. Unsubscribe events from exisiting clients
                 if (_emailSender != null)
                 {
                     _emailSender.ExceptionHappened -= EmailSenderOnExceptionHappened;
-                    _emailSender.Dispose();
                 }
 
                 if (_imapIdler != null)
                 {
-                    _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
                     _imapIdler.IntegrityCheck -= ImapIdlerOnIntegrityCheck;
                     _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
                     _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
                     _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
-                    _imapIdler.Dispose();
                 }
 
-                if (_imapWorker != null)
-                {
-                    _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
-                    _imapWorker.Dispose();
-                }
-                
-                _imapWorker = new ImapWorker(_factory);
+                _imapWorker = _factory.GetImapWorker();
                 WorkerStartTime = DateTime.Now;
 
-                _imapIdler = new ImapIdler(_factory);
+                _imapIdler = _factory.GetImapIdler();
                 IdlerStartTime = DateTime.Now;
 
-                _emailSender = new EmailSender(_factory);
+                _emailSender = _factory.GetEmailSender();
 
                 _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
-
-                //exceptions that happen in the idler or worker get logged in a list in the mailbox
-                _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
-                _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
 
                 _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
 
@@ -366,7 +308,10 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                EmailList.AddRange(await _imapWorker.FreshenMailBox());
+                foreach (var email in await _imapWorker.FreshenMailBox())
+                {
+                    EmailList.Add(email);
+                }
             }
             catch (Exception ex)
             {
@@ -439,36 +384,24 @@ namespace InboxWatcher.ImapClient
 
         private async void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            Trace.WriteLine($"{MailBoxName}: New message event - {_newMessagesSemaphore.CurrentCount} threads can enter the semaphore");
+            Trace.WriteLine($"{MailBoxName}: New message event");
             await NewMessageQueue(eventArgs.Count);
         }
 
         private async Task NewMessageQueue(int count)
         {
             _messagesReceivedQueue.Enqueue(count);
-            
-            try
+
+            var currentCount = _messagesReceivedQueue.Count;
+
+            await Task.Delay(2500);
+
+            if (_messagesReceivedQueue.Count > currentCount)
             {
-                var currentCount = _messagesReceivedQueue.Count;
-
-                await _newMessagesSemaphore.WaitAsync(Util.GetCancellationToken(30000));
-
-                await Task.Delay(2500);
-
-                if (_messagesReceivedQueue.Count > currentCount)
-                {
-                    _newMessagesSemaphore.Release();
-                    return;
-                }
-
-                await HandleNewMessages().ConfigureAwait(false);
-
-                _newMessagesSemaphore.Release();
+                return;
             }
-            catch (OperationCanceledException ex)
-            {
-                _newMessagesSemaphore.Release();
-            }
+
+            await HandleNewMessages().ConfigureAwait(false);
         }
 
 

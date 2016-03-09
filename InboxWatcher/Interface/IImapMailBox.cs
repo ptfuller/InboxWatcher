@@ -11,7 +11,7 @@ namespace InboxWatcher.ImapClient
     public interface IImapMailBox
     {
         IEnumerable<IMailFolder> EmailFolders { get; set; }
-        List<IMessageSummary> EmailList { get; set; }
+        IList<IMessageSummary> EmailList { get; set; }
         string MailBoxName { get; }
         int MailBoxId { get; }
         DateTime WorkerStartTime { get; }
