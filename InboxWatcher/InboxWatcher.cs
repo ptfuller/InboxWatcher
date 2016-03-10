@@ -36,7 +36,7 @@ namespace InboxWatcher
         /// <summary>
         ///     All running ImapMailBoxes are held in this list
         /// </summary>
-        public static Dictionary<int, ImapMailBox> MailBoxes { get; set; }
+        public static Dictionary<int, IImapMailBox> MailBoxes { get; set; }
 
         /// <summary>
         ///     The path to the html, js, and css resources for the UI
@@ -44,7 +44,6 @@ namespace InboxWatcher
         public static string ResourcePath { get; internal set; }
 
         private static IKernel _kernel;
-        private IKernel Kernel { get; set; }
 
         protected override void OnStart(string[] args)
         {
@@ -53,12 +52,11 @@ namespace InboxWatcher
 
         private async Task<Task> Setup()
         {
-            //Debugger.Launch();
+            Debugger.Launch();
 
             _kernel = ConfigureNinject();
-            Kernel = _kernel;
 
-            ConfigureAutoMapper();
+            //ConfigureAutoMapper();
 
             Trace.Listeners.Add(new SignalRTraceListener());
             Trace.Listeners.Add(new NLogTraceListener());
@@ -78,8 +76,13 @@ namespace InboxWatcher
             _kernel = new StandardKernel();
 
             _kernel.Bind<IClientConfiguration>().To<ImapClientConfiguration>();
-            _kernel.Bind<IImapMailBox>().To<ImapMailBox>();
-            _kernel.Bind<IImapFactory>().ToFactory();
+            _kernel.Bind<IImapMailBox>().ToProvider(new ImapMailBoxProvider());
+            _kernel.Bind<IImapFactory>().To<ImapClientFactory>();
+            _kernel.Bind<IMailBoxLogger>().To<MailBoxLogger>();
+            _kernel.Bind<IImapWorker>().To<ImapWorker>();
+            _kernel.Bind<IImapIdler>().To<ImapIdler>();
+            _kernel.Bind<IEmailSender>().To<EmailSender>();
+            _kernel.Bind<IEmailFilterer>().To<EmailFilterer>();
             
             return _kernel;
         }
@@ -117,9 +120,9 @@ namespace InboxWatcher
             WebApp.Start<WebApiStartup>(baseAddress);
         }
 
-        private static IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
+        private static IEnumerable<INotificationAction> SetupNotifications(int imapMailBoxConfigId)
         {
-            var notifications = new List<AbstractNotification>();
+            var notifications = new List<INotificationAction>();
 
             using (var ctx = _kernel.Get<MailModelContainer>())
             {
@@ -131,7 +134,7 @@ namespace InboxWatcher
                     var t = Type.GetType(configuration.NotificationType);
 
                     if (t == null) continue;
-                    var action = (AbstractNotification) Activator.CreateInstance(t);
+                    var action = (INotificationAction) Activator.CreateInstance(t);
                     notifications.Add(action.DeSerialize(configuration.ConfigurationXml));
                 }
             }
@@ -169,12 +172,12 @@ namespace InboxWatcher
 
         internal async Task ConfigureMailBoxes()
         {
-            MailBoxes = new Dictionary<int, ImapMailBox>();
+            MailBoxes = new Dictionary<int, IImapMailBox>();
             var tasks = new List<Task>();
 
             foreach(var config in GetConfigs())
             {
-                var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("configuration", config));
+                var mailbox = _kernel.Get<IImapMailBox>(new ConstructorArgument("configuration", config));
 
                 MailBoxes.Add(mailbox.MailBoxId, mailbox);
                 tasks.Add(mailbox.Setup());

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using InboxWatcher.DTO;
+using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
 using MailKit;
 using MimeKit;
@@ -12,6 +13,7 @@ namespace InboxWatcher.ImapClient
     {
         IEnumerable<IMailFolder> EmailFolders { get; set; }
         IList<IMessageSummary> EmailList { get; set; }
+        List<Exception> Exceptions { get; set; }
         string MailBoxName { get; }
         int MailBoxId { get; }
         DateTime WorkerStartTime { get; }
@@ -20,7 +22,7 @@ namespace InboxWatcher.ImapClient
         event EventHandler MessageRemoved;
         Task Setup();
         MailBoxStatusDto Status();
-        void AddNotification(AbstractNotification action);
+        void AddNotification(INotificationAction action);
         Task<MimeMessage> GetMessage(uint uniqueId);
         Task<bool> SendMail(MimeMessage message, uint uniqueId, string emailDestination, bool moveToDest);
         Task MoveMessage(IMessageSummary summary, string moveToFolder, string actionTakenBy);

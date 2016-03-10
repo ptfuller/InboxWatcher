@@ -5,13 +5,9 @@ namespace InboxWatcher.Interface
 {
     public interface IImapFactory
     {
-        string MailBoxName { get; set; }
+        string MailBoxName { get; }
         Task<IImapClient> GetClient();
         Task<SendClient> GetSmtpClient();
-        IImapMailBox GetMailBox();
-        IImapIdler GetImapIdler();
-        IImapWorker GetImapWorker();
-        IEmailSender GetEmailSender();
         IClientConfiguration GetConfiguration();
     }
 }

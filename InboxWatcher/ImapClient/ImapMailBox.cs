@@ -29,13 +29,12 @@ namespace InboxWatcher.ImapClient
         private IEmailSender _emailSender;
         private IEmailFilterer _emailFilterer;
 
-        private readonly IImapFactory _factory;
-        private readonly MailBoxLogger _mbLogger;
+        private readonly IMailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
-        private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
+        private List<INotificationAction> NotificationActions = new List<INotificationAction>();
         private List<uint> CurrentlyProcessingIds = new List<uint>();
 
         private bool _setupInProgress { get; set; }
@@ -47,7 +46,7 @@ namespace InboxWatcher.ImapClient
         
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public IList<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
-        public List<Exception> Exceptions = new List<Exception>();
+        public List<Exception> Exceptions { get; set; } = new List<Exception>();
 
         public string MailBoxName { get; }
         public int MailBoxId { get; }
@@ -59,15 +58,18 @@ namespace InboxWatcher.ImapClient
         public event EventHandler MessageRemoved;
 
 
-        public ImapMailBox(IClientConfiguration configuration, IImapFactory factory)
+        public ImapMailBox(IClientConfiguration config, IMailBoxLogger mbLogger, IImapWorker imapWorker, IImapIdler imapIdler, IEmailSender emailSender)
         {
-            _factory = factory;
-            _config = configuration;
+            _config = config;
+            _mbLogger = mbLogger;
+            _imapWorker = imapWorker;
+            _imapIdler = imapIdler;
+            _emailSender = emailSender;
+            _emailFilterer = null;
 
             _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
-            _mbLogger = new MailBoxLogger(_config);
         }
 
 
@@ -158,6 +160,8 @@ namespace InboxWatcher.ImapClient
                 _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
                 _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
                 _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
+                _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
+                _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
             }
             catch (Exception ex)
             {
@@ -216,32 +220,6 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                //1. Unsubscribe events from exisiting clients
-                if (_emailSender != null)
-                {
-                    _emailSender.ExceptionHappened -= EmailSenderOnExceptionHappened;
-                }
-
-                if (_imapIdler != null)
-                {
-                    _imapIdler.IntegrityCheck -= ImapIdlerOnIntegrityCheck;
-                    _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
-                    _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
-                    _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
-                }
-
-                _imapWorker = _factory.GetImapWorker();
-                WorkerStartTime = DateTime.Now;
-
-                _imapIdler = _factory.GetImapIdler();
-                IdlerStartTime = DateTime.Now;
-
-                _emailSender = _factory.GetEmailSender();
-
-                _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
-
-                _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
-
                 var sender = _emailSender.Setup();
                 var idler = _imapIdler.Setup(false);
                 var worker = _imapWorker.Setup(false);
@@ -287,7 +265,7 @@ namespace InboxWatcher.ImapClient
             await _emailSender.Setup();
         }
 
-        public void AddNotification(AbstractNotification action)
+        public void AddNotification(INotificationAction action)
         {
             NotificationActions.Add(action);
         }
@@ -315,19 +293,11 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                if (ex is NullReferenceException)
-                {
-                    Trace.WriteLine(ex.Message);
-                    Exceptions.Add(ex);
-                    EmailList = templist;
-                    _freshening = false;
-                    throw ex;
-                }
-
                 Trace.WriteLine(ex.Message);
                 Exceptions.Add(ex);
                 EmailList = templist;
                 _freshening = false;
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return false;
             }
 
@@ -366,7 +336,7 @@ namespace InboxWatcher.ImapClient
                     }
                 }
 
-                ctx.SaveChanges();
+                await ctx.SaveChangesAsync();
             }
 
             //set any email in db that is marked InQueue but not in current inbox as removed
@@ -428,7 +398,7 @@ namespace InboxWatcher.ImapClient
                 var exception = new Exception($"{MailBoxName}: Problem during HandleNewMessages", ex);
                 Trace.WriteLine(ex.Message);
                 logger.Error(exception);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 
@@ -521,7 +491,7 @@ namespace InboxWatcher.ImapClient
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
                 CurrentlyProcessingIds.Remove(uniqueId);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return null;
             }
         }
@@ -563,7 +533,7 @@ namespace InboxWatcher.ImapClient
                     logger.Error(ex);
                     Exceptions.Add(ex);
                     Trace.WriteLine(ex.Message);
-                    //await Setup();
+                    await _imapWorker.Setup().ConfigureAwait(false);
                     return false;
                 }
             }
@@ -584,7 +554,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 
@@ -603,7 +573,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                //Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 

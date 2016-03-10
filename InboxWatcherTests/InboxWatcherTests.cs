@@ -52,10 +52,9 @@ namespace InboxWatcher.Tests
             var pvtType = new PrivateType(typeof(InboxWatcher));
             var configs = (List <ImapMailBoxConfiguration> ) pvtType.InvokeStatic("GetConfigs");
             
-            var client = kernel.Get<ImapClientFactory>(new ConstructorArgument("configuration", configs[0]));
-            var imapMailBox = client.GetMailBox();
+            var client = kernel.Get<IImapFactory>(new ConstructorArgument("configuration", configs[0]));
+            var imapMailBox = kernel.Get<IImapMailBox>(new ConstructorArgument("config", configs[0]));
             Debugger.Break();
-
         }
     }
 }

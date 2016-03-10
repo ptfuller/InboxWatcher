@@ -4,19 +4,22 @@ using System.Threading.Tasks;
 using InboxWatcher.Interface;
 using MailKit;
 using MailKit.Security;
+using Ninject;
 using Ninject.Activation;
+using Ninject.Parameters;
 
 namespace InboxWatcher.ImapClient
 {
     public class ImapClientFactory : IImapFactory
     {
-        public string MailBoxName { get; set; }
+        public string MailBoxName { get; }
+
         private readonly IClientConfiguration _configuration;
 
-        public ImapClientFactory(IClientConfiguration configuration)
+        public ImapClientFactory(IClientConfiguration config)
         {
-            this._configuration = configuration;
-            MailBoxName = configuration.MailBoxName;
+            _configuration = config;
+            MailBoxName = config.MailBoxName;
         }
 
         public async Task<IImapClient> GetClient()
@@ -41,26 +44,6 @@ namespace InboxWatcher.ImapClient
             client.AuthenticationMechanisms.Remove("XOAUTH2");
             await client.AuthenticateAsync(_configuration.SmtpUserName, _configuration.SmtpPassword, Util.GetCancellationToken(10000));
             return client;
-        }
-
-        public IImapMailBox GetMailBox()
-        {
-            return new ImapMailBox(_configuration, this);
-        }
-
-        public IImapIdler GetImapIdler()
-        {
-            return new ImapIdler(this);
-        }
-
-        public IImapWorker GetImapWorker()
-        {
-            return new ImapWorker(this);
-        }
-
-        public IEmailSender GetEmailSender()
-        {
-            return new EmailSender(this);
         }
 
         public IClientConfiguration GetConfiguration()

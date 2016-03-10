@@ -146,9 +146,23 @@ namespace InboxWatcher.ImapClient
                 result.AddRange(
                     await
                         ImapClient.Inbox.FetchAsync(min, -1,
-                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId | MessageSummaryItems.InternalDate, Util.GetCancellationToken()));
+                            MessageSummaryItems.Envelope | MessageSummaryItems.UniqueId |
+                            MessageSummaryItems.InternalDate, Util.GetCancellationToken()));
 
                 return result;
+            }
+            catch (ImapCommandException ex)
+            {
+                if (ex.Message.Equals("The IMAP server replied to the 'FETCH' command with a 'NO' response."))
+                {
+                    await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken());
+                    await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
+                    return await FreshenMailBox();
+                }
+                else
+                {
+                    throw ex;
+                }
             }
             finally
             {

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Web.Http;
 using InboxWatcher.Attributes;
+using InboxWatcher.Interface;
 using InboxWatcher.Notifications;
 
 namespace InboxWatcher.WebAPI.Controllers
@@ -130,7 +131,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 var t = Type.GetType(selectedConfig.NotificationType);
                 if (t == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
 
-                var action = (AbstractNotification)Activator.CreateInstance(t);
+                var action = (INotificationAction)Activator.CreateInstance(t);
                 action = action.DeSerialize(selectedConfig.ConfigurationXml);
                 action.TestNotification();
             }
