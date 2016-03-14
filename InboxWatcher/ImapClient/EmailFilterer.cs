@@ -75,7 +75,7 @@ namespace InboxWatcher.ImapClient
                     //check subject contains
                     if (!string.IsNullOrEmpty(filter.SubjectContains))
                     {
-                        if (!string.IsNullOrEmpty(msgSummary.Envelope.Subject) &&
+                        if (string.IsNullOrEmpty(msgSummary.Envelope.Subject) ||
                             !msgSummary.Envelope.Subject.ToLower().Contains(filter.SubjectContains.ToLower())) continue;
                     }
 
