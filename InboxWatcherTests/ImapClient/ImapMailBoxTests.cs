@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
 using InboxWatcher.Tests;
 using MailKit;
+using MailKit.Net.Imap;
 using Moq;
 using Ninject;
 using Ninject.Parameters;
@@ -102,9 +104,51 @@ namespace InboxWatcher.ImapClient.Tests
             //* start the freshen *//
             var result = (Task<bool>)pvt.Invoke("FreshenMailBox");
 
-            _worker.Verify(x => x.FreshenMailBox());
+            _worker.Verify(x => x.FreshenMailBox(It.IsAny<string>()));
             Assert.IsTrue(result.Result);
             Assert.IsFalse((bool) pvt.GetFieldOrProperty("_freshening"));
+        }
+
+        [TestMethod()]
+        public void FreshenMailBoxTestWithException()
+        {
+            //setup fake imapworker
+            var _configuration = new Mock<ImapClientConfiguration>();
+
+            //mock client
+            var client = new Mock<IImapClient>();
+
+            //mock inbox folder
+            var inbox = new Mock<IMailFolder>();
+
+            //client returns mock inbox
+            client.Setup(x => x.Inbox).Returns(inbox.Object);
+
+            //mock factory
+            factory = new Mock<IImapFactory>();
+            factory.Setup(x => x.GetClient()).ReturnsAsync(client.Object);
+
+            //create the idler and start setup
+            var _imapWorker = new ImapWorker(factory.Object);
+
+            //setup private object
+            var pvt = new PrivateObject(_imapMailBox);
+            pvt.SetFieldOrProperty("_imapWorker", _imapWorker);
+
+            var r = new ImapCommandResponse();
+
+            //first fetch throws exception - after closing and opening folders now messages are returned
+            //this mirrors how the client has been functioning in real world tests
+            inbox.Setup(x => x.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(),
+                It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ImapCommandException(r,
+                    "The IMAP server replied to the 'FETCH' command with a 'NO' response."));
+
+            //* start the freshen *//
+            var result = (Task<bool>)pvt.Invoke("FreshenMailBox");
+
+            Assert.IsFalse(result.Result);
+            factory.Verify(x => x.GetClient(), Times.Exactly(2));
         }
     }
 }

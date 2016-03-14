@@ -126,13 +126,13 @@ namespace InboxWatcher.ImapClient
         /// Get the 500 newest message summaries
         /// </summary>
         /// <returns>message summaries for the newest 500 messages in the inbox</returns>
-        public async Task<IEnumerable<IMessageSummary>> FreshenMailBox()
+        public async Task<IEnumerable<IMessageSummary>> FreshenMailBox([CallerMemberNameAttribute] string calledFrom = "")
         {
             _idleTimer.Stop();
             await StopIdle();
             var result = new List<IMessageSummary>();
 
-            Trace.WriteLine($"{Factory.MailBoxName}: Worker got call to freshen");
+            Trace.WriteLine($"{Factory.MailBoxName}: Worker got call to freshen from {calledFrom}");
 
             try
             {
@@ -153,6 +153,9 @@ namespace InboxWatcher.ImapClient
             }
             catch (ImapCommandException ex)
             {
+                //you get 1 chance
+                if (calledFrom.Equals("FreshenMailBox")) throw ex;
+
                 if (ex.Message.Equals("The IMAP server replied to the 'FETCH' command with a 'NO' response."))
                 {
                     await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken());

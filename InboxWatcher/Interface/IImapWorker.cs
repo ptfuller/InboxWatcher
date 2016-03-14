@@ -19,7 +19,7 @@ namespace InboxWatcher.Interface
         /// Get the 500 newest message summaries
         /// </summary>
         /// <returns>message summaries for the newest 500 messages in the inbox</returns>
-        Task<IEnumerable<IMessageSummary>> FreshenMailBox();
+        Task<IEnumerable<IMessageSummary>> FreshenMailBox(string calledFrom = "");
 
         /// <summary>
         /// Call this with the count from the MessagesArrivedEventArgs of the folder's MessagesArrived event handler

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
 using MailKit;
+using MailKit.Net.Imap;
 using MimeKit;
 using Moq;
 using Ploeh.AutoFixture;
@@ -111,32 +112,72 @@ namespace InboxWatcher.ImapClient.Tests
         [TestMethod()]
         public void FreshenMailBoxTest()
         {
-            Assert.Fail();
+            _imapWorker.Setup(false);
+
+            var fix = new Fixture();
+            fix.Customize(new AutoMoqCustomization());
+
+            var messages = fix.CreateMany<IMessageSummary>().ToList();
+
+            inbox.Setup(x => x.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(),
+                It.IsAny<CancellationToken>())).ReturnsAsync(messages);
+
+            var results = _imapWorker.FreshenMailBox().Result;
+
+            Assert.AreEqual(messages.Count, results.Count());
         }
 
-        //[TestMethod()]
-        //public void GetMessageSummaryUidTest()
-        //{
-        //    _imapWorker.Setup(false);
+        [TestMethod()]
+        public void FreshenMailBoxTestWithException()
+        {
+            _imapWorker.Setup(false);
 
-        //    //mock message summary has an index of 1
-        //    var msgSummary = new Mock<IMessageSummary>();
-        //    msgSummary.Setup(x => x.Index).Returns(1);
+            var r = new ImapCommandResponse();
 
-        //    var msgSummaryList = new List<IMessageSummary> { msgSummary.Object };
+            var fix = new Fixture();
+            fix.Customize(new AutoMoqCustomization());
 
-        //    inbox.Setup(
-        //        x =>
-        //            x.FetchAsync(It.IsAny<List<UniqueId>>(), It.IsAny<MessageSummaryItems>(),
-        //                It.IsAny<CancellationToken>())).ReturnsAsync(msgSummaryList);
+            var messages = fix.CreateMany<IMessageSummary>().ToList();
 
-        //    //fake uid
-        //    var uid = new UniqueId(1);
+            //first fetch throws exception - after closing and opening folders now messages are returned
+            //this mirrors how the client has been functioning in real world tests
+            inbox.Setup(x => x.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(),
+                It.IsAny<CancellationToken>())).ThrowsAsync(new ImapCommandException(r ,"The IMAP server replied to the 'FETCH' command with a 'NO' response."))
+                .Callback(() =>
+                {
+                    inbox.Setup(x => x.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(),
+                        It.IsAny<CancellationToken>())).ReturnsAsync(messages);
+                });
 
-        //    var summary = _imapWorker.GetMessageSummary(uid).Result;
+            _imapWorker.FreshenMailBox();
 
-        //    //summary should have the index of 1
-        //    Assert.AreEqual(1, summary.Index);
-        //}
+            inbox.Verify(x => x.CloseAsync(It.Is<bool>(y => y == false), It.IsAny<CancellationToken>()), Times.Exactly(1));
+            inbox.Verify(x => x.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>()));
+        }
+
+        [TestMethod()]
+        [ExpectedException(typeof(AggregateException))]
+        public void FreshenMailBoxTestWithMultipleExceptions()
+        {
+            _imapWorker.Setup(false);
+
+            var r = new ImapCommandResponse();
+
+            var fix = new Fixture();
+            fix.Customize(new AutoMoqCustomization());
+
+            var messages = fix.CreateMany<IMessageSummary>().ToList();
+            
+            //always throw - make sure we can't get stuck
+            inbox.Setup(x => x.FetchAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<MessageSummaryItems>(),
+                It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new ImapCommandException(r,
+                    "The IMAP server replied to the 'FETCH' command with a 'NO' response."));
+
+            var result = _imapWorker.FreshenMailBox().Result;
+
+            inbox.Verify(x => x.CloseAsync(It.Is<bool>(y => y == false), It.IsAny<CancellationToken>()), Times.Exactly(1));
+            inbox.Verify(x => x.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+        }
     }
 }
