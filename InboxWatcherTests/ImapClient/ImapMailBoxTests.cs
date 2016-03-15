@@ -9,7 +9,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using InboxWatcher.Interface;
-using InboxWatcher.Tests;
 using MailKit;
 using MailKit.Net.Imap;
 using Moq;
@@ -57,7 +56,16 @@ namespace InboxWatcher.ImapClient.Tests
         [TestMethod()]
         public void SetupTest()
         {
-            Assert.Fail();
+            //arrange
+            var pvt = new PrivateObject(_imapMailBox);
+
+            //act
+            _imapMailBox.Setup().Wait();
+
+            //assert
+            var result = (bool)pvt.GetProperty("_setupInProgress");
+            Assert.IsFalse(result);
+            _worker.Verify(x => x.GetMailFolders());
         }
 
         [TestMethod()]
@@ -149,6 +157,84 @@ namespace InboxWatcher.ImapClient.Tests
 
             Assert.IsFalse(result.Result);
             factory.Verify(x => x.GetClient(), Times.Exactly(2));
+        }
+
+        [TestMethod()]
+        public void SetupEventsTests()
+        {
+            var pvt = new PrivateObject(_imapMailBox);
+
+            pvt.SetField("_imapIdler", _idler.Object);
+            pvt.SetField("_imapWorker", _worker.Object);
+            pvt.SetField("_emailSender", _sender.Object);
+
+            var result = (bool) pvt.Invoke("SetupEvents");
+
+            Assert.IsTrue(result);
+        }
+
+        [TestMethod()]
+        public void SetupEventsTestWithException()
+        {
+            var pvt = new PrivateObject(_imapMailBox);
+
+            //null object should throw exception on event assignment
+            pvt.SetField("_imapIdler", null);
+            pvt.SetField("_imapWorker", _worker.Object);
+            pvt.SetField("_emailSender", _sender.Object);
+
+            var result = (bool)pvt.Invoke("SetupEvents");
+
+            Assert.IsFalse(result);
+        }
+
+        [TestMethod()]
+        public void IdlerMessageArrivedEventTest()
+        {
+            //arrange
+            //subscribe the events
+            var pvt = new PrivateObject(_imapMailBox);
+
+            pvt.SetField("_imapIdler", _idler.Object);
+            pvt.SetField("_imapWorker", _worker.Object);
+            pvt.SetField("_emailSender", _sender.Object);
+
+            pvt.Invoke("SetupEvents");
+            
+            //act
+            _idler.Raise(x => x.MessageArrived += null, new MessagesArrivedEventArgs(1));
+            Task.Delay(3000).Wait();
+
+            //assert
+            //worker should get call to get new message
+            _worker.Verify(x => x.GetNewMessages(It.Is<int>(i => i == 1)));
+        }
+
+        [TestMethod()]
+        public void IdlerMessageExpungedEventTest()
+        {
+            //arrange
+            //subscribe the events
+            var pvt = new PrivateObject(_imapMailBox);
+
+            pvt.SetField("_imapIdler", _idler.Object);
+            pvt.SetField("_imapWorker", _worker.Object);
+            pvt.SetField("_emailSender", _sender.Object);
+
+            var msgSummary = new Mock<IMessageSummary>();
+
+            var emailList = new Mock<IList<IMessageSummary>>();
+            emailList.Setup(x => x.Count).Returns(2);
+            emailList.SetupGet(x => x[1]).Returns(msgSummary.Object);
+            _imapMailBox.EmailList = emailList.Object;
+
+            //act
+            pvt.Invoke("SetupEvents");
+            _idler.Raise(x => x.MessageExpunged += null, new MessageEventArgsWrapper(1));
+
+            //assert
+            emailList.Verify(x => x.Count);
+            emailList.Verify(x => x[1]);
         }
     }
 }

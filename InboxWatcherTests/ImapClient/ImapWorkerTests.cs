@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using InboxWatcher.ImapClient;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -174,8 +175,8 @@ namespace InboxWatcher.ImapClient.Tests
                 .ThrowsAsync(new ImapCommandException(r,
                     "The IMAP server replied to the 'FETCH' command with a 'NO' response."));
 
-            var result = _imapWorker.FreshenMailBox().Result;
-
+            var results = (List<IMessageSummary>) _imapWorker.FreshenMailBox("test").Result;
+            
             inbox.Verify(x => x.CloseAsync(It.Is<bool>(y => y == false), It.IsAny<CancellationToken>()), Times.Exactly(1));
             inbox.Verify(x => x.OpenAsync(It.IsAny<FolderAccess>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         }

@@ -143,6 +143,9 @@ namespace InboxWatcher.ImapClient
             _freshenTimer.Stop();
             _freshenTimer.Start();
 
+            WorkerStartTime = DateTime.Now;
+            IdlerStartTime = DateTime.Now;
+
             _setupInProgress = false;
         }
 
@@ -422,7 +425,7 @@ namespace InboxWatcher.ImapClient
             ctx.Clients.All.FreshenMailBox(MailBoxName);
         }
 
-        private async void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
+        private async void ImapIdlerOnMessageExpunged(object sender, MessageEventArgsWrapper messageEventArgs)
         {
             await HandleExpungedMessages(messageEventArgs.Index);
         }

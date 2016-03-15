@@ -27,19 +27,6 @@ namespace InboxWatcher.Interface
         /// <param name="numNewMessages">The number of new messages received</param>
         /// <returns>MessageSummaries of newly received messages</returns>
         Task<IEnumerable<IMessageSummary>> GetNewMessages(int numNewMessages);
-
-        event EventHandler<MessagesArrivedEventArgs> MessageArrived
-            //make sure only 1 subscription to these event handlers
-            ;
-
-        event EventHandler<MessageEventArgs> MessageExpunged;
-        event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
-
-        /// <summary>
-        /// Fires every minute with a count of emails in the current inbox.  Use this to verify against count in ImapMailBox
-        /// </summary>
-        event EventHandler<IntegrityCheckArgs> IntegrityCheck;
-
         Task Setup(bool isRecoverySetup = true);
         Task StartIdling([CallerMemberName] string memberName = "");
         bool IsConnected();

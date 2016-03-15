@@ -11,7 +11,7 @@ namespace InboxWatcher.Interface
     {
         event EventHandler<IntegrityCheckArgs> IntegrityCheck;
         event EventHandler<MessagesArrivedEventArgs> MessageArrived;
-        event EventHandler<MessageEventArgs> MessageExpunged;
+        event EventHandler<MessageEventArgsWrapper> MessageExpunged;
         event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
 
         int Count();

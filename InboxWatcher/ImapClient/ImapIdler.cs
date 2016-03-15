@@ -28,7 +28,7 @@ namespace InboxWatcher.ImapClient
 
         
         public event EventHandler<MessagesArrivedEventArgs> MessageArrived;
-        public event EventHandler<MessageEventArgs> MessageExpunged;
+        public event EventHandler<MessageEventArgsWrapper> MessageExpunged;
         public event EventHandler<MessageFlagsChangedEventArgs> MessageSeen;
         
         /// <summary>
@@ -67,7 +67,8 @@ namespace InboxWatcher.ImapClient
 
         protected virtual void Inbox_MessageExpunged(object sender, MessageEventArgs e)
         {
-            MessageExpunged?.Invoke(sender, e);
+            var wrapperArgs = new MessageEventArgsWrapper(e.Index);
+            MessageExpunged?.Invoke(sender, wrapperArgs);
         }
 
         protected virtual void InboxOnMessagesArrived(object sender, MessagesArrivedEventArgs messagesArrivedEventArgs)

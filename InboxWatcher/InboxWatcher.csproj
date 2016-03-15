@@ -203,6 +203,7 @@
     <Compile Include="Enum\NotificationType.cs" />
     <Compile Include="HtmlToText.cs" />
     <Compile Include="ImapClient\ImapMailBoxProvider.cs" />
+    <Compile Include="ImapClient\MessageEventArgsWrapper.cs" />
     <Compile Include="Interface\IMailBoxLogger.cs" />
     <Compile Include="ImapClient\EmailFilterer.cs" />
     <Compile Include="ImapClient\EmailSender.cs" />
