@@ -22,33 +22,31 @@ using Timer = System.Timers.Timer;
 
 namespace InboxWatcher.ImapClient
 {
-    public class ImapMailBox
+    public class ImapMailBox : IImapMailBox
     {
-        private ImapIdler _imapIdler;
-        private ImapWorker _imapWorker;
-        private EmailSender _emailSender;
-        private EmailFilterer _emailFilterer;
+        private IImapIdler _imapIdler;
+        private IImapWorker _imapWorker;
+        private IEmailSender _emailSender;
+        private IEmailFilterer _emailFilterer;
 
-        private readonly MailBoxLogger _mbLogger;
+        private readonly IMailBoxLogger _mbLogger;
         private readonly IClientConfiguration _config;
-        private readonly ImapClientDirector _imapClientDirector;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
-        private List<AbstractNotification> NotificationActions = new List<AbstractNotification>();
+        private List<INotificationAction> NotificationActions = new List<INotificationAction>();
         private List<uint> CurrentlyProcessingIds = new List<uint>();
 
         private bool _setupInProgress { get; set; }
         private bool _freshening { get; set; }
-        private SemaphoreSlim mutex;
-        private SemaphoreSlim _newMessagesSemaphore;
+
         private Task _newMessagesTask;
 
         private readonly Timer _freshenTimer;
         
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
-        public List<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
-        public List<Exception> Exceptions = new List<Exception>();
+        public IList<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
+        public List<Exception> Exceptions { get; set; } = new List<Exception>();
 
         public string MailBoxName { get; }
         public int MailBoxId { get; }
@@ -59,36 +57,26 @@ namespace InboxWatcher.ImapClient
         public event EventHandler NewMessageReceived;
         public event EventHandler MessageRemoved;
 
-        public ImapMailBox(ImapClientDirector icd, IEnumerable<AbstractNotification> notificationActions, IClientConfiguration config) :
-                this(icd, config)
-        {
-            NotificationActions.AddRange(notificationActions);
-        }
-        
-        public ImapMailBox(ImapClientDirector icd, AbstractNotification notificationAction, IClientConfiguration config) :
-            this(icd, config)
-        {
-            NotificationActions.Add(notificationAction);
-        }
 
-        public ImapMailBox(ImapClientDirector icd, IClientConfiguration config)
+        public ImapMailBox(IClientConfiguration config, IMailBoxLogger mbLogger, IImapWorker imapWorker, IImapIdler imapIdler, IEmailSender emailSender)
         {
-            _imapClientDirector = icd;
             _config = config;
+            _mbLogger = mbLogger;
+            _imapWorker = imapWorker;
+            _imapIdler = imapIdler;
+            _emailSender = emailSender;
+            _emailFilterer = null;
+
             _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
-            _mbLogger = new MailBoxLogger(_config);
         }
 
 
         public virtual async Task Setup()
         {
             _setupInProgress = true;
-
-            if (mutex == null) mutex = new SemaphoreSlim(1);
-            if (_newMessagesSemaphore == null) _newMessagesSemaphore = new SemaphoreSlim(1);
-
+            
             Trace.WriteLine($"{MailBoxName} starting setup");
 
             int retryTime = 5000;
@@ -108,6 +96,8 @@ namespace InboxWatcher.ImapClient
             Trace.WriteLine(MailBoxName + " SetupClients finished");
 
             retryTime = 5000;
+
+            _freshening = false;
 
             //make worker get initial list of messages and then start idling
             while (!await FreshenMailBox())
@@ -153,6 +143,9 @@ namespace InboxWatcher.ImapClient
             _freshenTimer.Stop();
             _freshenTimer.Start();
 
+            WorkerStartTime = DateTime.Now;
+            IdlerStartTime = DateTime.Now;
+
             _setupInProgress = false;
         }
 
@@ -160,48 +153,6 @@ namespace InboxWatcher.ImapClient
         {
             Trace.WriteLine($"{MailBoxName} Freshening due to timer");
             await FreshenMailBox();
-        }
-
-        private async void ImapClientExceptionHappened(object sender, InboxWatcherArgs args)
-        {
-            await HandleExceptions((Exception) sender, args.NeedReset);
-        }
-
-        private async Task HandleExceptions(Exception ex, bool needReset)
-        {
-            if (Exceptions.Count > 20)
-            {
-                Environment.Exit(1);
-            }
-
-            var exception = new Exception(DateTime.Now.ToString(), ex);
-
-            Exceptions.Add(exception);
-            Trace.WriteLine(MailBoxName + ": " + ex.Message);
-
-            try
-            {
-                //prevent this section from being accessed by more than 1 task at once - this should prevent multiple setups from happening
-                await mutex.WaitAsync(Util.GetCancellationToken(500));
-            }
-            catch (OperationCanceledException)
-            {
-                if (_setupInProgress) return;
-            }
-
-            if (_setupInProgress) return;
-
-            if (needReset)
-            {
-                _setupInProgress = true;
-
-                Trace.WriteLine($"{MailBoxName}: Something bad happened - resetting clients");
-                
-                await Setup();
-                _setupInProgress = false;
-            }
-
-            mutex.Release();
         }
 
         private bool SetupEvents()
@@ -212,6 +163,8 @@ namespace InboxWatcher.ImapClient
                 _imapIdler.MessageArrived += ImapIdlerOnMessageArrived;
                 _imapIdler.MessageExpunged += ImapIdlerOnMessageExpunged;
                 _imapIdler.MessageSeen += ImapIdlerOnMessageSeen;
+                _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
+                _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
             }
             catch (Exception ex)
             {
@@ -270,44 +223,6 @@ namespace InboxWatcher.ImapClient
         {
             try
             {
-                if (_emailSender != null)
-                {
-                    _emailSender.ExceptionHappened -= EmailSenderOnExceptionHappened;
-                    _emailSender.Dispose();
-                }
-
-                if (_imapIdler != null)
-                {
-                    _imapIdler.ExceptionHappened -= ImapClientExceptionHappened;
-                    _imapIdler.IntegrityCheck -= ImapIdlerOnIntegrityCheck;
-                    _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
-                    _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
-                    _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
-                    _imapIdler.Dispose();
-                }
-
-                if (_imapWorker != null)
-                {
-                    _imapWorker.ExceptionHappened -= ImapClientExceptionHappened;
-                    _imapWorker.Dispose();
-                }
-
-                _imapWorker = new ImapWorker(_imapClientDirector);
-                WorkerStartTime = DateTime.Now;
-
-                _imapIdler = new ImapIdler(_imapClientDirector);
-                IdlerStartTime = DateTime.Now;
-
-                _emailSender = new EmailSender(_imapClientDirector);
-
-                _emailSender.ExceptionHappened += EmailSenderOnExceptionHappened;
-
-                //exceptions that happen in the idler or worker get logged in a list in the mailbox
-                _imapIdler.ExceptionHappened += ImapClientExceptionHappened;
-                _imapWorker.ExceptionHappened += ImapClientExceptionHappened;
-
-                _imapIdler.IntegrityCheck += ImapIdlerOnIntegrityCheck;
-
                 var sender = _emailSender.Setup();
                 var idler = _imapIdler.Setup(false);
                 var worker = _imapWorker.Setup(false);
@@ -353,7 +268,7 @@ namespace InboxWatcher.ImapClient
             await _emailSender.Setup();
         }
 
-        public void AddNotification(AbstractNotification action)
+        public void AddNotification(INotificationAction action)
         {
             NotificationActions.Add(action);
         }
@@ -374,23 +289,18 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                EmailList.AddRange(await _imapWorker.FreshenMailBox(_imapIdler.Count()));
+                foreach (var email in await _imapWorker.FreshenMailBox())
+                {
+                    EmailList.Add(email);
+                }
             }
             catch (Exception ex)
             {
-                if (ex is NullReferenceException)
-                {
-                    Trace.WriteLine(ex.Message);
-                    Exceptions.Add(ex);
-                    EmailList = templist;
-                    _freshening = false;
-                    throw ex;
-                }
-
                 Trace.WriteLine(ex.Message);
                 Exceptions.Add(ex);
                 EmailList = templist;
                 _freshening = false;
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return false;
             }
 
@@ -429,7 +339,7 @@ namespace InboxWatcher.ImapClient
                     }
                 }
 
-                ctx.SaveChanges();
+                await ctx.SaveChangesAsync();
             }
 
             //set any email in db that is marked InQueue but not in current inbox as removed
@@ -447,36 +357,24 @@ namespace InboxWatcher.ImapClient
 
         private async void ImapIdlerOnMessageArrived(object sender, MessagesArrivedEventArgs eventArgs)
         {
-            Trace.WriteLine($"{MailBoxName}: New message event - {_newMessagesSemaphore.CurrentCount} threads can enter the semaphore");
+            Trace.WriteLine($"{MailBoxName}: New message event");
             await NewMessageQueue(eventArgs.Count);
         }
 
         private async Task NewMessageQueue(int count)
         {
             _messagesReceivedQueue.Enqueue(count);
-            
-            try
+
+            var currentCount = _messagesReceivedQueue.Count;
+
+            await Task.Delay(2500);
+
+            if (_messagesReceivedQueue.Count > currentCount)
             {
-                var currentCount = _messagesReceivedQueue.Count;
-
-                await _newMessagesSemaphore.WaitAsync(Util.GetCancellationToken(30000));
-
-                await Task.Delay(2500);
-
-                if (_messagesReceivedQueue.Count > currentCount)
-                {
-                    _newMessagesSemaphore.Release();
-                    return;
-                }
-
-                await HandleNewMessages().ConfigureAwait(false);
-
-                _newMessagesSemaphore.Release();
+                return;
             }
-            catch (OperationCanceledException ex)
-            {
-                _newMessagesSemaphore.Release();
-            }
+
+            await HandleNewMessages().ConfigureAwait(false);
         }
 
 
@@ -503,7 +401,7 @@ namespace InboxWatcher.ImapClient
                 var exception = new Exception($"{MailBoxName}: Problem during HandleNewMessages", ex);
                 Trace.WriteLine(ex.Message);
                 logger.Error(exception);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 
@@ -527,7 +425,7 @@ namespace InboxWatcher.ImapClient
             ctx.Clients.All.FreshenMailBox(MailBoxName);
         }
 
-        private async void ImapIdlerOnMessageExpunged(object sender, MessageEventArgs messageEventArgs)
+        private async void ImapIdlerOnMessageExpunged(object sender, MessageEventArgsWrapper messageEventArgs)
         {
             await HandleExpungedMessages(messageEventArgs.Index);
         }
@@ -596,7 +494,7 @@ namespace InboxWatcher.ImapClient
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
                 CurrentlyProcessingIds.Remove(uniqueId);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return null;
             }
         }
@@ -638,7 +536,7 @@ namespace InboxWatcher.ImapClient
                     logger.Error(ex);
                     Exceptions.Add(ex);
                     Trace.WriteLine(ex.Message);
-                    //await Setup();
+                    await _imapWorker.Setup().ConfigureAwait(false);
                     return false;
                 }
             }
@@ -659,7 +557,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                //await Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 
@@ -678,7 +576,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 logger.Error(ex);
                 Exceptions.Add(ex);
-                //Setup();
+                await _imapWorker.Setup().ConfigureAwait(false);
                 return;
             }
 
@@ -688,10 +586,11 @@ namespace InboxWatcher.ImapClient
         public async Task<MimeMessage> GetEmailByUniqueId(string messageId)
         {
             //throw new NotImplementedException("Not yet working");
-            var tempWorker = new ImapWorker(_imapClientDirector);
-            await tempWorker.Setup(false);
-            var folders = await tempWorker.GetMailFolders();
-            return await tempWorker.GetEmailByUniqueId(messageId, folders);
+            //var tempWorker = new ImapWorker(_imapClientDirector);
+            //await tempWorker.Setup(false);
+            //var folders = await tempWorker.GetMailFolders();
+            //return await tempWorker.GetEmailByUniqueId(messageId, folders);
+            return null;
         }
     }
 }

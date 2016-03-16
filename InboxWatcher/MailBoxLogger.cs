@@ -13,7 +13,7 @@ using MimeKit.Text;
 
 namespace InboxWatcher
 {
-    public class MailBoxLogger
+    public class MailBoxLogger : IMailBoxLogger
     {
         private IClientConfiguration _config;
 

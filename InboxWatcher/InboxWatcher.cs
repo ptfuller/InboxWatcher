@@ -17,6 +17,9 @@ using InboxWatcher.WebAPI.Controllers;
 using MailKit;
 using Microsoft.AspNet.SignalR;
 using Microsoft.Owin.Hosting;
+using Ninject;
+using Ninject.Extensions.Factory;
+using Ninject.Parameters;
 using NLog;
 
 namespace InboxWatcher
@@ -33,29 +36,27 @@ namespace InboxWatcher
         /// <summary>
         ///     All running ImapMailBoxes are held in this list
         /// </summary>
-        public static Dictionary<int, ImapMailBox> MailBoxes { get; set; }
+        public static Dictionary<int, IImapMailBox> MailBoxes { get; set; }
 
         /// <summary>
         ///     The path to the html, js, and css resources for the UI
         /// </summary>
         public static string ResourcePath { get; internal set; }
 
-        private static IEnumerable<IClientConfiguration> Configs
-        {
-            get
-            {
-                using (var ctx = new MailModelContainer())
-                {
-                    return ctx.ImapMailBoxConfigurations.ToList();
-                }
-            }
-        }
+        private static IKernel _kernel;
 
         protected override void OnStart(string[] args)
         {
+            Setup();
+        }
+
+        private async Task<Task> Setup()
+        {
             Debugger.Launch();
 
-            ConfigureAutoMapper();
+            _kernel = ConfigureNinject();
+
+            //ConfigureAutoMapper();
 
             Trace.Listeners.Add(new SignalRTraceListener());
             Trace.Listeners.Add(new NLogTraceListener());
@@ -64,10 +65,26 @@ namespace InboxWatcher
 
             StartWebApi();
 
-            Task.Run(async () => { await ConfigureMailBoxes(); });
-
             logger.Info("Inbox Watcher Started");
             Trace.WriteLine("Inbox Watcher Started");
+
+            return ConfigureMailBoxes();
+        }
+
+        private IKernel ConfigureNinject()
+        {
+            _kernel = new StandardKernel();
+
+            _kernel.Bind<IClientConfiguration>().To<ImapClientConfiguration>();
+            _kernel.Bind<IImapMailBox>().ToProvider(new ImapMailBoxProvider());
+            _kernel.Bind<IImapFactory>().To<ImapClientFactory>();
+            _kernel.Bind<IMailBoxLogger>().To<MailBoxLogger>();
+            _kernel.Bind<IImapWorker>().To<ImapWorker>();
+            _kernel.Bind<IImapIdler>().To<ImapIdler>();
+            _kernel.Bind<IEmailSender>().To<EmailSender>();
+            _kernel.Bind<IEmailFilterer>().To<EmailFilterer>();
+            
+            return _kernel;
         }
 
         private void ConfigureAutoMapper()
@@ -83,6 +100,14 @@ namespace InboxWatcher
             });
         }
 
+        public static List<ImapMailBoxConfiguration> GetConfigs()
+        {
+            using (var ctx = _kernel.Get<MailModelContainer>())
+            {
+                return ctx.ImapMailBoxConfigurations.ToList();
+            }
+        }
+
         protected override void OnStop()
         {
             Trace.WriteLine("Service shutting down");
@@ -95,11 +120,11 @@ namespace InboxWatcher
             WebApp.Start<WebApiStartup>(baseAddress);
         }
 
-        private static IEnumerable<AbstractNotification> SetupNotifications(int imapMailBoxConfigId)
+        private static IEnumerable<INotificationAction> SetupNotifications(int imapMailBoxConfigId)
         {
-            var notifications = new List<AbstractNotification>();
+            var notifications = new List<INotificationAction>();
 
-            using (var ctx = new MailModelContainer())
+            using (var ctx = _kernel.Get<MailModelContainer>())
             {
                 var configurations =
                     ctx.NotificationConfigurations.Where(x => x.ImapMailBoxConfigurationId == imapMailBoxConfigId);
@@ -109,7 +134,7 @@ namespace InboxWatcher
                     var t = Type.GetType(configuration.NotificationType);
 
                     if (t == null) continue;
-                    var action = (AbstractNotification) Activator.CreateInstance(t);
+                    var action = (INotificationAction) Activator.CreateInstance(t);
                     notifications.Add(action.DeSerialize(configuration.ConfigurationXml));
                 }
             }
@@ -128,47 +153,42 @@ namespace InboxWatcher
                 MailBoxes.Remove(selectedMailBox.MailBoxId);
             }
 
-            var director = new ImapClientDirector(conf);
-            var mailbox = new ImapMailBox(director, conf);
+            //create mailboxes via ninject
+            var director = _kernel.Get<ImapClientFactory>(new ConstructorArgument("configuration", conf));
+            var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
 
             foreach (var action in SetupNotifications(conf.Id))
             {
                 mailbox.AddNotification(action);
             }
 
-            await mailbox.Setup();
-
             MailBoxes.Add(mailbox.MailBoxId, mailbox);
+
+            await mailbox.Setup();
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();
         }
 
-        internal static async Task ConfigureMailBoxes()
+        internal async Task ConfigureMailBoxes()
         {
-            MailBoxes = new Dictionary<int, ImapMailBox>();
+            MailBoxes = new Dictionary<int, IImapMailBox>();
+            var tasks = new List<Task>();
 
-            //get configuration objects from database
-            var configs = Configs;
-
-            //setup each ImapMailBox and add it to the list of mailboxes
-            var setupTasks = configs.Select(clientConfiguration => Task.Run(async () =>
+            foreach(var config in GetConfigs())
             {
-                Trace.WriteLine($"Setting up {clientConfiguration.MailBoxName}");
-                var director = new ImapClientDirector(clientConfiguration);
-                var mailbox = new ImapMailBox(director, clientConfiguration);
+                var mailbox = _kernel.Get<IImapMailBox>(new ConstructorArgument("configuration", config));
 
-                await mailbox.Setup();
+                MailBoxes.Add(mailbox.MailBoxId, mailbox);
+                tasks.Add(mailbox.Setup());
 
-                foreach (var action in SetupNotifications(clientConfiguration.Id))
+                foreach (var action in SetupNotifications(mailbox.MailBoxId))
                 {
                     mailbox.AddNotification(action);
                 }
+            }
 
-                MailBoxes.Add(mailbox.MailBoxId, mailbox);
-            })).ToList();
-            
-            await Task.WhenAll(setupTasks);
+            await Task.WhenAll(tasks);
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();

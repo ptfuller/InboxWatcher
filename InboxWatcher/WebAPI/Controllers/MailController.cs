@@ -227,28 +227,28 @@ namespace InboxWatcher.WebAPI.Controllers
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
-        [Route("getmessage/{uniqueId}/sendto/{username}")]
-        [HttpGet]
-        public async Task<HttpResponseMessage> FindMessageInMailBox(uint uniqueId, string username)
-        {
-            Trace.WriteLine($"{username} is trying to get a message with uid: {uniqueId}");
+        //[Route("getmessage/{uniqueId}/sendto/{username}")]
+        //[HttpGet]
+        //public async Task<HttpResponseMessage> FindMessageInMailBox(uint uniqueId, string username)
+        //{
+        //    Trace.WriteLine($"{username} is trying to get a message with uid: {uniqueId}");
 
-            using (var ctx = new MailModelContainer())
-            {
-                var selectedEmail = ctx.Emails.FirstOrDefault(x => x.Id == uniqueId);
+        //    using (var ctx = new MailModelContainer())
+        //    {
+        //        var selectedEmail = ctx.Emails.FirstOrDefault(x => x.Id == uniqueId);
 
-                if (selectedEmail == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        //        if (selectedEmail == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
-                var selectedMailBox = InboxWatcher.MailBoxes[selectedEmail.ImapMailBoxConfigurationId];
+        //        var selectedMailBox = InboxWatcher.MailBoxes[selectedEmail.ImapMailBoxConfigurationId];
 
-                if (selectedMailBox == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        //        if (selectedMailBox == null) return new HttpResponseMessage(HttpStatusCode.InternalServerError);
 
-                var selectedMessage = await selectedMailBox.GetEmailByUniqueId(selectedEmail.EnvelopeID);
+        //        var selectedMessage = await selectedMailBox.GetEmailByUniqueId(selectedEmail.EnvelopeID);
 
-                if (!await selectedMailBox.SendMail(selectedMessage, uniqueId, username, false)) return new HttpResponseMessage(HttpStatusCode.NotFound);
+        //        if (!await selectedMailBox.SendMail(selectedMessage, uniqueId, username, false)) return new HttpResponseMessage(HttpStatusCode.NotFound);
 
-                return new HttpResponseMessage(HttpStatusCode.OK);
-            }
-        }
+        //        return new HttpResponseMessage(HttpStatusCode.OK);
+        //    }
+        //}
     }
 }

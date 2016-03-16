@@ -4,12 +4,13 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using InboxWatcher.Enum;
+using InboxWatcher.Interface;
 using MailKit;
 using MimeKit;
 
 namespace InboxWatcher.Notifications
 {
-    public abstract class AbstractNotification
+    public abstract class AbstractNotification : INotificationAction
     {
         [XmlAttribute]
         public virtual string Id { get; set; }
@@ -30,7 +31,7 @@ namespace InboxWatcher.Notifications
             }
         }
 
-        public virtual AbstractNotification DeSerialize(string xmlString)
+        public virtual INotificationAction DeSerialize(string xmlString)
         {
             var serilaizer = new XmlSerializer(GetType());
             var sr = new StringReader(xmlString);
