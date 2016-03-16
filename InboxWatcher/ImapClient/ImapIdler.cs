@@ -46,7 +46,7 @@ namespace InboxWatcher.ImapClient
             Timeout.AutoReset = false;
             Timeout.Elapsed += IdleLoop;
 
-            IntegrityCheckTimer = new Timer(60000);
+            IntegrityCheckTimer = new Timer(60000); //every minutes
             IntegrityCheckTimer.Elapsed += IntegrityCheckTimerOnElapsed;
         }
 

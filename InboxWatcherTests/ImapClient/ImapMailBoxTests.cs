@@ -63,7 +63,7 @@ namespace InboxWatcher.ImapClient.Tests
             _imapMailBox.Setup().Wait();
 
             //assert
-            var result = (bool)pvt.GetProperty("_setupInProgress");
+            var result = (bool)pvt.GetProperty("SetupInProgress");
             Assert.IsFalse(result);
             _worker.Verify(x => x.GetMailFolders());
         }
@@ -114,7 +114,7 @@ namespace InboxWatcher.ImapClient.Tests
 
             _worker.Verify(x => x.FreshenMailBox(It.IsAny<string>()));
             Assert.IsTrue(result.Result);
-            Assert.IsFalse((bool) pvt.GetFieldOrProperty("_freshening"));
+            Assert.IsFalse((bool) pvt.GetFieldOrProperty("Freshening"));
         }
 
         [TestMethod()]

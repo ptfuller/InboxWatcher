@@ -52,7 +52,7 @@ namespace InboxWatcher
 
         private async Task<Task> Setup()
         {
-            Debugger.Launch();
+            //Debugger.Launch();
 
             _kernel = ConfigureNinject();
 

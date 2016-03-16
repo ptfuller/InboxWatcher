@@ -33,17 +33,15 @@ namespace InboxWatcher.ImapClient
         private readonly IClientConfiguration _config;
         private readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
-        private List<INotificationAction> NotificationActions = new List<INotificationAction>();
-        private List<uint> CurrentlyProcessingIds = new List<uint>();
+        private readonly ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
+        private readonly List<INotificationAction> _notificationActions = new List<INotificationAction>();
+        private readonly List<uint> _currentlyProcessingIds = new List<uint>();
 
-        private bool _setupInProgress { get; set; }
-        private bool _freshening { get; set; }
+        private bool SetupInProgress { get; set; }
+        private bool Freshening { get; set; }
 
         private Task _newMessagesTask;
 
-        private readonly Timer _freshenTimer;
-        
         public IEnumerable<IMailFolder> EmailFolders { get; set; } = new List<IMailFolder>();
         public IList<IMessageSummary> EmailList { get; set; } = new List<IMessageSummary>();
         public List<Exception> Exceptions { get; set; } = new List<Exception>();
@@ -67,7 +65,6 @@ namespace InboxWatcher.ImapClient
             _emailSender = emailSender;
             _emailFilterer = null;
 
-            _freshenTimer = new Timer(1000 * 60 * 10); //10 minutes
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
         }
@@ -75,7 +72,7 @@ namespace InboxWatcher.ImapClient
 
         public virtual async Task Setup()
         {
-            _setupInProgress = true;
+            SetupInProgress = true;
             
             Trace.WriteLine($"{MailBoxName} starting setup");
 
@@ -97,7 +94,7 @@ namespace InboxWatcher.ImapClient
 
             retryTime = 5000;
 
-            _freshening = false;
+            Freshening = false;
 
             //make worker get initial list of messages and then start idling
             while (!await FreshenMailBox())
@@ -137,22 +134,10 @@ namespace InboxWatcher.ImapClient
 
             Exceptions.Clear();
 
-            _freshenTimer.Elapsed -= FreshenTimerOnElapsed;
-            _freshenTimer.Elapsed += FreshenTimerOnElapsed;
-
-            _freshenTimer.Stop();
-            _freshenTimer.Start();
-
             WorkerStartTime = DateTime.Now;
             IdlerStartTime = DateTime.Now;
 
-            _setupInProgress = false;
-        }
-
-        private async void FreshenTimerOnElapsed(object sender, ElapsedEventArgs args)
-        {
-            Trace.WriteLine($"{MailBoxName} Freshening due to timer");
-            await FreshenMailBox();
+            SetupInProgress = false;
         }
 
         private bool SetupEvents()
@@ -270,16 +255,14 @@ namespace InboxWatcher.ImapClient
 
         public void AddNotification(INotificationAction action)
         {
-            NotificationActions.Add(action);
+            _notificationActions.Add(action);
         }
 
         private async Task<bool> FreshenMailBox()
         {
-            if (_freshening) return false;
-
-            _freshenTimer.Stop();
-
-            _freshening = true;
+            if (Freshening) return false;
+            
+            Freshening = true;
 
             Trace.WriteLine($"{MailBoxName}: Freshening");
 
@@ -299,7 +282,7 @@ namespace InboxWatcher.ImapClient
                 Trace.WriteLine(ex.Message);
                 Exceptions.Add(ex);
                 EmailList = templist;
-                _freshening = false;
+                Freshening = false;
                 await _imapWorker.Setup().ConfigureAwait(false);
                 return false;
             }
@@ -315,7 +298,7 @@ namespace InboxWatcher.ImapClient
                         continue;
                     }
 
-                    NotificationActions.ForEach(async x =>
+                    _notificationActions.ForEach(async x =>
                     {
                         var notify = x?.Notify(email, NotificationType.Received, MailBoxName);
                         if (notify != null)
@@ -348,9 +331,7 @@ namespace InboxWatcher.ImapClient
                 await _mbLogger.LogEmailRemoved(summary);
             }
             
-            _freshening = false;
-
-            _freshenTimer.Start();
+            Freshening = false;
 
             return true;
         }
@@ -410,7 +391,7 @@ namespace InboxWatcher.ImapClient
                 if (message?.Envelope == null || EmailList.Any(x => x.Envelope.MessageId.Equals(message.Envelope.MessageId))) continue;
 
                 EmailList.Add(message);
-                NotificationActions.ForEach(async x =>
+                _notificationActions.ForEach(async x =>
                 {
                     var notify = x?.Notify(message, NotificationType.Received, MailBoxName);
                     if (notify != null)
@@ -439,7 +420,7 @@ namespace InboxWatcher.ImapClient
 
             EmailList.RemoveAt(index);
 
-            NotificationActions.ForEach(async x =>
+            _notificationActions.ForEach(async x =>
             {
                 var notify = x?.Notify(message, NotificationType.Removed, MailBoxName);
                 if (notify != null)
@@ -468,7 +449,7 @@ namespace InboxWatcher.ImapClient
             await _mbLogger.LogEmailSeen(message);
             Trace.WriteLine($"{MailBoxName}: {message.Envelope.Subject} was marked as read");
 
-            NotificationActions.ForEach(async x =>
+            _notificationActions.ForEach(async x =>
             {
                 var notify = x?.Notify(message, NotificationType.Seen, MailBoxName);
                 if (notify != null) await notify;
@@ -477,15 +458,15 @@ namespace InboxWatcher.ImapClient
 
         public async Task<MimeMessage> GetMessage(uint uniqueId)
         {
-            if (CurrentlyProcessingIds.Contains(uniqueId)) return null;
+            if (_currentlyProcessingIds.Contains(uniqueId)) return null;
 
-            CurrentlyProcessingIds.Add(uniqueId);
+            _currentlyProcessingIds.Add(uniqueId);
 
             var uid = new UniqueId(uniqueId);
 
             try
             {
-                CurrentlyProcessingIds.Remove(uniqueId);
+                _currentlyProcessingIds.Remove(uniqueId);
                 return await _imapWorker.GetMessage(uid);
             }
             catch (Exception ex)
@@ -493,7 +474,7 @@ namespace InboxWatcher.ImapClient
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
-                CurrentlyProcessingIds.Remove(uniqueId);
+                _currentlyProcessingIds.Remove(uniqueId);
                 await _imapWorker.Setup().ConfigureAwait(false);
                 return null;
             }
