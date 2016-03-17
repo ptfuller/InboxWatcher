@@ -24,7 +24,7 @@ namespace InboxWatcher.ImapClient
 
         public ImapWorker(IImapFactory factory) : base(factory)
         {
-            _idleTimer = new Timer(60000);
+            _idleTimer = new Timer(10000);
             _idleTimer.AutoReset = false;
             _idleTimer.Elapsed -= IdleTimerOnElapsed;
             _idleTimer.Elapsed += IdleTimerOnElapsed;
@@ -153,10 +153,13 @@ namespace InboxWatcher.ImapClient
             }
             catch (ImapCommandException ex)
             {
+                Trace.WriteLine(ex.Message);
+
                 //you get 1 chance
                 if (calledFrom.Equals("FreshenMailBox")) throw ex;
 
-                if (ex.Message.Equals("The IMAP server replied to the 'FETCH' command with a 'NO' response."))
+                if (ex.Message.Equals("The IMAP server replied to the 'FETCH' command with a 'NO' response.") ||
+                    ex.Message.Equals("The folder is not currently open."))
                 {
                     await ImapClient.Inbox.CloseAsync(false, Util.GetCancellationToken());
                     await ImapClient.Inbox.OpenAsync(FolderAccess.ReadWrite, Util.GetCancellationToken());
@@ -164,7 +167,7 @@ namespace InboxWatcher.ImapClient
                 }
                 else
                 {
-                    throw ex;
+                    throw;
                 }
             }
             finally

@@ -53,20 +53,22 @@ namespace InboxWatcher.ImapClient
         {
             if (email == null) return;
             if (_currentlyFiltering) return;
-            await HandleFilteringMessage(email);
+
+            #pragma warning disable 4014
+            HandleFilteringMessage(email);
+            #pragma warning restore 4014
         }
 
         private async Task HandleFilteringMessage(object email)
         {
             var msg = (IMessageSummary) email;
 
+            await Task.Delay(1000); //let enough time pass so that the message is logged before it is filtered
             await FilterMessage(msg);
         }
 
         private async Task FilterMessage(IMessageSummary msgSummary)
         {
-            await Task.Delay(1000); //let enough time pass so that the message is logged before it is filtered
-
             try
             {
                 foreach (var filter in _emailFilters)
@@ -105,7 +107,7 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
+                Trace.WriteLine($"{_attachedMailBox.MailBoxName} EmailFilterer exception: {ex.Message}");
             }
         }
     }

@@ -63,7 +63,6 @@ namespace InboxWatcher.ImapClient
             _imapWorker = imapWorker;
             _imapIdler = imapIdler;
             _emailSender = emailSender;
-            _emailFilterer = null;
 
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
@@ -131,9 +130,7 @@ namespace InboxWatcher.ImapClient
             #pragma warning disable 4014
             Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); }).ConfigureAwait(false);
             #pragma warning restore 4014
-
-            Exceptions.Clear();
-
+            
             WorkerStartTime = DateTime.Now;
             IdlerStartTime = DateTime.Now;
 
@@ -529,20 +526,7 @@ namespace InboxWatcher.ImapClient
 
         public async Task MoveMessage(IMessageSummary summary, string moveToFolder, string actionTakenBy)
         {
-            try
-            {
-                await _imapWorker.MoveMessage(summary.UniqueId.Id, moveToFolder, MailBoxName);
-            }
-            catch (Exception ex)
-            {
-                Trace.WriteLine(ex.Message);
-                logger.Error(ex);
-                Exceptions.Add(ex);
-                await _imapWorker.Setup().ConfigureAwait(false);
-                return;
-            }
-
-            await _mbLogger.LogEmailChanged(summary, actionTakenBy, "Moved to " + moveToFolder);
+            await MoveMessage(summary.UniqueId.Id, summary.Envelope.MessageId, moveToFolder, actionTakenBy);
         }
 
         public async Task MoveMessage(uint uid, string messageid, string moveToFolder, string actionTakenBy)

@@ -46,7 +46,7 @@ namespace InboxWatcher.ImapClient
             Timeout.AutoReset = false;
             Timeout.Elapsed += IdleLoop;
 
-            IntegrityCheckTimer = new Timer(60000); //every minutes
+            IntegrityCheckTimer = new Timer(120000); //every 2 minutes
             IntegrityCheckTimer.Elapsed += IntegrityCheckTimerOnElapsed;
         }
 
@@ -84,12 +84,20 @@ namespace InboxWatcher.ImapClient
             {
                 try
                 {
+                    if (ImapClient != null && ImapClient.IsConnected)
+                    {
+                        await ImapClient.DisconnectAsync(true, Util.GetCancellationToken(15000));
+                    }
+
                     ImapClient = await Factory.GetClient();
                 }
                 catch (Exception ex)
                 {
+                    Trace.WriteLine(ex.Message);
+
+                    //wait 10 seconds before trying again
                     await Task.Delay(10000);
-                    await Setup(true).ConfigureAwait(false);
+                    await Setup(true);
                     return;
                 }
             }
@@ -147,7 +155,7 @@ namespace InboxWatcher.ImapClient
                 }
                 catch (Exception ex)
                 {
-                    await Setup(true).ConfigureAwait(false);
+                    await Setup(true);
                 }
             });
 
@@ -162,7 +170,7 @@ namespace InboxWatcher.ImapClient
 
             if (!ImapClient.IsConnected || !ImapClient.IsAuthenticated)
             {
-                await Setup(true).ConfigureAwait(false);
+                await Setup(true);
                 return;
             }
 
@@ -176,7 +184,7 @@ namespace InboxWatcher.ImapClient
                 {
                     logger.Error(ex);
                     Trace.WriteLine($"{GetType().FullName}: {ex.Message}");
-                    await Setup(true).ConfigureAwait(false);
+                    await Setup(true);
                     return;
                 }
             }
@@ -218,7 +226,8 @@ namespace InboxWatcher.ImapClient
             }
             catch (Exception ex)
             {
-                await Setup(true).ConfigureAwait(false);
+                Trace.WriteLine(ex.Message);
+                await Setup(true);
             }
             finally
             {
