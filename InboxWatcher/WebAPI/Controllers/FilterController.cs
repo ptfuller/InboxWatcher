@@ -38,6 +38,16 @@ namespace InboxWatcher.WebAPI.Controllers
             var filter = Mapper.Map<EmailFilter>(filterToAdd);
             ImapMailBoxConfiguration conf;
 
+            if (filter.MoveToFolder == null)
+            {
+                filter.MoveToFolder = "";
+            }
+
+            if (filter.ForwardToAddress == null)
+            {
+                filter.ForwardToAddress = "";
+            }
+
             using (var ctx = new MailModelContainer())
             {
                 conf = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.MailBoxName.Equals(mbname));

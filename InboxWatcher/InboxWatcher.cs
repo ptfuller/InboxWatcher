@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading.Tasks;
+using System.Timers;
 using AutoMapper;
 using InboxWatcher.DTO;
 using InboxWatcher.ImapClient;
 using InboxWatcher.Interface;
-using InboxWatcher.Notifications;
 using InboxWatcher.Properties;
 using InboxWatcher.WebAPI;
 using InboxWatcher.WebAPI.Controllers;
@@ -18,9 +19,9 @@ using MailKit;
 using Microsoft.AspNet.SignalR;
 using Microsoft.Owin.Hosting;
 using Ninject;
-using Ninject.Extensions.Factory;
 using Ninject.Parameters;
 using NLog;
+using Timer = System.Timers.Timer;
 
 namespace InboxWatcher
 {
@@ -44,10 +45,38 @@ namespace InboxWatcher
         public static string ResourcePath { get; internal set; }
 
         private static IKernel _kernel;
+        private Timer _backupTimer;
 
         protected override void OnStart(string[] args)
         {
             Setup();
+
+            ConfigureAutoMapper();
+
+            _backupTimer = new Timer(1000 * 60 * 60); //1 hour
+            _backupTimer.Elapsed += BackupTimerOnElapsed;
+            _backupTimer.AutoReset = false;
+            _backupTimer.Start();
+        }
+
+        private void BackupTimerOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
+        {
+            Trace.WriteLine($"{DateTime.Now.ToString("s")} Backup Status: {BackupDatabase()}");
+            _backupTimer.Stop();
+            _backupTimer.Start();
+        }
+
+        private void ConfigureAutoMapper()
+        {
+            Mapper.Initialize(cfg =>
+            {
+                cfg.CreateMap<Email, EmailDto>()
+                    .ForMember(x => x.EmailLogs, opt => opt.Ignore())
+                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
+
+                cfg.CreateMap<EmailFilterDto, EmailFilter>()
+                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
+            });
         }
 
         private async Task<Task> Setup()
@@ -87,18 +116,6 @@ namespace InboxWatcher
             return _kernel;
         }
 
-        private void ConfigureAutoMapper()
-        {
-            Mapper.Initialize(cfg =>
-            {
-                cfg.CreateMap<Email, EmailDto>()
-                    .ForMember(x => x.EmailLogs, opt => opt.Ignore())
-                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
-
-                cfg.CreateMap<EmailFilterDto, EmailFilter>()
-                    .ForMember(x => x.ImapMailBoxConfiguration, opt => opt.Ignore());
-            });
-        }
 
         public static List<ImapMailBoxConfiguration> GetConfigs()
         {
@@ -107,6 +124,7 @@ namespace InboxWatcher
                 return ctx.ImapMailBoxConfigurations.ToList();
             }
         }
+
 
         protected override void OnStop()
         {
@@ -119,6 +137,7 @@ namespace InboxWatcher
             var baseAddress = Settings.Default.HostName;
             WebApp.Start<WebApiStartup>(baseAddress);
         }
+
 
         private static IEnumerable<INotificationAction> SetupNotifications(int imapMailBoxConfigId)
         {
@@ -151,11 +170,11 @@ namespace InboxWatcher
             if (selectedMailBox != null)
             {
                 MailBoxes.Remove(selectedMailBox.MailBoxId);
+                selectedMailBox.Dispose();
             }
 
-            //create mailboxes via ninject
-            var director = _kernel.Get<ImapClientFactory>(new ConstructorArgument("configuration", conf));
-            var mailbox = _kernel.Get<ImapMailBox>(new ConstructorArgument("icd", director));
+            //create mailbox via ninject
+            var mailbox = _kernel.Get<IImapMailBox>(new ConstructorArgument("configuration", conf));
 
             foreach (var action in SetupNotifications(conf.Id))
             {
@@ -169,6 +188,7 @@ namespace InboxWatcher
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();
         }
+
 
         internal async Task ConfigureMailBoxes()
         {
@@ -209,6 +229,33 @@ namespace InboxWatcher
                     Trace.WriteLine(imapMailBox.MailBoxName + ": Message Removed " + summary.Envelope.Subject);
                     Trace.WriteLine("ID: " + summary.Envelope.MessageId);
                 };
+            }
+        }
+
+        public static string BackupDatabase()
+        {
+            using (var ctx = new MailModelContainer())
+            {
+                var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var dbLocation = Path.Combine(assemblyLocation, "InboxWatcher.mdf");
+                var backupPath = Path.Combine(assemblyLocation, "Backups", "InboxWatcher.mdf");
+
+                if (!Directory.Exists(Path.Combine(assemblyLocation, "Backups")))
+                {
+                    Directory.CreateDirectory(Path.Combine(assemblyLocation, "Backups"));
+                }
+
+                try
+                {
+                    ctx.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, $"BACKUP DATABASE [{dbLocation}] TO DISK=N'{backupPath}' " +
+                                                                                                 $"WITH FORMAT, MEDIANAME='InboxWatcherBackup', MEDIADESCRIPTION='Media set for [{dbLocation}]'");
+                }
+                catch (Exception ex)
+                {
+                    return ex.ToString();
+                }
+
+                return "Success";
             }
         }
     }

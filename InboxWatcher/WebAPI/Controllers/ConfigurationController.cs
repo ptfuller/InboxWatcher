@@ -125,29 +125,7 @@ namespace InboxWatcher.WebAPI.Controllers
         [HttpGet]
         public string Backup()
         {
-            using (var ctx = new MailModelContainer())
-            {
-                var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                var dbLocation = Path.Combine(assemblyLocation, "InboxWatcher.mdf");
-                var backupPath = Path.Combine(assemblyLocation, "Backups", "InboxWatcher.mdf");
-
-                if (!Directory.Exists(Path.Combine(assemblyLocation, "Backups")))
-                {
-                    Directory.CreateDirectory(Path.Combine(assemblyLocation, "Backups"));
-                }
-
-                try
-                {
-                    ctx.Database.ExecuteSqlCommand(TransactionalBehavior.DoNotEnsureTransaction, $"BACKUP DATABASE [{dbLocation}] TO DISK=N'{backupPath}' " +
-                                                                                                 $"WITH FORMAT, MEDIANAME='InboxWatcherBackup', MEDIADESCRIPTION='Media set for [{dbLocation}]'");
-                }
-                catch (Exception ex)
-                {
-                    return ex.ToString();
-                }
-
-                return "Success";
-            }
+            return InboxWatcher.BackupDatabase();
         }
 
         [Route("reset/{mbName}")]

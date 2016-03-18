@@ -120,15 +120,19 @@ namespace InboxWatcher.ImapClient
 
             Trace.WriteLine($"{MailBoxName} FreshMailBox finished");
 
-            //get folders
-            EmailFolders = await _imapWorker.GetMailFolders();
+            //get folders TODO: do we need this?
+            //EmailFolders = await _imapWorker.GetMailFolders();
 
             //setup email filterer
             _emailFilterer = new EmailFilterer(this);
 
             //filter all new messages
             #pragma warning disable 4014
-            Task.Run(async () => { await _emailFilterer.FilterAllMessages(EmailList); }).ConfigureAwait(false);
+            Task.Run(async () =>
+            {
+                await Task.Delay(30000);
+                await _emailFilterer.FilterAllMessages(EmailList);
+            }).ConfigureAwait(false);
             #pragma warning restore 4014
             
             WorkerStartTime = DateTime.Now;
@@ -556,6 +560,14 @@ namespace InboxWatcher.ImapClient
             //var folders = await tempWorker.GetMailFolders();
             //return await tempWorker.GetEmailByUniqueId(messageId, folders);
             return null;
+        }
+
+        public void Dispose()
+        {
+            _imapWorker = null;
+            _imapIdler = null;
+            _emailSender = null;
+            _emailFilterer = null;
         }
     }
 }

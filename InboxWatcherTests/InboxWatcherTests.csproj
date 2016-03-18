@@ -160,6 +160,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="ImapClient\EmailFiltererTests.cs" />
     <Compile Include="ImapClient\ImapIdlerTests.cs" />
     <Compile Include="ImapClient\ImapMailBoxTests.cs" />
     <Compile Include="ImapClient\ImapWorkerTests.cs" />

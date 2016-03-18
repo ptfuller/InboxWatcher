@@ -28,5 +28,6 @@ namespace InboxWatcher.ImapClient
         Task MoveMessage(IMessageSummary summary, string moveToFolder, string actionTakenBy);
         Task MoveMessage(uint uid, string messageid, string moveToFolder, string actionTakenBy);
         Task<MimeMessage> GetEmailByUniqueId(string messageId);
+        void Dispose();
     }
 }
