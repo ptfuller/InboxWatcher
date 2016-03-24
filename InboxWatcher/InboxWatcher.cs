@@ -170,7 +170,11 @@ namespace InboxWatcher
             if (selectedMailBox != null)
             {
                 MailBoxes.Remove(selectedMailBox.MailBoxId);
+
+                Trace.WriteLine($"*InboxWatcher* : Mailbox with ID:{selectedMailBox.MailBoxId} removed - {MailBoxes.Count} Mailboxes remain");
+
                 selectedMailBox.Dispose();
+                selectedMailBox = null;
             }
 
             //create mailbox via ninject
@@ -184,6 +188,21 @@ namespace InboxWatcher
             MailBoxes.Add(mailbox.MailBoxId, mailbox);
 
             await mailbox.Setup();
+
+            //add the trace event listeners for received and removed to the new mailbox
+            mailbox.NewMessageReceived += (sender, eventArgs) =>
+            {
+                var summary = sender as IMessageSummary;
+                Trace.WriteLine(mailbox.MailBoxName + ": Message Received: " + summary.Envelope.Subject);
+                Trace.WriteLine("ID: " + summary.Envelope.MessageId);
+            };
+
+            mailbox.MessageRemoved += (sender, eventArgs) =>
+            {
+                var summary = sender as IMessageSummary;
+                Trace.WriteLine(mailbox.MailBoxName + ": Message Removed " + summary.Envelope.Subject);
+                Trace.WriteLine("ID: " + summary.Envelope.MessageId);
+            };
 
             var ctx = GlobalHost.ConnectionManager.GetHubContext<SignalRController>();
             ctx.Clients.All.SetupMailboxes();

@@ -29,9 +29,9 @@ namespace InboxWatcher.ImapClient
         private IEmailSender _emailSender;
         private IEmailFilterer _emailFilterer;
 
-        private readonly IMailBoxLogger _mbLogger;
-        private readonly IClientConfiguration _config;
-        private readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private IMailBoxLogger _mbLogger;
+        private IClientConfiguration _config;
+        private Logger logger = LogManager.GetCurrentClassLogger();
 
         private readonly ConcurrentQueue<int> _messagesReceivedQueue = new ConcurrentQueue<int>();
         private readonly List<INotificationAction> _notificationActions = new List<INotificationAction>();
@@ -66,6 +66,11 @@ namespace InboxWatcher.ImapClient
 
             MailBoxName = _config.MailBoxName;
             MailBoxId = _config.Id;
+        }
+
+        ~ImapMailBox()
+        {
+            Trace.WriteLine($"***{MailBoxName} is now gone.***");
         }
 
 
@@ -596,10 +601,24 @@ namespace InboxWatcher.ImapClient
 
         public void Dispose()
         {
+            Trace.WriteLine($"{MailBoxName} Dispose Called");
+
+            _imapIdler.MessageArrived -= ImapIdlerOnMessageArrived;
+            _imapIdler.MessageExpunged -= ImapIdlerOnMessageExpunged;
+            _imapIdler.MessageSeen -= ImapIdlerOnMessageSeen;
+            _emailSender.ExceptionHappened -= EmailSenderOnExceptionHappened;
+            _imapIdler.IntegrityCheck -= ImapIdlerOnIntegrityCheck;
+
+            NewMessageReceived = null;
+            MessageRemoved = null;
+
             _imapWorker = null;
             _imapIdler = null;
             _emailSender = null;
             _emailFilterer = null;
+            _mbLogger = null;
+            _config = null;
+            logger = null;
         }
     }
 }

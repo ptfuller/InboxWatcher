@@ -137,9 +137,7 @@ namespace InboxWatcher.WebAPI.Controllers
                 var selection = ctx.ImapMailBoxConfigurations.FirstOrDefault(x => x.MailBoxName.Equals(mbName));
 
                 if (selection == null) return new HttpResponseMessage(HttpStatusCode.NotFound);
-
-                InboxWatcher.MailBoxes.Remove(selection.Id);
-
+                
                 Task.Factory.StartNew(async () => { await InboxWatcher.ConfigureMailBox(selection); });
 
                 return new HttpResponseMessage(HttpStatusCode.OK);
