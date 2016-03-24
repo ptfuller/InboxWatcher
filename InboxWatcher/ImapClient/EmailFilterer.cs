@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MailKit;
+using MimeKit;
 using NLog;
 
 namespace InboxWatcher.ImapClient
@@ -69,6 +70,10 @@ namespace InboxWatcher.ImapClient
 
         private async Task FilterMessage(IMessageSummary msgSummary)
         {
+            //to move all filtered emails at once and prevent multiple individual calls to movemessage
+            //dictionary key is the filter name, list of message summaries to move to the filter's folder
+            var emailsToMove = new Dictionary<string, List<IMessageSummary>>();
+
             try
             {
                 foreach (var filter in _emailFilters)
@@ -102,8 +107,19 @@ namespace InboxWatcher.ImapClient
                     }
 
                     //move the message
-                    await _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, "Filter: " + filter.FilterName);
+                    //await _attachedMailBox.MoveMessage(msgSummary, filter.MoveToFolder, "Filter: " + filter.FilterName);
+                    if (emailsToMove.ContainsKey(filter.MoveToFolder))
+                    {
+                        emailsToMove[filter.MoveToFolder].Add(msgSummary);
+                    }
+                    else
+                    {
+                        var summaryList = new List<IMessageSummary> {msgSummary};
+                        emailsToMove.Add(filter.MoveToFolder, summaryList);
+                    }
                 }
+
+                await _attachedMailBox.MoveMessage(emailsToMove);
             }
             catch (Exception ex)
             {

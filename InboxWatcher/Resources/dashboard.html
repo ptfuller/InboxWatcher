@@ -17,6 +17,7 @@
 
     <link rel="stylesheet" href="/css/dashboard.css"/>
     <link rel="stylesheet" href="/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/css/jquery-ui.css"/>
 
     <script src="/js/bootstrap.js"></script>
 
@@ -214,6 +215,10 @@
             scroll: true,
             refreshPositions: true
         });
+
+        $("#terminalParent").resizable();
+
+        $("#terminalParent").css('position', 'absolute');
 
         $("#totalEmailsToday").click(function() {
             window.open('/mailboxes/' + SelectedMailBox + '/emails/true', '_blank');

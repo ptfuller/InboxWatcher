@@ -76,44 +76,15 @@ namespace InboxWatcher.ImapClient
             }
         }
 
-        public async Task MoveMessage(uint uniqueId, string emailDestination, string mbname)
+        public async Task MoveMessage(uint uniqueId, string emailDestination)
         {
             _idleTimer.Stop();
             await StopIdle();
-            IMailFolder root;
-
-            try
-            {
-                root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, Util.GetCancellationToken());
-            }
-            finally
-            {
-                _idleTimer.Start();
-            }
-
-            IMailFolder mbfolder;
-            IMailFolder destFolder;
+            
 
                 try
                 {
-                    mbfolder = await root.GetSubfolderAsync(mbname, Util.GetCancellationToken());
-                }
-                catch (FolderNotFoundException ice)
-                {
-                    mbfolder = await root.CreateAsync(mbname, false, Util.GetCancellationToken());
-                }
-
-                try
-                {
-                    destFolder = await mbfolder.GetSubfolderAsync(emailDestination, Util.GetCancellationToken());
-                }
-                catch (FolderNotFoundException ice)
-                {
-                    destFolder = await mbfolder.CreateAsync(emailDestination, true, Util.GetCancellationToken());
-                }
-
-                try
-                {
+                    var destFolder = await GetDestinationFolder(emailDestination);
                     await ImapClient.Inbox.MoveToAsync(new UniqueId(uniqueId), destFolder, Util.GetCancellationToken());
                 }
                 finally
@@ -121,6 +92,53 @@ namespace InboxWatcher.ImapClient
                     _idleTimer.Start();
                 }
         }
+
+
+        public async Task MoveMessage(List<IMessageSummary> uniqueIds, string emailDestination)
+        {
+            _idleTimer.Stop();
+            await StopIdle();
+
+            try
+            {
+                var destFolder = await GetDestinationFolder(emailDestination);
+                await ImapClient.Inbox.MoveToAsync(uniqueIds.Select(x => x.UniqueId).ToList(), destFolder, Util.GetCancellationToken());
+            }
+            finally
+            {
+                _idleTimer.Start();
+            }
+        }
+
+
+        private async Task<IMailFolder> GetDestinationFolder(string destinationFolderName)
+        {
+            var root = await ImapClient.GetFolderAsync(ImapClient.PersonalNamespaces[0].Path, Util.GetCancellationToken());
+
+            IMailFolder mbfolder;
+            IMailFolder destFolder;
+
+            try
+            {
+                mbfolder = await root.GetSubfolderAsync(Factory.MailBoxName, Util.GetCancellationToken());
+            }
+            catch (FolderNotFoundException ice)
+            {
+                mbfolder = await root.CreateAsync(Factory.MailBoxName, false, Util.GetCancellationToken());
+            }
+
+            try
+            {
+                destFolder = await mbfolder.GetSubfolderAsync(destinationFolderName, Util.GetCancellationToken());
+            }
+            catch (FolderNotFoundException ice)
+            {
+                destFolder = await mbfolder.CreateAsync(destinationFolderName, true, Util.GetCancellationToken());
+            }
+
+            return destFolder;
+        }
+
 
         /// <summary>
         /// Get the 500 newest message summaries

@@ -13,7 +13,8 @@ namespace InboxWatcher.Interface
     {
         Task<MimeMessage> GetMessage(UniqueId uid);
         Task DeleteMessage(UniqueId uid);
-        Task MoveMessage(uint uniqueId, string emailDestination, string mbname);
+        Task MoveMessage(uint uniqueId, string emailDestination);
+        Task MoveMessage(List<IMessageSummary> uniqueId, string emailDestination);
 
         /// <summary>
         /// Get the 500 newest message summaries

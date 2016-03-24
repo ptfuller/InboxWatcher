@@ -93,6 +93,18 @@ namespace InboxWatcher.WebAPI.Controllers
             return response;
         }
 
+        [Route("css/jquery-ui.css")]
+        public HttpResponseMessage GetJqueryUiCss()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK);
+            var content = Path.Combine(InboxWatcher.ResourcePath, "jquery-ui.css");
+            response.Content = new StringContent(File.ReadAllText(content));
+
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("text/css");
+
+            return response;
+        }
+
         [Route("js/jquery.signalR-2.2.0.js")]
         public HttpResponseMessage GetSignalR()
         {

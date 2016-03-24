@@ -467,7 +467,11 @@ namespace InboxWatcher.ImapClient
 
             try
             {
-                _currentlyProcessingIds.Remove(uniqueId);
+                var selectedMessage = await _imapWorker.GetMessage(uid);
+                if (selectedMessage != null) return selectedMessage;
+
+                //possibly the worker is de-synched from the server and should be reset
+                await _imapWorker.Setup();
                 return await _imapWorker.GetMessage(uid);
             }
             catch (Exception ex)
@@ -475,9 +479,12 @@ namespace InboxWatcher.ImapClient
                 logger.Error(ex);
                 Exceptions.Add(ex);
                 Trace.WriteLine(ex.Message);
-                _currentlyProcessingIds.Remove(uniqueId);
                 await _imapWorker.Setup().ConfigureAwait(false);
                 return null;
+            }
+            finally
+            {
+                _currentlyProcessingIds.Remove(uniqueId);
             }
         }
 
@@ -488,6 +495,7 @@ namespace InboxWatcher.ImapClient
             {
                 var success = false;
 
+                //try 4 times
                 for (var i = 0; i < 4; i++)
                 {
                     if (await _emailSender.SendMail(message, emailDestination, moveToDest))
@@ -511,7 +519,7 @@ namespace InboxWatcher.ImapClient
             {
                 try
                 {
-                    await _imapWorker.MoveMessage(uniqueId, emailDestination, MailBoxName);
+                    await _imapWorker.MoveMessage(uniqueId, emailDestination);
                 }
                 catch (Exception ex)
                 {
@@ -538,7 +546,7 @@ namespace InboxWatcher.ImapClient
             
             try
             {
-                await _imapWorker.MoveMessage(uid, moveToFolder, MailBoxName);
+                await _imapWorker.MoveMessage(uid, moveToFolder);
             }
             catch (Exception ex)
             {
@@ -550,6 +558,30 @@ namespace InboxWatcher.ImapClient
             }
 
             await _mbLogger.LogEmailChanged(messageid, actionTakenBy, "Moved to " + moveToFolder);
+        }
+
+        public async Task MoveMessage(Dictionary<string, List<IMessageSummary>> messages)
+        {
+            foreach (var dictEntry in messages)
+            {
+                try
+                {
+                    await _imapWorker.MoveMessage(dictEntry.Value, dictEntry.Key);
+
+                    foreach (var message in dictEntry.Value)
+                    {
+                        await _mbLogger.LogEmailChanged(message.Envelope.MessageId, dictEntry.Key, "Moved to " + dictEntry.Key);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine(ex.Message);
+                    logger.Error(ex);
+                    Exceptions.Add(ex);
+                    await _imapWorker.Setup().ConfigureAwait(false);
+                }
+            }
+            
         }
 
         public async Task<MimeMessage> GetEmailByUniqueId(string messageId)

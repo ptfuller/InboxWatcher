@@ -177,22 +177,20 @@ namespace InboxWatcher.ImapClient
                 buildMessage.Body = builder.ToMessageBody();
 
                 await client.SendAsync(buildMessage);
+
+                return true;
             }
             catch (Exception ex)
             {
                 Trace.WriteLine(ex.Message);
-
                 await Setup();
-                
-                _emailIsSending = false;
-                _timer.Start();
-
                 return false;
             }
-
-            _emailIsSending = false;
-            _timer.Start();
-            return true;
+            finally
+            {
+                _emailIsSending = false;
+                _timer.Start();
+            }
         }
     }
 }
